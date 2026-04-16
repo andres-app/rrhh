@@ -118,7 +118,6 @@ if ($module === 'rrhh') {
 $routes = [
 
     'login' => static function (): void {
-        // Llamamos directamente a la vista del login que creamos
         require_file(__DIR__ . '/../Vista/modulos/login.php');
     },
 
@@ -128,11 +127,11 @@ $routes = [
     },
 
     'perfil' => static function (): void {
-        // SEGURIDAD DESACTIVADA TEMPORALMENTE PARA VER EL DISEÑO
-        // require_role(['colaborador', 'rrhh', 'admin', 'superadmin']); 
-
-        // Llamamos directamente a la vista del perfil
         require_file(__DIR__ . '/../Vista/modulos/colaborador/perfil.php');
+    },
+
+    'documentos' => static function (): void {
+        require_file(__DIR__ . '/../Vista/modulos/colaborador/documentos.php');
     }
 ];
 

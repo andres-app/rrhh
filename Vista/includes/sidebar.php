@@ -10,6 +10,9 @@
         <a href="<?= BASE_URL ?>/perfil" class="flex items-center px-4 py-3 rounded-xl transition <?= ($menu_activo == 'perfil') ? 'bg-indigo-800 font-bold shadow-inner' : 'text-indigo-200 hover:bg-indigo-800' ?>">
             <span class="mr-3">👤</span> Mi Perfil
         </a>
+        <a href="<?= BASE_URL ?>/documentos" class="flex items-center px-4 py-3 rounded-xl transition <?= ($menu_activo == 'documentos') ? 'bg-indigo-800 font-bold shadow-inner' : 'text-indigo-200 hover:bg-indigo-800' ?>">
+            <span class="mr-3">📄</span> Mis Documentos
+        </a>
         
         <a href="<?= BASE_URL ?>/rrhh/validaciones" class="flex items-center px-4 py-3 rounded-xl transition <?= ($menu_activo == 'validaciones') ? 'bg-indigo-800 font-bold shadow-inner' : 'text-indigo-200 hover:bg-indigo-800' ?>">
             <span class="mr-3">✅</span> Validaciones
