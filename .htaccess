@@ -1,0 +1,14 @@
+<IfModule mod_rewrite.c>
+    RewriteEngine On
+
+    # 1. Si alguien entra a la raíz exacta del dominio (rrhh.legrand.pe), mándalo a Public
+    RewriteRule ^$ Public/ [L]
+
+    # 2. Si lo que busca no es un archivo ni una carpeta física...
+    RewriteCond %{REQUEST_FILENAME} !-f
+    RewriteCond %{REQUEST_FILENAME} !-d
+    # ...y la URL no empieza ya con "Public/"...
+    RewriteCond %{REQUEST_URI} !^/Public/
+    # 3. ...entonces reescribe internamente la URL para que pase por Public/
+    RewriteRule ^(.*)$ Public/$1 [L]
+</IfModule>
