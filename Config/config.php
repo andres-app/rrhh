@@ -2,7 +2,7 @@
 // /Config/config.php
 
 // URL base de tu proyecto (Cámbiala cuando subas a producción)
-define('BASE_URL', 'http://localhost/rrhh_system/Public');
+define('BASE_URL', 'https://rrhh.legrand.pe');
 
 // Credenciales de Base de Datos
 define('DB_HOST', 'localhost');
