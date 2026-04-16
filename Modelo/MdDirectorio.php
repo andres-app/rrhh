@@ -3,12 +3,14 @@
 
 require_once "Conexion.php";
 
-class MdDirectorio {
+class MdDirectorio
+{
 
     /*=============================================
     MODELO PARA LA TABLA PRINCIPAL
     =============================================*/
-    public static function mdlMostrarDirectorio() {
+    public static function mdlMostrarDirectorio()
+    {
         try {
             $stmt = Conexion::conectar()->prepare("
                 SELECT 
@@ -35,9 +37,26 @@ class MdDirectorio {
     /*=============================================
     MODELO PARA EL PERFIL DETALLE
     =============================================*/
-    public static function mdlObtenerPerfilCompleto($id) {
+    public static function mdlObtenerPerfilCompleto($id)
+    {
         $stmt = Conexion::conectar()->prepare("
-            SELECT m.*, l.* FROM colab_maestro m
+            SELECT 
+                m.*, 
+                l.sueldo, 
+                l.nsa_cip, 
+                l.correo_institucional, 
+                l.puesto_cas, 
+                l.tipo_puesto, 
+                l.area, 
+                l.procedencia, 
+                l.modalidad_contrato AS mod_contrato, -- Alias para la vista
+                l.situacion, 
+                l.fecha_ingreso, 
+                l.fecha_cese,
+                (SELECT nombre_completo FROM colab_familia WHERE colab_id = m.id AND parentesco = 'CONYUGE' LIMIT 1) as conyuge,
+                (SELECT fecha_nacimiento FROM colab_familia WHERE colab_id = m.id AND parentesco = 'CONYUGE' LIMIT 1) as onomastico_conyuge,
+                (SELECT COUNT(*) FROM colab_familia WHERE colab_id = m.id AND parentesco LIKE 'HIJO%') as n_hijos
+            FROM colab_maestro m
             INNER JOIN colab_laboral l ON m.id = l.colab_id
             WHERE m.id = :id
         ");
