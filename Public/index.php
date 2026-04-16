@@ -108,6 +108,14 @@ if ($module === 'rrhh') {
         exit;
     }
 
+    // RUTA: perfil con ID (rrhh/perfil/123)
+    if ($subRoute === 'perfil') {
+        // El ID sería el tercer parámetro: /rrhh/perfil/1
+        $id_colaborador = $parts[2] ?? null;
+        require_file(__DIR__ . '/../Vista/modulos/rrhh/perfil_detalle.php');
+        exit;
+    }
+
     not_found('404 - RRHH: Ruta no definida');
 }
 /*
