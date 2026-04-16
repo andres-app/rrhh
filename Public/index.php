@@ -102,6 +102,12 @@ if ($module === 'rrhh') {
         exit;
     }
 
+    // RUTA DASHBOARD
+    if ($subRoute === 'dashboard') {
+        require_file(__DIR__ . '/../Vista/modulos/rrhh/dashboard.php');
+        exit;
+    }
+
     not_found('404 - RRHH: Ruta no definida');
 }
 /*
