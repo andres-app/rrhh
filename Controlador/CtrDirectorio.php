@@ -1,15 +1,26 @@
 <?php
-// /Controladores/CtrDirectorio.php
+// /Controlador/CtrDirectorio.php
 
 class CtrDirectorio {
 
+    /*=============================================
+    MOSTRAR DIRECTORIO (El método que falta)
+    =============================================*/
     public function ctrMostrarDirectorio() {
+        
+        // Llamamos al modelo para obtener los datos
         $respuesta = MdDirectorio::mdlMostrarDirectorio();
         return $respuesta;
+        
     }
 
-    // Para la vista de perfil individual (tipo Facebook)
+    /*=============================================
+    VER PERFIL INDIVIDUAL
+    =============================================*/
     public function ctrVerPerfil($id) {
-        return MdDirectorio::mdlObtenerPerfilCompleto($id);
+        if (!$id || !is_numeric($id)) return false;
+
+        $respuesta = MdDirectorio::mdlObtenerPerfilCompleto($id);
+        return $respuesta;
     }
 }
