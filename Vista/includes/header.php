@@ -9,4 +9,4 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <title><?= $titulo_pagina ?? 'Sistema de RRHH' ?></title>
 </head>
-<body class="bg-slate-50 font-sans antialiased text-slate-900 flex h-screen overflow-hidden">
+<body class="bg-slate-50 font-sans antialiased text-slate-900 flex flex-col md:flex-row h-screen overflow-hidden">

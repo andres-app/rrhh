@@ -1,17 +1,38 @@
 <?php
 // /Vista/includes/sidebar.php
 ?>
-<aside class="w-64 bg-slate-900 text-slate-300 flex flex-col hidden md:flex z-20 border-r border-slate-800 shadow-xl">
-    
-    <div class="h-20 flex items-center px-6 border-b border-slate-800">
+
+<div class="md:hidden flex items-center justify-between bg-slate-900 p-4 shrink-0 z-20 border-b border-slate-800">
+    <div class="flex items-center">
         <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/30">
             <span class="text-white font-bold text-xl leading-none">H</span>
         </div>
         <span class="text-xl font-bold text-white tracking-wide">HR<span class="text-indigo-400">Panel</span></span>
     </div>
+    <button id="btn-menu" class="text-slate-300 hover:text-white focus:outline-none">
+        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
+        </svg>
+    </button>
+</div>
+
+<div id="sidebar-overlay" class="fixed inset-0 bg-slate-900/60 z-30 hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+
+<aside id="sidebar" class="w-64 bg-slate-900 text-slate-300 flex flex-col z-40 border-r border-slate-800 shadow-xl fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out h-full">
+    
+    <div class="h-20 flex items-center justify-between px-6 border-b border-slate-800 shrink-0">
+        <div class="flex items-center">
+            <div class="w-8 h-8 bg-indigo-500 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-indigo-500/30">
+                <span class="text-white font-bold text-xl leading-none">H</span>
+            </div>
+            <span class="text-xl font-bold text-white tracking-wide">HR<span class="text-indigo-400">Panel</span></span>
+        </div>
+        <button id="btn-close-menu" class="md:hidden text-slate-400 hover:text-white">
+            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path></svg>
+        </button>
+    </div>
     
     <nav class="flex-1 overflow-y-auto py-6">
-        
         <div class="px-6 mb-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest">Mi Espacio</div>
         
         <a href="<?= BASE_URL ?>/perfil" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'perfil') ? 'bg-indigo-500/10 text-indigo-400 border-l-4 border-indigo-500' : 'hover:bg-slate-800 hover:text-white border-l-4 border-transparent text-slate-400' ?>">
@@ -43,7 +64,7 @@
         </a>
     </nav>
 
-    <div class="p-4 bg-slate-900/80 border-t border-slate-800">
+    <div class="p-4 bg-slate-900/80 border-t border-slate-800 shrink-0">
         <div class="flex items-center p-2 rounded-xl hover:bg-slate-800 transition cursor-pointer group">
             <img src="https://ui-avatars.com/api/?name=Rafael+Abanto&background=4f46e5&color=fff" class="w-9 h-9 rounded-full shadow-md border border-slate-700 group-hover:border-indigo-500 transition-colors">
             <div class="ml-3 overflow-hidden flex-1">
