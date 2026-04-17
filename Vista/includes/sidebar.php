@@ -120,11 +120,19 @@ $accesoDocs = tieneAcceso('documentos');
 
     <div class="p-4 bg-black/20 border-t border-red-950 shrink-0">
         <div class="flex items-center p-2 rounded-xl hover:bg-red-900/30 transition cursor-pointer group">
-            <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user_name'] ?? 'Usuario') ?>&background=880808&color=fff" class="w-9 h-9 rounded-full shadow-md border border-red-900 group-hover:border-red-500 transition-colors">
+
+            <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['username'] ?? 'Usuario') ?>&background=880808&color=fff" class="w-9 h-9 rounded-full shadow-md border border-red-900 group-hover:border-red-500 transition-colors">
+
             <div class="ml-3 overflow-hidden flex-1">
-                <p class="text-sm font-bold text-white truncate"><?= $_SESSION['user_name'] ?? 'Nombre Usuario' ?></p>
-                <a href="<?= BASE_URL ?>/logout" class="text-xs text-red-400/70 group-hover:text-red-400 transition truncate block">Cerrar sesión</a>
+                <p class="text-sm font-bold text-white truncate">
+                    <?= $_SESSION['nombre_completo'] ?>
+                </p>
+                <p class="text-[10px] text-red-400/60 uppercase font-medium">
+                    <?= $_SESSION['user_role'] ?>
+                </p>
+                <a href="<?= BASE_URL ?>/logout" class="text-xs text-red-400/70 hover:text-red-400 transition block">Cerrar sesión</a>
             </div>
+
             <svg class="w-4 h-4 text-red-700 group-hover:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
             </svg>
