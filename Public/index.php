@@ -7,8 +7,14 @@ session_start();
 
 require_once __DIR__ . '/../Config/config.php';
 require_once __DIR__ . '/../Modelo/Conexion.php';
-require_once __DIR__ . '/../Controlador/CtrUsuario.php';
+
+// Modelos
 require_once __DIR__ . '/../Modelo/MdUsuario.php';
+require_once __DIR__ . '/../Modelo/MdPermisos.php';
+
+// Controladores
+require_once __DIR__ . '/../Controlador/CtrUsuario.php';
+require_once __DIR__ . '/../Controlador/CtrPermisos.php';
 
 /* HELPERS */
 function redirect(string $to) { header('Location: ' . $to); exit; }
