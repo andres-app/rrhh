@@ -18,9 +18,15 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
     <header class="h-20 bg-white shadow-sm flex items-center px-8 justify-between z-10 border-b border-red-50">
         <div>
-            <h1 class="text-2xl font-bold text-slate-800">Hola, Administrador 👋</h1>
-            <p class="text-sm text-slate-500">Aquí tienes el resumen de hoy, <?= date('d/m/Y') ?></p>
+            <h1 class="text-2xl font-bold text-slate-800">
+                Hola, <?= explode(' ', $_SESSION["nombre_completo"])[0] ?> 👋
+            </h1>
+
+            <p class="text-sm text-slate-500">
+                Aquí tienes el resumen de hoy, <?= date('d/m/Y') ?> | <?= date('H:i') ?>
+            </p>
         </div>
+
         <div class="flex items-center space-x-4">
             <div class="hidden md:flex relative">
                 <input type="text" placeholder="Búsqueda rápida..." class="bg-slate-100 border-none rounded-full px-4 py-2 text-sm focus:ring-2 focus:ring-red-700 outline-none w-64 transition-all">

@@ -1,14 +1,16 @@
 <?php
 // /Controlador/CtrUsuario.php
 
-class CtrUsuario {
+class CtrUsuario
+{
 
     /**
      * Maneja el proceso de inicio de sesión
      */
-    public function ctrLogin() {
+    public function ctrLogin()
+    {
         if (isset($_POST["login_username"])) {
-            
+
             // 1. Definición de variables
             $tabla = "usuarios";
             $item = "username";
@@ -22,12 +24,14 @@ class CtrUsuario {
             $respuesta = MdUsuario::mdlMostrarUsuarios($tabla, $item, $valor);
 
             // 3. Verificación de credenciales con password_verify (por tus hashes $2y$10...)
-            if ($respuesta && $respuesta["username"] == $_POST["login_username"] && 
-                password_verify($_POST["login_password"], $respuesta["password"])) {
-                
+            if (
+                $respuesta && $respuesta["username"] == $_POST["login_username"] &&
+                password_verify($_POST["login_password"], $respuesta["password"])
+            ) {
+
                 // 4. Verificación de si el usuario está activo
                 if ($respuesta["estado"] == 1) {
-                    
+
                     // 5. Configuración de Variables de Sesión
                     $_SESSION["validarSesion"] = "ok";
                     $_SESSION["user_id"] = $respuesta["id"];
@@ -39,27 +43,26 @@ class CtrUsuario {
                      * Si existe el registro en colab_maestro usa el nombre real,
                      * de lo contrario usa el username (ej. para el usuario 'admin')
                      */
-                    $_SESSION["nombre_completo"] = (!empty($respuesta["nombres_apellidos"])) 
-                                                   ? $respuesta["nombres_apellidos"] 
-                                                   : $respuesta["username"];
+                    $_SESSION["nombre_completo"] = (!empty($respuesta["nombres_apellidos"]))
+                        ? $respuesta["nombres_apellidos"]
+                        : $respuesta["username"];
 
                     /**
                      * 7. Redirección Inteligente según Permisos
-                     * Esto evita que el Colaborador caiga en rrhh/dashboard (donde no tiene acceso)
                      */
-                    if ($respuesta["rol"] == "superadmin" || $respuesta["rol"] == "admin") {
-                        // Perfiles administrativos van al panel de control
+                    $rolLimpio = strtolower(trim($respuesta["rol"]));
+
+                    if ($rolLimpio == "superadmin" || $rolLimpio == "admin" || $rolLimpio == "rrhh") {
+                        // Ahora el rol 'rrhh' también es redirigido al panel administrativo
                         echo '<script>window.location = "rrhh/dashboard";</script>';
-                    } 
-                    else if ($respuesta["rol"] == "colaborador") {
-                        // Colaboradores van directamente a su perfil personal
+                    } else if ($rolLimpio == "colaborador") {
+                        // Los colaboradores van a su perfil personal
                         echo '<script>window.location = "perfil";</script>';
-                    } 
-                    else {
-                        // Ruta por defecto para otros roles
+                    } else {
+                        // Si el rol no coincide con ninguno de los anteriores
                         echo '<script>window.location = "inicio";</script>';
                     }
-                    
+
                     exit(); // Detener ejecución tras redirección
 
                 } else {
@@ -67,7 +70,6 @@ class CtrUsuario {
                             Esta cuenta está desactivada. Por favor, contacte con Recursos Humanos.
                           </div>';
                 }
-
             } else {
                 // Error de credenciales
                 echo '<div class="mt-4 bg-red-50 border-l-4 border-red-500 p-3 text-red-700 text-sm font-bold shadow-sm">
@@ -80,7 +82,8 @@ class CtrUsuario {
     /**
      * Cerrar sesión de forma segura
      */
-    static public function ctrLogout() {
+    static public function ctrLogout()
+    {
         session_destroy();
         echo '<script>window.location = "login";</script>';
     }
