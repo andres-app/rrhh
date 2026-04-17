@@ -17,30 +17,26 @@
                 <span class="text-3xl font-black text-red-900">HR</span>
             </div>
             <h1 class="text-4xl font-extrabold text-white mb-4 tracking-tight">Portal del Colaborador</h1>
-            <p class="text-red-200/80 text-lg max-w-md mx-auto font-medium">Gestiona tu información personal, revisa tus documentos y mantén tu perfil profesional actualizado en un solo lugar.</p>
+            <p class="text-red-200/80 text-lg max-w-md mx-auto font-medium">Gestiona tu información personal y mantén tu perfil actualizado.</p>
         </div>
     </div>
 
     <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
         <div class="w-full max-w-md">
             
-            <div class="lg:hidden w-16 h-16 bg-red-900 rounded-2xl mb-8 flex items-center justify-center shadow-lg">
-                <span class="text-2xl font-black text-white">HR</span>
-            </div>
-
             <h2 class="text-3xl font-bold text-slate-800 mb-2 tracking-tight">Bienvenido de nuevo</h2>
-            <p class="text-slate-500 mb-8">Ingresa tus credenciales para acceder a tu cuenta.</p>
+            <p class="text-slate-500 mb-8">Ingresa tus credenciales para acceder.</p>
 
             <?php if(isset($_GET['error']) && $_GET['error'] == 'no_access'): ?>
                 <div class="mb-6 bg-red-50 border-l-4 border-red-600 p-4 rounded-r-lg">
-                    <p class="text-sm text-red-800 font-bold">Debes iniciar sesión para acceder a esa página.</p>
+                    <p class="text-sm text-red-800 font-bold">Debes iniciar sesión para acceder.</p>
                 </div>
             <?php endif; ?>
 
-            <form action="<?= BASE_URL ?>/login" method="POST" class="space-y-6">
+            <form method="POST" class="space-y-6">
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Usuario (DNI)</label>
-                    <input type="text" name="dni" required 
+                    <input type="text" name="login_username" required 
                            class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-red-900/20 focus:border-red-900 transition-all outline-none" 
                            placeholder="Ingresa tu número de DNI">
                 </div>
@@ -48,21 +44,21 @@
                 <div>
                     <div class="flex justify-between items-center mb-2">
                         <label class="block text-sm font-bold text-slate-700 uppercase tracking-wide">Contraseña</label>
-                        <a href="#" class="text-xs font-bold text-red-800 hover:text-red-600 transition">¿Olvidaste tu contraseña?</a>
                     </div>
-                    <input type="password" name="password" required 
+                    <input type="password" name="login_password" required 
                            class="w-full px-4 py-3 rounded-xl border border-slate-200 bg-slate-50 focus:bg-white focus:ring-2 focus:ring-red-900/20 focus:border-red-900 transition-all outline-none" 
                            placeholder="••••••••">
-                </div>
-
-                <div class="flex items-center">
-                    <input type="checkbox" id="remember" class="w-4 h-4 text-red-900 border-slate-300 rounded focus:ring-red-900">
-                    <label for="remember" class="ml-2 text-sm text-slate-600 font-medium cursor-pointer">Recordar mis datos</label>
                 </div>
 
                 <button type="submit" class="w-full bg-red-900 text-white font-bold rounded-xl py-4 px-4 hover:bg-[#310404] shadow-xl shadow-red-900/20 transition-all active:scale-[0.98] tracking-wide">
                     Ingresar al Sistema
                 </button>
+
+                <?php
+                    // EJECUCIÓN DEL CONTROLADOR
+                    $login = new CtrUsuario();
+                    $login->ctrLogin();
+                ?>
             </form>
 
             <p class="mt-8 text-center text-xs text-slate-400 font-medium uppercase tracking-[0.2em]">

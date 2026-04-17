@@ -1,4 +1,11 @@
 <?php
+
+// En cada vista protegida
+if (!isset($_SESSION["validarSesion"]) || $_SESSION["validarSesion"] != "ok") {
+    header("Location: " . BASE_URL . "/login");
+    exit();
+}
+
 $titulo_pagina = "Dashboard | Panel de Control RRHH";
 $menu_activo = "dashboard";
 

@@ -1,151 +1,80 @@
 <?php
-// /Public/index.php
-
 declare(strict_types=1);
-
-// Configuración de errores para desarrollo
 ini_set('display_errors', '1');
-ini_set('display_startup_errors', '1');
 error_reporting(E_ALL);
 
 session_start();
 
-// -------------------------------------------------------------------------
-// 1. CARGAMOS LA CONFIGURACIÓN
-// -------------------------------------------------------------------------
-$ruta_config = __DIR__ . '/../Config/config.php';
-if (file_exists($ruta_config)) {
-    require_once $ruta_config;
+require_once __DIR__ . '/../Config/config.php';
+require_once __DIR__ . '/../Modelo/Conexion.php';
+require_once __DIR__ . '/../Controlador/CtrUsuario.php';
+require_once __DIR__ . '/../Modelo/MdUsuario.php';
+
+/* HELPERS */
+function redirect(string $to) { header('Location: ' . $to); exit; }
+
+function check_access(string $module_path, string $role): array {
+    $db = Conexion::conectar();
+    $stmt = $db->prepare("SELECT p.can_view, p.can_edit 
+                          FROM permisos p 
+                          INNER JOIN modulos m ON p.modulo_id = m.id 
+                          WHERE m.ruta_base = :module AND p.rol = :rol LIMIT 1");
+    $stmt->execute(['module' => $module_path, 'rol' => $role]);
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: ['can_view' => 0, 'can_edit' => 0];
 }
 
-// Fallback de seguridad
-if (!defined('BASE_URL')) {
-    define('BASE_URL', 'https://rrhh.legrand.pe');
-}
-
-/*
-|--------------------------------------------------------------------------
-| HELPERS (Funciones de utilidad)
-|--------------------------------------------------------------------------
-*/
-
-function redirect(string $to): void
-{
-    header('Location: ' . $to);
-    exit;
-}
-
-function not_found(string $msg = '404 - Página no encontrada'): void
-{
-    http_response_code(404);
-    echo "
-    <div style='font-family:Arial,sans-serif;padding:24px;color:#0f172a;text-align:center;'>
-        <h1 style='margin:0 0 10px;font-size:28px'>{$msg}</h1>
-        <p>Verifica que la ruta o el archivo existan en la carpeta correspondiente.</p>
-        <a href='" . BASE_URL . "/login' style='color:#4f46e5;text-decoration:none;font-weight:bold;'>Volver al inicio</a>
-    </div>";
-    exit;
-}
-
-function require_role(array $allowed_roles): void
-{
-    if (empty($_SESSION['user_id']) || !in_array($_SESSION['user_role'], $allowed_roles)) {
-        redirect(BASE_URL . '/login?error=no_access');
-    }
-}
-
-function require_file(string $file): void
-{
-    if (!is_file($file)) {
-        not_found("404 - No existe el archivo físico: {$file}");
-    }
-    require $file;
-}
-
-/*
-|--------------------------------------------------------------------------
-| ROUTER (Procesamiento de la URL)
-|--------------------------------------------------------------------------
-*/
-
+/* ROUTER LOGIC */
 $path   = trim((string)($_GET['url'] ?? 'login'), '/');
-$parts  = $path === '' ? [] : explode('/', $path);
-$module = $parts[0] ?? 'login';
-$sub    = $parts[1] ?? null;
+$parts  = explode('/', $path);
+$module = $parts[0] ?: 'login';
 
-/*
-|--------------------------------------------------------------------------
-| RRHH ROUTES (/rrhh/...)
-|--------------------------------------------------------------------------
-*/
-if ($module === 'rrhh') {
-    // SEGURIDAD DESACTIVADA TEMPORALMENTE PARA VER EL DISEÑO
-    // require_role(['rrhh', 'admin', 'superadmin']);
-
-    $subRoute = (string)($sub ?? '');
-
-    // RUTA VALIDACIONES
-    if ($subRoute === 'validaciones') {
-        require_file(__DIR__ . '/../Vista/modulos/rrhh/validaciones.php');
-        exit;
-    }
-
-    // RUTA DIRECTORIO
-    if ($subRoute === 'directorio') {
-        require_file(__DIR__ . '/../Vista/modulos/rrhh/directorio.php');
-        exit;
-    }
-
-    // RUTA VALIDACIONES
-    if ($subRoute === 'validaciones') {
-        require_file(__DIR__ . '/../Vista/modulos/rrhh/validaciones.php');
-        exit;
-    }
-
-    // RUTA DASHBOARD
-    if ($subRoute === 'dashboard') {
-        require_file(__DIR__ . '/../Vista/modulos/rrhh/dashboard.php');
-        exit;
-    }
-
-    // RUTA: perfil con ID (rrhh/perfil/123)
-    if ($subRoute === 'perfil') {
-        // El ID sería el tercer parámetro: /rrhh/perfil/1
-        $id_colaborador = $parts[2] ?? null;
-        require_file(__DIR__ . '/../Vista/modulos/rrhh/perfil_detalle.php');
-        exit;
-    }
-
-    not_found('404 - RRHH: Ruta no definida');
-}
-/*
-|--------------------------------------------------------------------------
-| PUBLIC & COLLABORATOR ROUTES
-|--------------------------------------------------------------------------
-*/
-$routes = [
-
-    'login' => static function (): void {
-        require_file(__DIR__ . '/../Vista/modulos/login.php');
-    },
-
-    'logout' => static function (): void {
-        session_destroy();
-        redirect(BASE_URL . '/login');
-    },
-
-    'perfil' => static function (): void {
-        require_file(__DIR__ . '/../Vista/modulos/colaborador/perfil.php');
-    },
-
-    'documentos' => static function (): void {
-        require_file(__DIR__ . '/../Vista/modulos/colaborador/documentos.php');
-    }
-];
-
-// Ejecución de la ruta encontrada
-if (!isset($routes[$module])) {
-    not_found("404 - El módulo '{$module}' no está definido en el sistema.");
+// Rutas públicas
+if ($module === 'login' || $module === 'logout') {
+    if ($module === 'logout') { session_destroy(); redirect(BASE_URL . '/login'); }
+    require_once __DIR__ . '/../Vista/modulos/login.php';
+    exit;
 }
 
-$routes[$module]();
+// Validación de Sesión
+if (empty($_SESSION['user_id'])) { redirect(BASE_URL . '/login'); }
+
+$user_role = $_SESSION['user_role']; // Asegúrate de setear esto en el login
+$permisos  = check_access($module, $user_role);
+
+if (!$permisos['can_view']) {
+    die("No tienes permiso para acceder a este módulo.");
+}
+
+// Guardar permisos en sesión para usar en las vistas (ocultar botones de edición)
+$_SESSION['current_module_can_edit'] = (bool)$permisos['can_edit'];
+
+/* CARGA DE MÓDULOS */
+switch ($module) {
+    case 'rrhh':
+        $sub = $parts[1] ?? 'dashboard';
+        $file = __DIR__ . "/../Vista/modulos/rrhh/{$sub}.php";
+        if ($sub === 'perfil') {
+            $id_colaborador = $parts[2] ?? null;
+            $file = __DIR__ . "/../Vista/modulos/rrhh/perfil_detalle.php";
+        }
+        break;
+
+    case 'configuracion':
+        // Solo Superadmin y Admin
+        $file = __DIR__ . "/../Vista/modulos/configuracion/permisos.php";
+        break;
+
+    case 'perfil': // Perfil del propio colaborador
+        $file = __DIR__ . "/../Vista/modulos/colaborador/perfil.php";
+        break;
+
+    default:
+        $file = __DIR__ . "/../Vista/modulos/{$module}.php";
+        break;
+}
+
+if (file_exists($file)) {
+    require_once $file;
+} else {
+    echo "404 - El archivo del módulo no existe.";
+}
