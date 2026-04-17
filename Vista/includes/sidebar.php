@@ -1,5 +1,27 @@
 <?php
 // /Vista/includes/sidebar.php
+
+/**
+ * Función auxiliar para verificar permisos en la vista.
+ * Nota: 'check_access' debe estar disponible (ya la definiste en index.php)
+ */
+function tieneAcceso($modulo)
+{
+    if (!isset($_SESSION['user_role'])) return false;
+
+    // El Superadmin suele tener acceso a todo por defecto
+    if ($_SESSION['user_role'] === 'superadmin') return true;
+
+    // Consultamos la función que ya creaste en tu Router (index.php)
+    $permisos = check_access($modulo, $_SESSION['user_role']);
+    return (bool)$permisos['can_view'];
+}
+
+// Pre-calculamos accesos para no repetir llamadas
+$accesoRRHH = tieneAcceso('rrhh');
+$accesoConfig = tieneAcceso('configuracion');
+$accesoPerfil = tieneAcceso('perfil');
+$accesoDocs = tieneAcceso('documentos');
 ?>
 
 <div class="md:hidden flex items-center justify-between bg-[#1a0505] p-4 shrink-0 z-20 border-b border-red-950/50">
@@ -34,53 +56,73 @@
         </button>
     </div>
 
-    <nav class="flex-1 overflow-y-auto py-6">
-        <div class="px-6 mb-2 text-[10px] font-bold text-red-400/50 uppercase tracking-widest">Mi Espacio</div>
+    <nav class="flex-1 overflow-y-auto py-6 custom-scrollbar">
 
-        <a href="<?= BASE_URL ?>/perfil" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'perfil') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-            </svg>
-            <span class="font-medium text-sm">Mi Perfil</span>
-        </a>
+        <?php if ($accesoPerfil || $accesoDocs): ?>
+            <div class="px-6 mb-2 text-[10px] font-bold text-red-400/50 uppercase tracking-widest">Mi Espacio</div>
 
-        <a href="<?= BASE_URL ?>/documentos" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'documentos') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-            </svg>
-            <span class="font-medium text-sm">Mis Documentos</span>
-        </a>
+            <?php if ($accesoPerfil): ?>
+                <a href="<?= BASE_URL ?>/perfil" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'perfil') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
+                    </svg>
+                    <span class="font-medium text-sm">Mi Perfil</span>
+                </a>
+            <?php endif; ?>
 
-        <div class="px-6 mt-8 mb-2 text-[10px] font-bold text-red-400/50 uppercase tracking-widest">Administración</div>
+            <?php if ($accesoDocs): ?>
+                <a href="<?= BASE_URL ?>/documentos" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'documentos') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
+                    </svg>
+                    <span class="font-medium text-sm">Mis Documentos</span>
+                </a>
+            <?php endif; ?>
+        <?php endif; ?>
 
-        <a href="<?= BASE_URL ?>/rrhh/dashboard" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'dashboard') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2v-10z"></path>
-            </svg>
-            <span class="font-medium text-sm">Dashboard</span>
-        </a>
+        <?php if ($accesoRRHH): ?>
+            <div class="px-6 mt-8 mb-2 text-[10px] font-bold text-red-400/50 uppercase tracking-widest">Administración</div>
 
-        <a href="<?= BASE_URL ?>/rrhh/validaciones" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'validaciones') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-            </svg>
-            <span class="font-medium text-sm flex-1">Validaciones</span>
-            <span class="bg-red-600 text-white text-[10px] font-bold px-2 py-0.5 rounded-full shadow-sm">5</span>
-        </a>
+            <a href="<?= BASE_URL ?>/rrhh/dashboard" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'dashboard') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2v-10z"></path>
+                </svg>
+                <span class="font-medium text-sm">Dashboard</span>
+            </a>
 
-        <a href="<?= BASE_URL ?>/rrhh/directorio" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'directorio') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-            <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656|126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-            </svg>
-            <span class="font-medium text-sm">Directorio</span>
-        </a>
+            <a href="<?= BASE_URL ?>/rrhh/validaciones" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'validaciones') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
+                </svg>
+                <span class="font-medium text-sm flex-1">Validaciones</span>
+            </a>
+
+            <a href="<?= BASE_URL ?>/rrhh/directorio" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'directorio') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+                </svg>
+                <span class="font-medium text-sm">Directorio</span>
+            </a>
+        <?php endif; ?>
+
+        <?php if ($accesoConfig): ?>
+            <div class="px-6 mt-8 mb-2 text-[10px] font-bold text-red-400/50 uppercase tracking-widest">Sistema</div>
+            <a href="<?= BASE_URL ?>/configuracion" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'configuracion') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
+                </svg>
+                <span class="font-medium text-sm">Permisos</span>
+            </a>
+        <?php endif; ?>
+
     </nav>
 
     <div class="p-4 bg-black/20 border-t border-red-950 shrink-0">
         <div class="flex items-center p-2 rounded-xl hover:bg-red-900/30 transition cursor-pointer group">
-            <img src="https://ui-avatars.com/api/?name=Rafael+Abanto&background=880808&color=fff" class="w-9 h-9 rounded-full shadow-md border border-red-900 group-hover:border-red-500 transition-colors">
+            <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['user_name'] ?? 'Usuario') ?>&background=880808&color=fff" class="w-9 h-9 rounded-full shadow-md border border-red-900 group-hover:border-red-500 transition-colors">
             <div class="ml-3 overflow-hidden flex-1">
-                <p class="text-sm font-bold text-white truncate">Rafael Abanto</p>
+                <p class="text-sm font-bold text-white truncate"><?= $_SESSION['user_name'] ?? 'Nombre Usuario' ?></p>
                 <a href="<?= BASE_URL ?>/logout" class="text-xs text-red-400/70 group-hover:text-red-400 transition truncate block">Cerrar sesión</a>
             </div>
             <svg class="w-4 h-4 text-red-700 group-hover:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
@@ -89,3 +131,18 @@
         </div>
     </div>
 </aside>
+
+<style>
+    /* Ocultar scrollbar para Chrome, Safari y Opera */
+    .custom-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
+
+    /* Ocultar scrollbar para IE, Edge y Firefox */
+    .custom-scrollbar {
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
+    }
+</style>

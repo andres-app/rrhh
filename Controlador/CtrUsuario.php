@@ -10,10 +10,8 @@ class CtrUsuario {
             $item = "username";
             $valor = $_POST["login_username"];
 
-            // Llamada al modelo con nomenclatura Md
             $respuesta = MdUsuario::mdlMostrarUsuarios($tabla, $item, $valor);
 
-            // Verificación segura
             if ($respuesta && $respuesta["username"] == $_POST["login_username"] && password_verify($_POST["login_password"], $respuesta["password"])) {
                 
                 if ($respuesta["estado"] == 1) {
@@ -23,8 +21,17 @@ class CtrUsuario {
                     $_SESSION["username"] = $respuesta["username"];
                     $_SESSION["user_role"] = $respuesta["rol"];
 
-                    // Redirección al dashboard de RRHH
-                    echo '<script>window.location = "rrhh/dashboard";</script>';
+                    // --- REDIRECCIÓN CORREGIDA ---
+                    // Verificamos el rol antes de decidir a dónde enviarlo
+                    if ($respuesta["rol"] == "superadmin" || $respuesta["rol"] == "admin") {
+                        // Admins van al Dashboard de RRHH
+                        echo '<script>window.location = "rrhh/dashboard";</script>';
+                    } else {
+                        // Colaboradores van directamente a su Perfil (donde sí tienen permiso)
+                        echo '<script>window.location = "perfil";</script>';
+                    }
+                    exit; // Importante para detener la ejecución del script
+
                 } else {
                     echo '<div class="mt-4 bg-orange-50 border-l-4 border-orange-500 p-3 text-orange-700 text-sm">Esta cuenta está desactivada.</div>';
                 }
