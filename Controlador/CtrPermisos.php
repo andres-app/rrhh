@@ -6,33 +6,46 @@ class CtrPermisos {
     public function ctrGuardarMatriz() {
         if (isset($_POST["actualizar_permisos"])) {
             
-            $matriz = $_POST["permiso"]; 
+            $rolLogueado = $_SESSION["rol"] ?? $_SESSION["perfil"] ?? null;
+            $rolesBase = MdPermisos::mdlMostrarRoles();
+            $modulos = MdPermisos::mdlMostrarModulos();
             $exito = true;
 
-            foreach ($matriz as $rol => $modulos) {
-                foreach ($modulos as $moduloId => $acciones) {
+            foreach ($rolesBase as $rol) {
+                
+                // PROTECCIÓN: Si el usuario no es superadmin, no puede tocar al superadmin ni a sí mismo
+                if ($rolLogueado !== 'superadmin') {
+                    if ($rol === 'superadmin' || $rol === $rolLogueado) {
+                        continue; // Ignorar estos registros en el guardado
+                    }
+                }
+
+                foreach ($modulos as $m) {
+                    $id_mod = $m["id"];
                     
+                    // Solo procesamos los roles que permitimos en el bucle superior
+                    $can_view = isset($_POST["permiso"][$rol][$id_mod]["ver"]) ? 1 : 0;
+                    $can_edit = isset($_POST["permiso"][$rol][$id_mod]["editar"]) ? 1 : 0;
+
                     $datos = [
                         "rol" => $rol,
-                        "modulo_id" => (int)$moduloId,
-                        "can_view" => isset($acciones["ver"]) ? 1 : 0,
-                        "can_edit" => isset($acciones["editar"]) ? 1 : 0
+                        "modulo_id" => (int)$id_mod,
+                        "can_view" => $can_view,
+                        "can_edit" => $can_edit
                     ];
 
-                    // Llamada al modelo corregido
-                    if (!MdPermisos::mdlGuardarPermiso($datos)) {
+                    if(!MdPermisos::mdlGuardarPermiso($datos)) {
                         $exito = false;
                     }
                 }
             }
 
             if ($exito) {
-                // Usamos un script que detenga la ejecución y redireccione
                 echo '<script>
-                    alert("¡Permisos actualizados con éxito!");
-                    window.location.href = "'.BASE_URL.'/configuracion/permisos"; 
+                    alert("¡Permisos actualizados correctamente!");
+                    window.location.href = "permisos";
                 </script>';
-                exit; // IMPORTANTE para detener el flujo
+                exit;
             }
         }
     }
