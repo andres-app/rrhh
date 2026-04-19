@@ -1,27 +1,25 @@
 <?php
+if (session_status() === PHP_SESSION_NONE) { session_start(); }
+
 require_once ROOT_PATH . 'Controlador/CtrPermisos.php';
 require_once ROOT_PATH . 'Modelo/MdPermisos.php';
 
-// ✅ Rol correcto desde sesión
 $rolActual = strtolower(trim($_SESSION["user_role"] ?? ""));
-
 $controlador = new CtrPermisos();
+
+// 1. Guardar cambios (si se envió el formulario)
+$controlador->ctrGuardarMatriz();
+
+// 2. Obtener datos frescos de la DB después del guardado
 $modulos = MdPermisos::mdlMostrarModulos();
 $rolesBase = MdPermisos::mdlMostrarRoles();
+$permisosCargados = MdPermisos::mdlObtenerPermisosAsociativos();
 
-// ✅ FILTRO FINAL LIMPIO
+// 3. Filtrar roles para la tabla (Ocultar Superadmin y mi propio rol)
 $rolesAMostrar = [];
-
 foreach ($rolesBase as $r) {
-
     $r_norm = strtolower(trim($r));
-
-    // 🚫 ocultar siempre superadmin
-    if ($r_norm === 'superadmin') continue;
-
-    // 🚫 ocultar el mismo rol (incluye admin, rrhh, etc.)
-    if ($r_norm === $rolActual) continue;
-
+    if ($r_norm === 'superadmin' || $r_norm === $rolActual) continue;
     $rolesAMostrar[] = $r;
 }
 
@@ -39,8 +37,6 @@ require_once ROOT_PATH . 'Vista/includes/sidebar.php';
         <button form="formPermisos" type="submit" name="actualizar_permisos" class="bg-red-900 hover:bg-red-950 text-white px-4 py-1.5 rounded-lg text-xs font-bold transition-all shadow-md">
             Guardar Cambios
         </button>
-
-
     </header>
 
     <div class="p-4 flex-1 overflow-y-auto">
@@ -61,19 +57,19 @@ require_once ROOT_PATH . 'Vista/includes/sidebar.php';
                     <tbody class="divide-y divide-slate-100 bg-white text-[12px]">
                         <?php foreach ($modulos as $m): ?>
                             <tr class="hover:bg-slate-50/50 transition-colors">
-                                <td class="px-4 py-2 font-medium text-slate-700 italic lowercase first-letter:uppercase">
-                                    <?= $m['nombre'] ?>
+                                <td class="px-4 py-2 font-medium text-slate-700 capitalize">
+                                    <?= str_replace("_", " ", $m['nombre']) ?>
                                 </td>
 
-                                <?php foreach ($rolesAMostrar as $rol):
-                                    $p = MdPermisos::mdlObtenerPermiso($rol, $m['id']);
-                                    $vCheck = ($p && $p['can_view']) ? 'checked' : '';
-                                    $eCheck = ($p && $p['can_edit']) ? 'checked' : '';
+                                <?php foreach ($rolesAMostrar as $rol): 
+                                    $vCheck = (isset($permisosCargados[$rol][$m['id']]) && $permisosCargados[$rol][$m['id']]['ver']) ? 'checked' : '';
+                                    $eCheck = (isset($permisosCargados[$rol][$m['id']]) && $permisosCargados[$rol][$m['id']]['editar']) ? 'checked' : '';
                                 ?>
                                     <td class="px-4 py-2 border-l border-slate-50">
                                         <div class="flex justify-center gap-5">
                                             <input type="checkbox" name="permiso[<?= $rol ?>][<?= $m['id'] ?>][ver]" <?= $vCheck ?>
                                                 class="w-3.5 h-3.5 rounded border-slate-300 text-red-900 focus:ring-0">
+                                            
                                             <input type="checkbox" name="permiso[<?= $rol ?>][<?= $m['id'] ?>][editar]" <?= $eCheck ?>
                                                 class="w-3.5 h-3.5 rounded border-slate-300 text-slate-800 focus:ring-0">
                                         </div>
@@ -84,7 +80,6 @@ require_once ROOT_PATH . 'Vista/includes/sidebar.php';
                     </tbody>
                 </table>
             </div>
-            <?php $controlador->ctrGuardarMatriz(); ?>
         </form>
     </div>
 </main>

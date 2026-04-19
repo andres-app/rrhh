@@ -1,12 +1,10 @@
 <?php
-// /Modelo/MdPermisos.php
 require_once "Conexion.php";
 
 class MdPermisos {
 
     static public function mdlMostrarRoles() {
-        // Obtenemos todos los roles únicos para las columnas
-        $stmt = Conexion::conectar()->prepare("SELECT DISTINCT rol FROM permisos ORDER BY id ASC");
+        $stmt = Conexion::conectar()->prepare("SELECT DISTINCT rol FROM permisos ORDER BY rol ASC");
         $stmt->execute();
         return $stmt->fetchAll(PDO::FETCH_COLUMN, 0);
     }
@@ -17,10 +15,19 @@ class MdPermisos {
         return $stmt->fetchAll();
     }
 
-    static public function mdlObtenerPermiso($rol, $moduloId) {
-        $stmt = Conexion::conectar()->prepare("SELECT * FROM permisos WHERE rol = :rol AND modulo_id = :id");
-        $stmt->execute(["rol" => $rol, "id" => $moduloId]);
-        return $stmt->fetch();
+    static public function mdlObtenerPermisosAsociativos() {
+        $stmt = Conexion::conectar()->prepare("SELECT * FROM permisos");
+        $stmt->execute();
+        $resultados = $stmt->fetchAll();
+        
+        $matriz = [];
+        foreach ($resultados as $fila) {
+            $matriz[$fila['rol']][$fila['modulo_id']] = [
+                'ver' => $fila['can_view'],
+                'editar' => $fila['can_edit']
+            ];
+        }
+        return $matriz;
     }
 
     static public function mdlGuardarPermiso($datos) {
