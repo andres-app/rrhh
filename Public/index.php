@@ -57,6 +57,11 @@ $_SESSION['current_module_can_edit'] = (bool)$permisos['can_edit'];
 
 /* CARGA DE MÓDULOS */
 switch ($module) {
+    case 'documentos':
+        // Redirigimos la ruta virtual "documentos" al archivo físico real
+        $file = __DIR__ . "/../Vista/modulos/colaborador/documentos.php";
+        break;
+
     case 'rrhh':
         $sub = $parts[1] ?? 'dashboard';
         $file = __DIR__ . "/../Vista/modulos/rrhh/{$sub}.php";

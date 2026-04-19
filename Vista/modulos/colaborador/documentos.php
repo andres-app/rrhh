@@ -1,4 +1,5 @@
 <?php
+//Vista/modulos/colaborador/documentos.php
 $titulo_pagina = "Mis Documentos | Portal del Colaborador";
 $menu_activo = "documentos";
 

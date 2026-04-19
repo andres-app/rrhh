@@ -1,4 +1,5 @@
 <?php
+//Modelo/MdPermisos.php
 require_once "Conexion.php";
 
 class MdPermisos {

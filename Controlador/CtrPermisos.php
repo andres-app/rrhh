@@ -1,5 +1,5 @@
 <?php
-
+//Controlador/CtrPermisos.php
 class CtrPermisos {
 
     public function ctrGuardarMatriz() {

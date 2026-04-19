@@ -1,4 +1,5 @@
 <?php
+//Vista/modulos/configuracion/permisos.php
 if (session_status() === PHP_SESSION_NONE) { session_start(); }
 
 require_once ROOT_PATH . 'Controlador/CtrPermisos.php';
