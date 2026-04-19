@@ -1,34 +1,44 @@
-<?php
-// /Vista/includes/footer.php
-?>
-
 <script>
     document.addEventListener("DOMContentLoaded", () => {
+        const loader = document.getElementById('preloader-premium');
+
+        // Función para mostrar
+        const showLoader = () => loader && loader.classList.remove('loader-hidden');
+
+        // 1. Mostrar al navegar (Enlaces internos)
+        document.addEventListener("click", (e) => {
+            const a = e.target.closest("a");
+            if (a && a.hostname === window.location.hostname && 
+                a.getAttribute("href") && 
+                !a.getAttribute("href").startsWith("#") && 
+                a.target !== "_blank") {
+                showLoader();
+            }
+        });
+
+        // 2. Mostrar al enviar formularios (Login, Guardar, etc.)
+        document.addEventListener("submit", (e) => {
+            if (!e.defaultPrevented) showLoader();
+        });
+
+        // --- TU LÓGICA DE MENU SIDEBAR ---
         const btnMenu = document.getElementById("btn-menu");
-        const btnClose = document.getElementById("btn-close-menu");
         const sidebar = document.getElementById("sidebar");
         const overlay = document.getElementById("sidebar-overlay");
 
-        const toggleMenu = () => {
-            // Deslizar menú
-            sidebar.classList.toggle("-translate-x-full");
-            
-            // Lógica del overlay
-            if (sidebar.classList.contains("-translate-x-full")) {
-                overlay.classList.replace("opacity-100", "opacity-0");
-                setTimeout(() => overlay.classList.add("hidden"), 300); // Esperar a que termine la transición
-            } else {
-                overlay.classList.remove("hidden");
-                setTimeout(() => overlay.classList.replace("opacity-0", "opacity-100"), 10);
-            }
-        };
-
-        // Eventos
-        if(btnMenu) btnMenu.addEventListener("click", toggleMenu);
-        if(btnClose) btnClose.addEventListener("click", toggleMenu);
-        if(overlay) overlay.addEventListener("click", toggleMenu); // Cierra al tocar fuera del menú
+        if (btnMenu && sidebar) {
+            btnMenu.onclick = () => {
+                sidebar.classList.toggle("-translate-x-full");
+                if (overlay) overlay.classList.toggle("hidden");
+            };
+        }
+        if (overlay) {
+            overlay.onclick = () => {
+                sidebar.classList.add("-translate-x-full");
+                overlay.classList.add("hidden");
+            };
+        }
     });
 </script>
-
 </body>
 </html>

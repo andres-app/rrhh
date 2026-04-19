@@ -4,9 +4,53 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
     <title>Iniciar Sesión - RRHH</title>
+    <style>
+        /* Estilos del Preloader Impactante */
+        #preloader-premium {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(6px);
+            transition: opacity 0.4s ease;
+        }
+        .loader-container { position: relative; width: 100px; height: 100px; }
+        .orbit {
+            position: absolute; top: 0; left: 0; width: 100%; height: 100%;
+            border-radius: 50%; border: 3px solid transparent;
+            border-top-color: #7f1d1d; /* Color Rojo 900 para combinar con tu login */
+            animation: spin-orbit 1s cubic-bezier(0.5, 0, 0.5, 1) infinite;
+        }
+        .orbit:nth-child(2) {
+            width: 80%; height: 80%; top: 10%; left: 10%;
+            border-top-color: #450a0a; animation-duration: 1.5s; animation-direction: reverse;
+        }
+        .orbit:nth-child(3) {
+            width: 60%; height: 60%; top: 20%; left: 20%;
+            border-top-color: #ef4444; animation-duration: 0.8s;
+        }
+        @keyframes spin-orbit {
+            0% { transform: rotate(0deg) scale(1); }
+            50% { transform: rotate(180deg) scale(1.1); }
+            100% { transform: rotate(360deg) scale(1); }
+        }
+        .loader-hidden { opacity: 0 !important; pointer-events: none !important; }
+    </style>
 </head>
 <body class="bg-slate-50 font-sans antialiased text-slate-900 h-screen flex">
+
+    <div id="preloader-premium">
+        <div class="loader-container">
+            <div class="orbit"></div>
+            <div class="orbit"></div>
+            <div class="orbit"></div>
+        </div>
+    </div>
 
     <div class="hidden lg:flex lg:w-1/2 bg-gradient-to-br from-[#310404] via-[#4c0505] to-red-900 items-center justify-center relative overflow-hidden">
         <div class="absolute top-0 left-0 w-96 h-96 bg-white opacity-5 rounded-full -translate-x-1/2 -translate-y-1/2"></div>
@@ -23,7 +67,6 @@
 
     <div class="w-full lg:w-1/2 flex items-center justify-center p-8 bg-white">
         <div class="w-full max-w-md">
-            
             <h2 class="text-3xl font-bold text-slate-800 mb-2 tracking-tight">Bienvenido de nuevo</h2>
             <p class="text-slate-500 mb-8">Ingresa tus credenciales para acceder.</p>
 
@@ -33,7 +76,7 @@
                 </div>
             <?php endif; ?>
 
-            <form method="POST" class="space-y-6">
+            <form method="POST" id="loginForm" class="space-y-6">
                 <div>
                     <label class="block text-sm font-bold text-slate-700 mb-2 uppercase tracking-wide">Usuario (DNI)</label>
                     <input type="text" name="login_username" required 
@@ -55,7 +98,6 @@
                 </button>
 
                 <?php
-                    // EJECUCIÓN DEL CONTROLADOR
                     $login = new CtrUsuario();
                     $login->ctrLogin();
                 ?>
@@ -67,5 +109,29 @@
         </div>
     </div>
 
+    <script>
+        (function() {
+            const loader = document.getElementById('preloader-premium');
+            
+            // Función para ocultar
+            const hideLoader = () => {
+                if(loader) loader.classList.add('loader-hidden');
+            };
+
+            // 1. Ocultar al cargar la página
+            window.addEventListener('load', hideLoader);
+            
+            // Seguro por si el 'load' tarda demasiado
+            setTimeout(hideLoader, 2000);
+
+            // 2. Mostrar al enviar el formulario de Login
+            const form = document.getElementById('loginForm');
+            if(form) {
+                form.addEventListener('submit', () => {
+                    loader.classList.remove('loader-hidden');
+                });
+            }
+        })();
+    </script>
 </body>
 </html>
