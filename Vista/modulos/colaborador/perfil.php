@@ -237,9 +237,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
 
             <!-- ─── TAB: FAMILIA ─── -->
-<div id="tab-familia" class="tab-panel hidden animate-in">
+            <div id="tab-familia" class="tab-panel hidden animate-in">
                 <h3 class="section-title">Carga Familiar</h3>
-                
+
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
                     <div class="bg-red-50 border border-red-100 rounded-2xl p-6">
                         <p class="info-label text-red-400">Cónyuge</p>
@@ -252,7 +252,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             <p class="text-xs text-red-300 italic mt-2">Fecha de nacimiento no registrada</p>
                         <?php endif; ?>
                     </div>
-                    
+
                     <div class="bg-slate-50 border border-slate-100 rounded-2xl p-6 flex items-center justify-between">
                         <div>
                             <p class="info-label">Hijos Registrados</p>
@@ -262,9 +262,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     </div>
                 </div>
 
-                <?php 
+                <?php
                 // Filtramos solo los hijos del arreglo general de familia
-                $hijos_lista = array_filter($perfil['familia'] ?? [], function($f) {
+                $hijos_lista = array_filter($perfil['familia'] ?? [], function ($f) {
                     return in_array(strtoupper($f['parentesco']), ['HIJO', 'HIJA']);
                 });
                 ?>
@@ -275,7 +275,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             Detalle de Hijos
                             <span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold"><?php echo count($hijos_lista); ?></span>
                         </h4>
-                        
+
                         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
                             <?php foreach ($hijos_lista as $hijo): ?>
                                 <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-red-200 hover:shadow-md transition-all">
@@ -287,21 +287,21 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                                             <?php echo htmlspecialchars($hijo['parentesco']); ?>
                                         </span>
                                     </div>
-                                    
+
                                     <div class="space-y-1.5 mt-3">
                                         <?php if (!empty($hijo['fecha_nacimiento'])): ?>
                                             <p class="text-xs text-slate-500 flex justify-between">
-                                                <span class="font-semibold text-slate-400">Nacimiento:</span> 
+                                                <span class="font-semibold text-slate-400">Nacimiento:</span>
                                                 <span class="font-medium text-slate-700">
-                                                    <?php echo fmt($hijo['fecha_nacimiento']); ?> 
+                                                    <?php echo fmt($hijo['fecha_nacimiento']); ?>
                                                     <span class="text-red-800 font-bold ml-1">(<?php echo calcularEdad($hijo['fecha_nacimiento']); ?>)</span>
                                                 </span>
                                             </p>
                                         <?php endif; ?>
-                                        
+
                                         <?php if (!empty($hijo['dni_familiar'])): ?>
                                             <p class="text-xs text-slate-500 flex justify-between">
-                                                <span class="font-semibold text-slate-400">DNI:</span> 
+                                                <span class="font-semibold text-slate-400">DNI:</span>
                                                 <span class="font-medium text-slate-700"><?php echo htmlspecialchars($hijo['dni_familiar']); ?></span>
                                             </p>
                                         <?php endif; ?>
@@ -311,7 +311,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         </div>
                     </div>
                 <?php endif; ?>
-                </div>
+            </div>
 
             <!-- ─── TAB: FORMACIÓN ─── -->
             <div id="tab-formacion" class="tab-panel hidden animate-in">
@@ -401,7 +401,8 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                     ['num' => 1, 'label' => 'Personal'],
                     ['num' => 2, 'label' => 'Contacto'],
                     ['num' => 3, 'label' => 'Familia'],
-                    ['num' => 4, 'label' => 'Confirmar'],
+                    ['num' => 4, 'label' => 'Formación'],
+                    ['num' => 5, 'label' => 'Confirmar'],
                 ];
                 $total = count($steps);
                 foreach ($steps as $idx => $step):
@@ -609,8 +610,62 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                 </div>
             </div>
 
-            <!-- ── PASO 4: Confirmación ── -->
-            <div id="form-step-4" class="form-step hidden">
+            <!-- ── PASO 4: Formación ── -->
+            <div id="form-step-4" class="form-step space-y-5 hidden">
+                <div class="flex items-center justify-between mb-2">
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Formación Académica</p>
+                    <button type="button" onclick="agregarFormacion()"
+                        class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                        </svg>
+                        Agregar Estudio
+                    </button>
+                </div>
+
+                <div id="lista-formacion" class="space-y-3">
+                    <?php
+                    if (empty($formacion)): ?>
+                        <div id="sin-formacion" class="text-center py-5 text-slate-400 text-xs">
+                            No hay estudios registrados. Haz clic en "Agregar Estudio".
+                        </div>
+                        <?php else:
+                        foreach (array_values($formacion) as $fi => $form): ?>
+                            <div class="formacion-row bg-white border border-slate-200 rounded-xl p-4 relative" data-index="<?php echo $fi; ?>">
+                                <button type="button" onclick="eliminarFormacion(this)"
+                                    class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors">
+                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                    </svg>
+                                </button>
+                                <div class="grid grid-cols-2 gap-3 pr-6">
+                                    <div class="field-group">
+                                        <label class="field-label">Tipo de Grado</label>
+                                        <select name="formacion[<?php echo $fi; ?>][tipo_grado]" class="field-input">
+                                            <?php foreach (['SECUNDARIA', 'TÉCNICO', 'BACHILLER', 'TÍTULO PROFESIONAL', 'MAESTRÍA', 'DOCTORADO', 'ESPECIALIZACIÓN'] as $t): ?>
+                                                <option value="<?php echo $t; ?>" <?php echo (strtoupper($form['tipo_grado'] ?? '') === $t) ? 'selected' : ''; ?>><?php echo $t; ?></option>
+                                            <?php endforeach; ?>
+                                        </select>
+                                    </div>
+                                    <div class="field-group">
+                                        <label class="field-label">Carrera / Especialidad</label>
+                                        <input type="text" name="formacion[<?php echo $fi; ?>][descripcion_carrera]" class="field-input"
+                                            value="<?php echo htmlspecialchars($form['descripcion_carrera'] ?? ''); ?>">
+                                    </div>
+                                    <div class="field-group col-span-2">
+                                        <label class="field-label">Institución</label>
+                                        <input type="text" name="formacion[<?php echo $fi; ?>][institucion]" class="field-input"
+                                            value="<?php echo htmlspecialchars($form['institucion'] ?? ''); ?>">
+                                    </div>
+                                    <input type="hidden" name="formacion[<?php echo $fi; ?>][id]" value="<?php echo $form['id'] ?? ''; ?>">
+                                </div>
+                            </div>
+                    <?php endforeach;
+                    endif; ?>
+                </div>
+            </div>
+
+            <div id="form-step-5" class="form-step hidden">
                 <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-6">Resumen de Cambios</p>
 
                 <div class="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6 flex items-start gap-3">
@@ -843,36 +898,36 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
         const idx = hijoIdx++;
         const html = `
-    <div class="hijo-row bg-white border border-slate-200 rounded-xl p-4 relative animate-in" data-index="${idx}">
-        <button type="button" onclick="eliminarHijo(this)"
-            class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors">
-            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-            </svg>
-        </button>
-        <div class="grid grid-cols-2 gap-3 pr-6">
-            <div class="field-group col-span-2">
-                <label class="field-label">Nombre Completo</label>
-                <input type="text" name="hijos[${idx}][nombre]" class="field-input" placeholder="Nombre y apellidos">
+        <div class="hijo-row bg-white border border-slate-200 rounded-xl p-4 relative animate-in" data-index="${idx}">
+            <button type="button" onclick="eliminarHijo(this)"
+                class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+            <div class="grid grid-cols-2 gap-3 pr-6">
+                <div class="field-group col-span-2">
+                    <label class="field-label">Nombre Completo</label>
+                    <input type="text" name="hijos[${idx}][nombre]" class="field-input" placeholder="Nombre y apellidos">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Parentesco</label>
+                    <select name="hijos[${idx}][parentesco]" class="field-input">
+                        <option value="HIJO">Hijo</option>
+                        <option value="HIJA">Hija</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Fecha de Nacimiento</label>
+                    <input type="date" name="hijos[${idx}][fecha_nacimiento]" class="field-input">
+                </div>
+                <div class="field-group">
+                    <label class="field-label">DNI</label>
+                    <input type="text" name="hijos[${idx}][dni]" class="field-input" maxlength="8" placeholder="Opcional">
+                </div>
+                <input type="hidden" name="hijos[${idx}][id]" value="">
             </div>
-            <div class="field-group">
-                <label class="field-label">Parentesco</label>
-                <select name="hijos[${idx}][parentesco]" class="field-input">
-                    <option value="HIJO">Hijo</option>
-                    <option value="HIJA">Hija</option>
-                </select>
-            </div>
-            <div class="field-group">
-                <label class="field-label">Fecha de Nacimiento</label>
-                <input type="date" name="hijos[${idx}][fecha_nacimiento]" class="field-input">
-            </div>
-            <div class="field-group">
-                <label class="field-label">DNI</label>
-                <input type="text" name="hijos[${idx}][dni]" class="field-input" maxlength="8" placeholder="Opcional">
-            </div>
-            <input type="hidden" name="hijos[${idx}][id]" value="">
-        </div>
-    </div>`;
+        </div>`;
         document.getElementById('lista-hijos').insertAdjacentHTML('beforeend', html);
     }
 
@@ -886,6 +941,62 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             const lista = document.getElementById('lista-hijos');
             if (!lista.querySelector('.hijo-row')) {
                 lista.innerHTML = '<div id="sin-hijos" class="text-center py-5 text-slate-400 text-xs">No hay hijos registrados. Haz clic en "Agregar hijo" para añadir.</div>';
+            }
+        }, 200);
+    }
+
+    // ── FORMACIÓN DINÁMICA ────────────────────────────
+    let formIdx = <?php echo count($formacion ?? []); ?>;
+
+    function agregarFormacion() {
+        const sinForm = document.getElementById('sin-formacion');
+        if (sinForm) sinForm.remove();
+
+        const idx = formIdx++;
+        const html = `
+        <div class="formacion-row bg-white border border-slate-200 rounded-xl p-4 relative animate-in" data-index="${idx}">
+            <button type="button" onclick="eliminarFormacion(this)"
+                class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+            <div class="grid grid-cols-2 gap-3 pr-6">
+                <div class="field-group">
+                    <label class="field-label">Tipo de Grado</label>
+                    <select name="formacion[${idx}][tipo_grado]" class="field-input">
+                        <option value="BACHILLER">Bachiller</option>
+                        <option value="TÍTULO PROFESIONAL">Título Profesional</option>
+                        <option value="TÉCNICO">Técnico</option>
+                        <option value="MAESTRÍA">Maestría</option>
+                        <option value="DOCTORADO">Doctorado</option>
+                        <option value="ESPECIALIZACIÓN">Especialización</option>
+                    </select>
+                </div>
+                <div class="field-group">
+                    <label class="field-label">Carrera / Especialidad</label>
+                    <input type="text" name="formacion[${idx}][descripcion_carrera]" class="field-input" placeholder="Ej: Ing. Sistemas">
+                </div>
+                <div class="field-group col-span-2">
+                    <label class="field-label">Institución</label>
+                    <input type="text" name="formacion[${idx}][institucion]" class="field-input" placeholder="Ej: Universidad Nacional...">
+                </div>
+                <input type="hidden" name="formacion[${idx}][id]" value="">
+            </div>
+        </div>`;
+        document.getElementById('lista-formacion').insertAdjacentHTML('beforeend', html);
+    }
+
+    function eliminarFormacion(btn) {
+        const row = btn.closest('.formacion-row');
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(-6px)';
+        row.style.transition = 'all .2s ease';
+        setTimeout(() => {
+            row.remove();
+            const lista = document.getElementById('lista-formacion');
+            if (!lista.querySelector('.formacion-row')) {
+                lista.innerHTML = '<div id="sin-formacion" class="text-center py-5 text-slate-400 text-xs">No hay estudios registrados. Haz clic en "Agregar Estudio".</div>';
             }
         }, 200);
     }
@@ -912,10 +1023,11 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         btn.classList.remove('tab-idle');
     }
 
-    // ── MODAL ─────────────────────────────────────────
+    // ── MODAL & WIZARD ────────────────────────────────
     const valoresOriginales = {};
+    let pasoActual = 1;
+    const totalPasos = 5; // Ahora son 5 pasos
 
-    // En tu <script> dentro de abrirModal()
     function abrirModal() {
         const m = document.getElementById('modal-perfil');
         m.classList.remove('hidden');
@@ -923,21 +1035,33 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
         // Capturar valores de inputs simples
         document.querySelectorAll('.form-step [name]').forEach(el => {
-            if (!el.readOnly && !el.name.includes('hijos')) {
+            if (!el.readOnly && !el.name.includes('hijos') && !el.name.includes('formacion')) {
                 valoresOriginales[el.name] = el.value;
             }
         });
 
-        // NUEVO: Capturar estado original de los hijos existentes
+        // Capturar estado original de los hijos
         valoresOriginales['hijos'] = [];
         document.querySelectorAll('.hijo-row').forEach(row => {
             const id = row.querySelector('[name*="[id]"]')?.value;
-            if (id) { // Solo si ya tiene ID (es de la BD)
+            if (id) {
                 valoresOriginales['hijos'].push({
                     id: id,
                     nombre: row.querySelector('[name*="[nombre]"]')?.value,
                     dni: row.querySelector('[name*="[dni]"]')?.value,
                     fecha: row.querySelector('[name*="[fecha_nacimiento]"]')?.value
+                });
+            }
+        });
+
+        // Capturar estado original de la formación
+        valoresOriginales['formacion'] = [];
+        document.querySelectorAll('.formacion-row').forEach(row => {
+            const id = row.querySelector('[name*="[id]"]')?.value;
+            if (id) {
+                valoresOriginales['formacion'].push({
+                    id: id,
+                    carrera: row.querySelector('[name*="[descripcion_carrera]"]')?.value
                 });
             }
         });
@@ -951,13 +1075,10 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         setTimeout(() => m.classList.add('hidden'), 350);
     }
 
-    // ── WIZARD DE PASOS ───────────────────────────────
-    let pasoActual = 1;
-    const totalPasos = 4;
-
     function irPaso(n) {
         document.querySelectorAll('.form-step').forEach(s => s.classList.add('hidden'));
-        document.getElementById('form-step-' + n).classList.remove('hidden');
+        const pasoForm = document.getElementById('form-step-' + n);
+        if(pasoForm) pasoForm.classList.remove('hidden');
 
         for (let i = 1; i <= totalPasos; i++) {
             const circle = document.querySelector(`.step-indicator[data-step="${i}"] .step-circle`);
@@ -965,6 +1086,8 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             const chkEl = document.querySelector(`.step-indicator[data-step="${i}"] .step-check`);
             const label = document.getElementById('step-label-' + i);
             const line = document.getElementById('line-' + i);
+
+            if(!circle) continue; // Por si algún paso no tiene indicador visual
 
             circle.classList.remove('bg-red-900', 'border-red-900', 'text-white', 'bg-green-500', 'border-green-500', 'bg-white', 'border-slate-200', 'text-slate-400');
             label && label.classList.remove('text-red-900', 'text-green-600', 'text-slate-400');
@@ -990,8 +1113,10 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             }
         }
 
-        document.getElementById('paso-actual').textContent = n;
-        document.getElementById('paso-total').textContent = totalPasos;
+        const msActual = document.getElementById('paso-actual');
+        const msTotal = document.getElementById('paso-total');
+        if(msActual) msActual.textContent = n;
+        if(msTotal) msTotal.textContent = totalPasos;
 
         const btnAnt = document.getElementById('btn-anterior');
         const btnSig = document.getElementById('btn-siguiente');
@@ -1014,7 +1139,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         if (pasoActual > 1) irPaso(pasoActual - 1);
     }
 
-    // ── RESUMEN EN PASO 4 ─────────────────────────────
+    // ── RESUMEN EN ÚLTIMO PASO ────────────────────────
     const labelesCampos = {
         fecha_nacimiento: 'Fecha de Nacimiento',
         lugar_nacimiento: 'Lugar de Nacimiento',
@@ -1033,9 +1158,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         const container = document.getElementById('resumen-cambios');
         const cambios = [];
 
-        // 1. Campos generales (lo que ya tenías)
+        // 1. Campos generales
         document.querySelectorAll('.form-step [name]').forEach(el => {
-            if (el.readOnly || el.name.includes('hijos')) return;
+            if (el.readOnly || el.name.includes('hijos') || el.name.includes('formacion')) return;
             if (!labelesCampos[el.name]) return;
 
             const original = valoresOriginales[el.name] ?? '';
@@ -1053,41 +1178,51 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             }
         });
 
-        // 2. Lógica inteligente para HIJOS
-        document.querySelectorAll('.hijo-row').forEach((row, i) => {
+        // 2. Hijos
+        document.querySelectorAll('.hijo-row').forEach(row => {
             const idActual = row.querySelector('[name*="[id]"]')?.value;
             const nombreActual = row.querySelector('[name*="[nombre]"]')?.value ?? '';
-            const dniActual = row.querySelector('[name*="[dni]"]')?.value ?? '';
-            const fechaActual = row.querySelector('[name*="[fecha_nacimiento]"]')?.value ?? '';
-
             if (!nombreActual) return;
 
-            // Buscar si este hijo ya existía en los valores originales
             const original = valoresOriginales['hijos'].find(h => h.id == idActual);
-
             if (!original) {
-                // Es un HIJO NUEVO
                 cambios.push(`
                 <div class="resumen-item border-l-4 border-green-500">
-                    <span class="r-label text-green-600">Nuevo Hijo registrado</span>
+                    <span class="r-label text-green-600">Nuevo Hijo</span>
                     <span class="r-val">${nombreActual}</span>
                 </div>`);
-            } else {
-                // Es un hijo existente, verificar si cambió algo
-                if (original.nombre !== nombreActual || original.dni !== dniActual || original.fecha !== fechaActual) {
-                    cambios.push(`
-                    <div class="resumen-item border-l-4 border-amber-500">
-                        <span class="r-label text-amber-600">Datos actualizados: ${original.nombre}</span>
-                        <div class="text-right">
-                            <p class="r-val text-amber-700">${nombreActual}</p>
-                            <p class="text-[10px] text-slate-400">DNI: ${dniActual} | F.Nac: ${fechaActual}</p>
-                        </div>
-                    </div>`);
-                }
+            } else if (original.nombre !== nombreActual) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-amber-500">
+                    <span class="r-label text-amber-600">Hijo Editado</span>
+                    <span class="r-val">${nombreActual}</span>
+                </div>`);
             }
         });
 
-        // Renderizado final
+        // 3. Formación
+        document.querySelectorAll('.formacion-row').forEach(row => {
+            const idActual = row.querySelector('[name*="[id]"]')?.value;
+            const carreraActual = row.querySelector('[name*="[descripcion_carrera]"]')?.value ?? '';
+            if (!carreraActual) return;
+
+            const original = valoresOriginales['formacion'].find(f => f.id == idActual);
+            if (!original) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-green-500">
+                    <span class="r-label text-green-600">Nuevo Estudio</span>
+                    <span class="r-val">${carreraActual}</span>
+                </div>`);
+            } else if (original.carrera !== carreraActual) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-amber-500">
+                    <span class="r-label text-amber-600">Estudio Editado</span>
+                    <span class="r-val">${carreraActual}</span>
+                </div>`);
+            }
+        });
+
+        // Renderizado
         if (cambios.length === 0) {
             container.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">No realizaste ningún cambio.</div>`;
         } else {
@@ -1105,11 +1240,13 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
         const campos = {};
         document.querySelectorAll('.form-step [name]').forEach(el => {
-            if (!el.readOnly) campos[el.name] = el.value;
+            if (!el.readOnly && !el.name.includes('hijos') && !el.name.includes('formacion')) {
+                campos[el.name] = el.value;
+            }
         });
         campos['id'] = <?php echo (int)($perfil['id'] ?? 0); ?>;
 
-        // Capturar datos de hijos
+        // Capturar Hijos
         const hijos = [];
         document.querySelectorAll('.hijo-row').forEach(row => {
             const idx = row.dataset.index;
@@ -1123,35 +1260,48 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         });
         campos['hijos'] = hijos;
 
-        fetch('<?php echo BASE_URL; ?>/perfil/actualizar', {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-Requested-With': 'XMLHttpRequest'
-                },
-                body: JSON.stringify(campos)
-            })
-            .then(r => r.text()) // Leemos como texto primero para limpiar
-            .then(raw => {
-                const cleanJson = raw.trim(); // <--- ESTO ELIMINA EL ERROR DE CARACTERES
-                const res = JSON.parse(cleanJson);
-
-                if (res.success) {
-                    cerrarModal();
-                    mostrarToast('✓', 'Perfil actualizado correctamente', 'bg-slate-800');
-                    setTimeout(() => location.reload(), 1500);
-                } else {
-                    mostrarToast('✗', res.mensaje || 'Error al guardar', 'bg-red-800');
-                }
-            })
-            .catch(err => {
-                console.error('Error:', err);
-                mostrarToast('✗', 'Error de conexión', 'bg-red-800');
-            })
-            .finally(() => {
-                btn.textContent = '✓ Guardar Cambios';
-                btn.disabled = false;
+        // Capturar Formación
+        const formacion = [];
+        document.querySelectorAll('.formacion-row').forEach(row => {
+            const idx = row.dataset.index;
+            formacion.push({
+                id: row.querySelector(`[name="formacion[${idx}][id]"]`)?.value || '',
+                tipo_grado: row.querySelector(`[name="formacion[${idx}][tipo_grado]"]`)?.value || '',
+                descripcion_carrera: row.querySelector(`[name="formacion[${idx}][descripcion_carrera]"]`)?.value || '',
+                institucion: row.querySelector(`[name="formacion[${idx}][institucion]"]`)?.value || ''
             });
+        });
+        campos['formacion'] = formacion;
+
+        fetch('<?php echo BASE_URL; ?>/perfil/actualizar', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(campos)
+        })
+        .then(r => r.text())
+        .then(raw => {
+            const cleanJson = raw.trim();
+            const res = JSON.parse(cleanJson);
+
+            if (res.success) {
+                cerrarModal();
+                mostrarToast('✓', 'Perfil actualizado correctamente', 'bg-slate-800');
+                setTimeout(() => location.reload(), 1500);
+            } else {
+                mostrarToast('✗', res.mensaje || 'Error al guardar', 'bg-red-800');
+            }
+        })
+        .catch(err => {
+            console.error('Error:', err);
+            mostrarToast('✗', 'Error de conexión', 'bg-red-800');
+        })
+        .finally(() => {
+            btn.textContent = '✓ Guardar Cambios';
+            btn.disabled = false;
+        });
     }
 
     // ── TOAST ─────────────────────────────────────────
@@ -1165,7 +1315,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         setTimeout(() => t.classList.add('hidden'), 3000);
     }
 
-    // Cerrar modal con ESC
     document.addEventListener('keydown', e => {
         if (e.key === 'Escape') cerrarModal();
     });

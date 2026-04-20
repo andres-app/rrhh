@@ -99,6 +99,7 @@ class MdDirectorio
         // 3. TODA la formación académica (puede haber varios registros: grado, especialización, etc.)
         $stmt3 = $pdo->prepare("
             SELECT 
+                id,
                 tipo_grado,
                 descripcion_carrera,
                 institucion,
@@ -149,27 +150,27 @@ class MdDirectorio
         return $perfil;
     }
 
-    public static function mdlActualizarPerfil($datos)
+public static function mdlActualizarPerfil($datos)
     {
         $pdo = Conexion::conectar();
 
         try {
             $pdo->beginTransaction();
 
-            // ── Actualizar tabla maestro ──────────────────────────
+            // ── 1. Actualizar tabla maestro ──────────────────────────
             $stmt = $pdo->prepare("
-            UPDATE colab_maestro SET
-                fecha_nacimiento    = :fecha_nacimiento,
-                lugar_nacimiento    = :lugar_nacimiento,
-                estado_civil        = :estado_civil,
-                grupo_sanguineo     = :grupo_sanguineo,
-                talla               = :talla,
-                celular             = :celular,
-                correo_personal     = :correo_personal,
-                direccion_residencia= :direccion_residencia,
-                distrito            = :distrito
-            WHERE id = :id
-        ");
+                UPDATE colab_maestro SET
+                    fecha_nacimiento    = :fecha_nacimiento,
+                    lugar_nacimiento    = :lugar_nacimiento,
+                    estado_civil        = :estado_civil,
+                    grupo_sanguineo     = :grupo_sanguineo,
+                    talla               = :talla,
+                    celular             = :celular,
+                    correo_personal     = :correo_personal,
+                    direccion_residencia= :direccion_residencia,
+                    distrito            = :distrito
+                WHERE id = :id
+            ");
             $stmt->execute([
                 ':fecha_nacimiento'     => $datos['fecha_nacimiento']    ?: null,
                 ':lugar_nacimiento'     => $datos['lugar_nacimiento']    ?? null,
@@ -183,31 +184,24 @@ class MdDirectorio
                 ':id'                   => (int)$datos['id'],
             ]);
 
-            // ── Actualizar / insertar cónyuge ─────────────────────
+            // ── 2. Actualizar / insertar cónyuge ─────────────────────
             $nombreConyuge = trim($datos['conyuge'] ?? '');
             $fechaConyuge  = $datos['fecha_nac_conyuge'] ?: null;
 
-            // ¿Ya existe registro de cónyuge?
-            $chk = $pdo->prepare("
-            SELECT id FROM colab_familia
-            WHERE colab_id = :id AND parentesco = 'CONYUGE'
-            LIMIT 1
-        ");
+            $chk = $pdo->prepare("SELECT id FROM colab_familia WHERE colab_id = :id AND parentesco = 'CONYUGE' LIMIT 1");
             $chk->execute([':id' => (int)$datos['id']]);
             $conyugeExistente = $chk->fetchColumn();
 
             if ($conyugeExistente) {
                 if ($nombreConyuge === '') {
-                    // Si vaciaron el nombre, eliminar el registro
-                    $pdo->prepare("DELETE FROM colab_familia WHERE id = :fid")
-                        ->execute([':fid' => $conyugeExistente]);
+                    $pdo->prepare("DELETE FROM colab_familia WHERE id = :fid")->execute([':fid' => $conyugeExistente]);
                 } else {
                     $pdo->prepare("
-                    UPDATE colab_familia SET
-                        nombre_completo = :nombre,
-                        fecha_nacimiento = :fecha
-                    WHERE id = :fid
-                ")->execute([
+                        UPDATE colab_familia SET
+                            nombre_completo = :nombre,
+                            fecha_nacimiento = :fecha
+                        WHERE id = :fid
+                    ")->execute([
                         ':nombre' => $nombreConyuge,
                         ':fecha'  => $fechaConyuge,
                         ':fid'    => $conyugeExistente,
@@ -215,46 +209,40 @@ class MdDirectorio
                 }
             } elseif ($nombreConyuge !== '') {
                 $pdo->prepare("
-                INSERT INTO colab_familia (colab_id, parentesco, nombre_completo, fecha_nacimiento)
-                VALUES (:colab_id, 'CONYUGE', :nombre, :fecha)
-            ")->execute([
+                    INSERT INTO colab_familia (colab_id, parentesco, nombre_completo, fecha_nacimiento)
+                    VALUES (:colab_id, 'CONYUGE', :nombre, :fecha)
+                ")->execute([
                     ':colab_id' => (int)$datos['id'],
                     ':nombre'   => $nombreConyuge,
                     ':fecha'    => $fechaConyuge,
                 ]);
             }
 
-            // ── Sincronizar hijos ─────────────────────────────────
-            // Primero obtenemos los IDs actuales de hijos en BD
-            $stmtIds = $pdo->prepare("
-            SELECT id FROM colab_familia
-            WHERE colab_id = :id AND parentesco IN ('HIJO','HIJA')
-        ");
+            // ── 3. Sincronizar hijos ─────────────────────────────────
+            $stmtIds = $pdo->prepare("SELECT id FROM colab_familia WHERE colab_id = :id AND parentesco IN ('HIJO','HIJA')");
             $stmtIds->execute([':id' => (int)$datos['id']]);
-            $idsEnBD      = $stmtIds->fetchAll(PDO::FETCH_COLUMN);
+            $idsEnBD = $stmtIds->fetchAll(PDO::FETCH_COLUMN);
             $idsRecibidos = [];
 
             $hijos = $datos['hijos'] ?? [];
             foreach ($hijos as $hijo) {
                 $nombre = trim($hijo['nombre'] ?? '');
-                if ($nombre === '') continue; // ignorar filas vacías
+                if ($nombre === '') continue; 
 
                 $hijoId    = (int)($hijo['id'] ?? 0);
-                $parentesco = in_array($hijo['parentesco'], ['HIJO', 'HIJA'])
-                    ? $hijo['parentesco'] : 'HIJO';
+                $parentesco = in_array($hijo['parentesco'], ['HIJO', 'HIJA']) ? $hijo['parentesco'] : 'HIJO';
                 $fechaNac  = $hijo['fecha_nacimiento'] ?: null;
                 $dni       = $hijo['dni'] ?? null;
 
                 if ($hijoId > 0 && in_array($hijoId, $idsEnBD)) {
-                    // Actualizar existente
                     $pdo->prepare("
-                    UPDATE colab_familia SET
-                        nombre_completo  = :nombre,
-                        parentesco       = :parentesco,
-                        fecha_nacimiento = :fecha,
-                        dni_familiar     = :dni
-                    WHERE id = :fid AND colab_id = :colab_id
-                ")->execute([
+                        UPDATE colab_familia SET
+                            nombre_completo  = :nombre,
+                            parentesco       = :parentesco,
+                            fecha_nacimiento = :fecha,
+                            dni_familiar     = :dni
+                        WHERE id = :fid AND colab_id = :colab_id
+                    ")->execute([
                         ':nombre'     => $nombre,
                         ':parentesco' => $parentesco,
                         ':fecha'      => $fechaNac,
@@ -264,11 +252,10 @@ class MdDirectorio
                     ]);
                     $idsRecibidos[] = $hijoId;
                 } else {
-                    // Insertar nuevo
                     $ins = $pdo->prepare("
-                    INSERT INTO colab_familia (colab_id, parentesco, nombre_completo, fecha_nacimiento, dni_familiar)
-                    VALUES (:colab_id, :parentesco, :nombre, :fecha, :dni)
-                ");
+                        INSERT INTO colab_familia (colab_id, parentesco, nombre_completo, fecha_nacimiento, dni_familiar)
+                        VALUES (:colab_id, :parentesco, :nombre, :fecha, :dni)
+                    ");
                     $ins->execute([
                         ':colab_id'   => (int)$datos['id'],
                         ':parentesco' => $parentesco,
@@ -280,16 +267,67 @@ class MdDirectorio
                 }
             }
 
-            // Eliminar hijos que ya no están en el formulario
             $aEliminar = array_diff($idsEnBD, $idsRecibidos);
             if (!empty($aEliminar)) {
                 $placeholders = implode(',', array_fill(0, count($aEliminar), '?'));
-                $pdo->prepare("DELETE FROM colab_familia WHERE id IN ($placeholders)")
-                    ->execute(array_values($aEliminar));
+                $pdo->prepare("DELETE FROM colab_familia WHERE id IN ($placeholders)")->execute(array_values($aEliminar));
+            }
+
+            // ── 4. Sincronizar Formación Académica ────────────────────
+            $stmtFormIds = $pdo->prepare("SELECT id FROM colab_formacion WHERE colab_id = :id");
+            $stmtFormIds->execute([':id' => (int)$datos['id']]);
+            $idsFormEnBD = $stmtFormIds->fetchAll(PDO::FETCH_COLUMN);
+            $idsFormRecibidos = [];
+
+            $formacion = $datos['formacion'] ?? [];
+            foreach ($formacion as $form) {
+                $carrera = trim($form['descripcion_carrera'] ?? '');
+                $institucion = trim($form['institucion'] ?? '');
+                if ($carrera === '' && $institucion === '') continue;
+
+                $formId = (int)($form['id'] ?? 0);
+                $tipoGrado = $form['tipo_grado'] ?? 'BACHILLER';
+
+                if ($formId > 0 && in_array($formId, $idsFormEnBD)) {
+                    $pdo->prepare("
+                        UPDATE colab_formacion SET
+                            tipo_grado = :tipo,
+                            descripcion_carrera = :carrera,
+                            institucion = :institucion,
+                            estado_validacion = 'PENDIENTE'
+                        WHERE id = :fid AND colab_id = :colab_id
+                    ")->execute([
+                        ':tipo'        => $tipoGrado,
+                        ':carrera'     => $carrera,
+                        ':institucion' => $institucion,
+                        ':fid'         => $formId,
+                        ':colab_id'    => (int)$datos['id'],
+                    ]);
+                    $idsFormRecibidos[] = $formId;
+                } else {
+                    $ins = $pdo->prepare("
+                        INSERT INTO colab_formacion (colab_id, tipo_grado, descripcion_carrera, institucion, estado_validacion)
+                        VALUES (:colab_id, :tipo, :carrera, :institucion, 'PENDIENTE')
+                    ");
+                    $ins->execute([
+                        ':colab_id'    => (int)$datos['id'],
+                        ':tipo'        => $tipoGrado,
+                        ':carrera'     => $carrera,
+                        ':institucion' => $institucion,
+                    ]);
+                    $idsFormRecibidos[] = (int)$pdo->lastInsertId();
+                }
+            }
+
+            $formAEliminar = array_diff($idsFormEnBD, $idsFormRecibidos);
+            if (!empty($formAEliminar)) {
+                $placeholdersForm = implode(',', array_fill(0, count($formAEliminar), '?'));
+                $pdo->prepare("DELETE FROM colab_formacion WHERE id IN ($placeholdersForm)")->execute(array_values($formAEliminar));
             }
 
             $pdo->commit();
             return ['success' => true];
+
         } catch (Exception $e) {
             $pdo->rollBack();
             return ['success' => false, 'mensaje' => $e->getMessage()];
