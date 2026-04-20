@@ -26,23 +26,39 @@ class CtrDirectorio
         return $respuesta;
     }
 
-public function ctrActualizarPerfil($body)
+    public function ctrActualizarPerfil($body)
     {
-        // 1. Validación de datos (Lógica del Controlador)
+        // 1. Validación básica
         if (!$body || empty($body['id'])) {
             return ['success' => false, 'mensaje' => 'Datos inválidos o incompletos'];
         }
 
-        // 2. Validación de seguridad (El usuario solo edita su propio ID)
-        $idSesion = $_SESSION['user_id'] ?? null;
-        if ((int)$body['id'] !== (int)$idSesion) {
+        $idObjetivo = (int)$body['id'];
+        $idSesion   = (int)($_SESSION['user_id'] ?? 0);
+        $rolSesion  = strtolower(trim($_SESSION['user_role'] ?? ''));
+
+        // 2. Roles con permiso total
+        $rolesConAccesoTotal = ['rrhh', 'admin', 'superadmin'];
+
+        $puedeEditar = false;
+
+        // ✔ Puede editar su propio perfil
+        if ($idObjetivo === $idSesion) {
+            $puedeEditar = true;
+        }
+
+        // ✔ Puede editar si es RRHH/Admin
+        if (in_array($rolSesion, $rolesConAccesoTotal, true)) {
+            $puedeEditar = true;
+        }
+
+        if (!$puedeEditar) {
             return ['success' => false, 'mensaje' => 'No tienes permiso para editar este perfil'];
         }
 
-        // 3. Llamada al Modelo
+        // 3. Guardar cambios
         $resultado = MdDirectorio::mdlActualizarPerfil($body);
 
-        // 4. Retornamos el array de respuesta al Router
         return $resultado;
     }
 }

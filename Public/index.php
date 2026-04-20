@@ -2,7 +2,7 @@
 //Public/index.php
 declare(strict_types=1);
 ob_start();
-ini_set('display_errors', '1');
+ini_set('display_errors', '0');
 error_reporting(E_ALL);
 
 session_start();
@@ -56,34 +56,48 @@ if (empty($_SESSION['user_id'])) {
     redirect(BASE_URL . '/login');
 }
 
-// ══════════════════════════════════════════════════════════════
-// RUTAS AJAX — van ANTES del check_access para no bloquearse
-// ══════════════════════════════════════════════════════════════
+
 // ══════════════════════════════════════════════════════════════
 // RUTAS AJAX 
 // ══════════════════════════════════════════════════════════════
+
 if ($module === 'perfil' && ($parts[1] ?? '') === 'actualizar') {
-    
-    // Cargamos dependencias
+
     require_once __DIR__ . '/../Modelo/MdDirectorio.php';
     require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
 
-    // Limpieza técnica para evitar el error "Unexpected non-whitespace..."
-    if (ob_get_length()) ob_clean();
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+
     header('Content-Type: application/json; charset=utf-8');
 
-    // Leemos la entrada JSON
-    $body = json_decode(file_get_contents('php://input'), true);
+    try {
+        $raw  = file_get_contents('php://input');
+        $body = json_decode($raw, true);
 
-    // Instanciamos el controlador y ejecutamos la lógica
-    $ctrl = new CtrDirectorio();
-    $respuesta = $ctrl->ctrActualizarPerfil($body);
+        if (!is_array($body)) {
+            echo json_encode([
+                'success' => false,
+                'mensaje' => 'JSON inválido o vacío'
+            ], JSON_UNESCAPED_UNICODE);
+            exit;
+        }
 
-    // Único lugar donde se imprime el JSON
-    echo json_encode($respuesta);
-    exit;
+        $ctrl = new CtrDirectorio();
+        $respuesta = $ctrl->ctrActualizarPerfil($body);
+
+        echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
+        exit;
+
+    } catch (Throwable $e) {
+        echo json_encode([
+            'success' => false,
+            'mensaje' => 'Error interno: ' . $e->getMessage()
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
 }
-// ══════════════════════════════════════════════════════════════
 
 // ── Permisos ──────────────────────────────────────────────────
 $user_role = $_SESSION['user_role'];
