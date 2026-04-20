@@ -119,7 +119,6 @@ $accesoDocs = tieneAcceso('documentos');
     </nav>
 
     <a href="<?= BASE_URL ?>/logout" class="flex items-center p-2 rounded-xl hover:bg-red-900/30 transition cursor-pointer group">
-
         <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['username'] ?? 'Usuario') ?>&background=880808&color=fff"
             class="w-9 h-9 rounded-full shadow-md border border-red-900 group-hover:border-red-500 transition-colors">
 
@@ -138,7 +137,6 @@ $accesoDocs = tieneAcceso('documentos');
         <svg class="w-4 h-4 text-red-700 group-hover:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
         </svg>
-
     </a>
 </aside>
 
@@ -147,12 +145,58 @@ $accesoDocs = tieneAcceso('documentos');
     .custom-scrollbar::-webkit-scrollbar {
         display: none;
     }
-
     /* Ocultar scrollbar para IE, Edge y Firefox */
     .custom-scrollbar {
-        -ms-overflow-style: none;
-        /* IE and Edge */
-        scrollbar-width: none;
-        /* Firefox */
+        -ms-overflow-style: none; /* IE and Edge */
+        scrollbar-width: none; /* Firefox */
     }
 </style>
+
+<script>
+    // Usamos una función autoejecutable para que no choque con otras variables de tu sistema
+    (function() {
+        function iniciarMenu() {
+            const btnMenu = document.getElementById("btn-menu");
+            const btnCloseMenu = document.getElementById("btn-close-menu");
+            const sidebar = document.getElementById("sidebar");
+            const overlay = document.getElementById("sidebar-overlay");
+
+            // Si por alguna razón el sidebar no existe en esta vista, no hacemos nada para evitar errores
+            if (!sidebar) return; 
+
+            // 1. Abrir Menú
+            if (btnMenu) {
+                // Usamos onclick tradicional que es más resistente a recargas de AJAX o includes de PHP
+                btnMenu.onclick = function(e) {
+                    e.preventDefault();
+                    sidebar.classList.remove("-translate-x-full");
+                    if (overlay) overlay.classList.remove("hidden");
+                };
+            }
+
+            // 2. Cerrar Menú con la 'X'
+            if (btnCloseMenu) {
+                btnCloseMenu.onclick = function(e) {
+                    e.preventDefault();
+                    sidebar.classList.add("-translate-x-full");
+                    if (overlay) overlay.classList.add("hidden");
+                };
+            }
+
+            // 3. Cerrar Menú tocando el fondo oscuro
+            if (overlay) {
+                overlay.onclick = function() {
+                    sidebar.classList.add("-translate-x-full");
+                    overlay.classList.add("hidden");
+                };
+            }
+        }
+
+        // Verificamos si la página ya cargó. Si sí, lo ejecutamos ya. Si no, esperamos.
+        if (document.readyState === "loading") {
+            document.addEventListener("DOMContentLoaded", iniciarMenu);
+        } else {
+            iniciarMenu();
+        }
+    })();
+</script>
