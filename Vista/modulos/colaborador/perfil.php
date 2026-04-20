@@ -784,15 +784,15 @@ require_once __DIR__ . '/../../includes/sidebar.php';
      JAVASCRIPT
 ═══════════════════════════════════════════════ -->
 <script>
-// ── HIJOS DINÁMICOS ───────────────────────────────
-let hijoIdx = <?php echo max(count(array_filter($perfil['familia'] ?? [], fn($f) => in_array($f['parentesco'], ['HIJO', 'HIJA']))), 0); ?>;
+    // ── HIJOS DINÁMICOS ───────────────────────────────
+    let hijoIdx = <?php echo max(count(array_filter($perfil['familia'] ?? [], fn($f) => in_array($f['parentesco'], ['HIJO', 'HIJA']))), 0); ?>;
 
-function agregarHijo() {
-    const sinHijos = document.getElementById('sin-hijos');
-    if (sinHijos) sinHijos.remove();
+    function agregarHijo() {
+        const sinHijos = document.getElementById('sin-hijos');
+        if (sinHijos) sinHijos.remove();
 
-    const idx = hijoIdx++;
-    const html = `
+        const idx = hijoIdx++;
+        const html = `
     <div class="hijo-row bg-white border border-slate-200 rounded-xl p-4 relative animate-in" data-index="${idx}">
         <button type="button" onclick="eliminarHijo(this)"
             class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors">
@@ -823,160 +823,160 @@ function agregarHijo() {
             <input type="hidden" name="hijos[${idx}][id]" value="">
         </div>
     </div>`;
-    document.getElementById('lista-hijos').insertAdjacentHTML('beforeend', html);
-}
-
-function eliminarHijo(btn) {
-    const row = btn.closest('.hijo-row');
-    row.style.opacity = '0';
-    row.style.transform = 'translateY(-6px)';
-    row.style.transition = 'all .2s ease';
-    setTimeout(() => {
-        row.remove();
-        const lista = document.getElementById('lista-hijos');
-        if (!lista.querySelector('.hijo-row')) {
-            lista.innerHTML = '<div id="sin-hijos" class="text-center py-5 text-slate-400 text-xs">No hay hijos registrados. Haz clic en "Agregar hijo" para añadir.</div>';
-        }
-    }, 200);
-}
-
-// ── TABS PRINCIPALES ──────────────────────────────
-function switchTab(id) {
-    document.querySelectorAll('.tab-panel').forEach(p => {
-        p.classList.add('hidden');
-        p.classList.remove('block');
-    });
-    document.querySelectorAll('.tab-btn').forEach(b => {
-        b.classList.remove('tab-active');
-        b.classList.add('tab-idle');
-    });
-    const panel = document.getElementById('tab-' + id);
-    panel.classList.remove('hidden');
-    panel.classList.add('block');
-    panel.classList.remove('animate-in');
-    void panel.offsetWidth;
-    panel.classList.add('animate-in');
-
-    const btn = document.getElementById('btn-' + id);
-    btn.classList.add('tab-active');
-    btn.classList.remove('tab-idle');
-}
-
-// ── MODAL ─────────────────────────────────────────
-const valoresOriginales = {};
-
-function abrirModal() {
-    const m = document.getElementById('modal-perfil');
-    m.classList.remove('hidden');
-    requestAnimationFrame(() => m.classList.add('modal-open'));
-
-    // Capturar valores originales ANTES de que el usuario edite
-    document.querySelectorAll('.form-step [name]').forEach(el => {
-        if (!el.readOnly) {
-            valoresOriginales[el.name] = el.value;
-        }
-    });
-
-    irPaso(1);
-}
-
-function cerrarModal() {
-    const m = document.getElementById('modal-perfil');
-    m.classList.remove('modal-open');
-    setTimeout(() => m.classList.add('hidden'), 350);
-}
-
-// ── WIZARD DE PASOS ───────────────────────────────
-let pasoActual = 1;
-const totalPasos = 4;
-
-function irPaso(n) {
-    document.querySelectorAll('.form-step').forEach(s => s.classList.add('hidden'));
-    document.getElementById('form-step-' + n).classList.remove('hidden');
-
-    for (let i = 1; i <= totalPasos; i++) {
-        const circle = document.querySelector(`.step-indicator[data-step="${i}"] .step-circle`);
-        const numEl  = document.querySelector(`.step-indicator[data-step="${i}"] .step-num`);
-        const chkEl  = document.querySelector(`.step-indicator[data-step="${i}"] .step-check`);
-        const label  = document.getElementById('step-label-' + i);
-        const line   = document.getElementById('line-' + i);
-
-        circle.classList.remove('bg-red-900','border-red-900','text-white','bg-green-500','border-green-500','bg-white','border-slate-200','text-slate-400');
-        label && label.classList.remove('text-red-900','text-green-600','text-slate-400');
-
-        if (i < n) {
-            circle.classList.add('bg-green-500','border-green-500','text-white');
-            numEl && numEl.classList.add('hidden');
-            chkEl && chkEl.classList.remove('hidden');
-            label && label.classList.add('text-green-600');
-            if (line) line.style.background = '#22c55e';
-        } else if (i === n) {
-            circle.classList.add('bg-red-900','border-red-900','text-white');
-            numEl && numEl.classList.remove('hidden');
-            chkEl && chkEl.classList.add('hidden');
-            label && label.classList.add('text-red-900');
-            if (line) line.style.background = '#e2e8f0';
-        } else {
-            circle.classList.add('bg-white','border-slate-200','text-slate-400');
-            numEl && numEl.classList.remove('hidden');
-            chkEl && chkEl.classList.add('hidden');
-            label && label.classList.add('text-slate-400');
-            if (line) line.style.background = '#e2e8f0';
-        }
+        document.getElementById('lista-hijos').insertAdjacentHTML('beforeend', html);
     }
 
-    document.getElementById('paso-actual').textContent = n;
-    document.getElementById('paso-total').textContent  = totalPasos;
+    function eliminarHijo(btn) {
+        const row = btn.closest('.hijo-row');
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(-6px)';
+        row.style.transition = 'all .2s ease';
+        setTimeout(() => {
+            row.remove();
+            const lista = document.getElementById('lista-hijos');
+            if (!lista.querySelector('.hijo-row')) {
+                lista.innerHTML = '<div id="sin-hijos" class="text-center py-5 text-slate-400 text-xs">No hay hijos registrados. Haz clic en "Agregar hijo" para añadir.</div>';
+            }
+        }, 200);
+    }
 
-    const btnAnt  = document.getElementById('btn-anterior');
-    const btnSig  = document.getElementById('btn-siguiente');
-    const btnGuar = document.getElementById('btn-guardar');
+    // ── TABS PRINCIPALES ──────────────────────────────
+    function switchTab(id) {
+        document.querySelectorAll('.tab-panel').forEach(p => {
+            p.classList.add('hidden');
+            p.classList.remove('block');
+        });
+        document.querySelectorAll('.tab-btn').forEach(b => {
+            b.classList.remove('tab-active');
+            b.classList.add('tab-idle');
+        });
+        const panel = document.getElementById('tab-' + id);
+        panel.classList.remove('hidden');
+        panel.classList.add('block');
+        panel.classList.remove('animate-in');
+        void panel.offsetWidth;
+        panel.classList.add('animate-in');
 
-    btnAnt.classList.toggle('hidden', n === 1);
-    btnSig.classList.toggle('hidden', n === totalPasos);
-    btnGuar.classList.toggle('hidden', n !== totalPasos);
+        const btn = document.getElementById('btn-' + id);
+        btn.classList.add('tab-active');
+        btn.classList.remove('tab-idle');
+    }
 
-    if (n === totalPasos) construirResumen();
+    // ── MODAL ─────────────────────────────────────────
+    const valoresOriginales = {};
 
-    pasoActual = n;
-}
+    function abrirModal() {
+        const m = document.getElementById('modal-perfil');
+        m.classList.remove('hidden');
+        requestAnimationFrame(() => m.classList.add('modal-open'));
 
-function pasoSiguiente() {
-    if (pasoActual < totalPasos) irPaso(pasoActual + 1);
-}
+        // Capturar valores originales ANTES de que el usuario edite
+        document.querySelectorAll('.form-step [name]').forEach(el => {
+            if (!el.readOnly) {
+                valoresOriginales[el.name] = el.value;
+            }
+        });
 
-function pasoAnterior() {
-    if (pasoActual > 1) irPaso(pasoActual - 1);
-}
+        irPaso(1);
+    }
 
-// ── RESUMEN EN PASO 4 ─────────────────────────────
-const labelesCampos = {
-    fecha_nacimiento:     'Fecha de Nacimiento',
-    lugar_nacimiento:     'Lugar de Nacimiento',
-    estado_civil:         'Estado Civil',
-    grupo_sanguineo:      'Grupo Sanguíneo',
-    talla:                'Talla',
-    direccion_residencia: 'Dirección',
-    distrito:             'Distrito',
-    celular:              'Celular',
-    correo_personal:      'Correo Personal',
-    conyuge:              'Cónyuge',
-    fecha_nac_conyuge:    'Fecha Nac. Cónyuge',
-};
+    function cerrarModal() {
+        const m = document.getElementById('modal-perfil');
+        m.classList.remove('modal-open');
+        setTimeout(() => m.classList.add('hidden'), 350);
+    }
 
-function construirResumen() {
-    const container = document.getElementById('resumen-cambios');
-    const cambios = [];
+    // ── WIZARD DE PASOS ───────────────────────────────
+    let pasoActual = 1;
+    const totalPasos = 4;
 
-    document.querySelectorAll('.form-step [name]').forEach(el => {
-        if (el.readOnly) return;
-        if (!labelesCampos[el.name]) return;
+    function irPaso(n) {
+        document.querySelectorAll('.form-step').forEach(s => s.classList.add('hidden'));
+        document.getElementById('form-step-' + n).classList.remove('hidden');
 
-        const original = valoresOriginales[el.name] ?? '';
-        const actual   = el.value ?? '';
+        for (let i = 1; i <= totalPasos; i++) {
+            const circle = document.querySelector(`.step-indicator[data-step="${i}"] .step-circle`);
+            const numEl = document.querySelector(`.step-indicator[data-step="${i}"] .step-num`);
+            const chkEl = document.querySelector(`.step-indicator[data-step="${i}"] .step-check`);
+            const label = document.getElementById('step-label-' + i);
+            const line = document.getElementById('line-' + i);
 
-        if (original !== actual) {
-            cambios.push(`
+            circle.classList.remove('bg-red-900', 'border-red-900', 'text-white', 'bg-green-500', 'border-green-500', 'bg-white', 'border-slate-200', 'text-slate-400');
+            label && label.classList.remove('text-red-900', 'text-green-600', 'text-slate-400');
+
+            if (i < n) {
+                circle.classList.add('bg-green-500', 'border-green-500', 'text-white');
+                numEl && numEl.classList.add('hidden');
+                chkEl && chkEl.classList.remove('hidden');
+                label && label.classList.add('text-green-600');
+                if (line) line.style.background = '#22c55e';
+            } else if (i === n) {
+                circle.classList.add('bg-red-900', 'border-red-900', 'text-white');
+                numEl && numEl.classList.remove('hidden');
+                chkEl && chkEl.classList.add('hidden');
+                label && label.classList.add('text-red-900');
+                if (line) line.style.background = '#e2e8f0';
+            } else {
+                circle.classList.add('bg-white', 'border-slate-200', 'text-slate-400');
+                numEl && numEl.classList.remove('hidden');
+                chkEl && chkEl.classList.add('hidden');
+                label && label.classList.add('text-slate-400');
+                if (line) line.style.background = '#e2e8f0';
+            }
+        }
+
+        document.getElementById('paso-actual').textContent = n;
+        document.getElementById('paso-total').textContent = totalPasos;
+
+        const btnAnt = document.getElementById('btn-anterior');
+        const btnSig = document.getElementById('btn-siguiente');
+        const btnGuar = document.getElementById('btn-guardar');
+
+        btnAnt.classList.toggle('hidden', n === 1);
+        btnSig.classList.toggle('hidden', n === totalPasos);
+        btnGuar.classList.toggle('hidden', n !== totalPasos);
+
+        if (n === totalPasos) construirResumen();
+
+        pasoActual = n;
+    }
+
+    function pasoSiguiente() {
+        if (pasoActual < totalPasos) irPaso(pasoActual + 1);
+    }
+
+    function pasoAnterior() {
+        if (pasoActual > 1) irPaso(pasoActual - 1);
+    }
+
+    // ── RESUMEN EN PASO 4 ─────────────────────────────
+    const labelesCampos = {
+        fecha_nacimiento: 'Fecha de Nacimiento',
+        lugar_nacimiento: 'Lugar de Nacimiento',
+        estado_civil: 'Estado Civil',
+        grupo_sanguineo: 'Grupo Sanguíneo',
+        talla: 'Talla',
+        direccion_residencia: 'Dirección',
+        distrito: 'Distrito',
+        celular: 'Celular',
+        correo_personal: 'Correo Personal',
+        conyuge: 'Cónyuge',
+        fecha_nac_conyuge: 'Fecha Nac. Cónyuge',
+    };
+
+    function construirResumen() {
+        const container = document.getElementById('resumen-cambios');
+        const cambios = [];
+
+        document.querySelectorAll('.form-step [name]').forEach(el => {
+            if (el.readOnly) return;
+            if (!labelesCampos[el.name]) return;
+
+            const original = valoresOriginales[el.name] ?? '';
+            const actual = el.value ?? '';
+
+            if (original !== actual) {
+                cambios.push(`
                 <div class="resumen-item">
                     <span class="r-label">${labelesCampos[el.name]}</span>
                     <div class="text-right">
@@ -984,92 +984,107 @@ function construirResumen() {
                         <p class="r-val text-green-700">${actual || '—'}</p>
                     </div>
                 </div>`);
-        }
-    });
+            }
+        });
 
-    // Hijos nuevos o modificados
-    document.querySelectorAll('.hijo-row').forEach((row, i) => {
-        const nombre = row.querySelector('[name*="nombre"]')?.value ?? '';
-        if (nombre) {
-            cambios.push(`
+        // Hijos nuevos o modificados
+        document.querySelectorAll('.hijo-row').forEach((row, i) => {
+            const nombre = row.querySelector('[name*="nombre"]')?.value ?? '';
+            if (nombre) {
+                cambios.push(`
                 <div class="resumen-item">
                     <span class="r-label">Hijo ${i + 1}</span>
                     <span class="r-val">${nombre}</span>
                 </div>`);
-        }
-    });
+            }
+        });
 
-    if (cambios.length === 0) {
-        container.innerHTML = `
+        if (cambios.length === 0) {
+            container.innerHTML = `
             <div class="text-center py-8 text-slate-400 text-sm">
                 No realizaste ningún cambio.
             </div>`;
-    } else {
-        container.innerHTML = `
+        } else {
+            container.innerHTML = `
             <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-3">
                 ${cambios.length} campo(s) modificado(s)
             </p>
             ${cambios.join('')}`;
-    }
-}
-
-// ── GUARDAR VÍA AJAX ──────────────────────────────
-function guardarPerfil() {
-    const btn = document.getElementById('btn-guardar');
-    btn.textContent = 'Guardando…';
-    btn.disabled = true;
-
-    const campos = {};
-    document.querySelectorAll('.form-step [name]').forEach(el => {
-        if (!el.readOnly) campos[el.name] = el.value;
-    });
-    campos['id'] = <?php echo (int)($perfil['id'] ?? 0); ?>;
-
-    fetch('<?php echo BASE_URL; ?>/perfil/actualizar', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify(campos)
-    })
-    .then(r => r.text())
-    .then(raw => {
-        console.log('Respuesta cruda:', raw);
-        const res = JSON.parse(raw);
-        if (res.success) {
-            cerrarModal();
-            mostrarToast('✓', 'Perfil actualizado correctamente', 'bg-slate-800');
-            setTimeout(() => location.reload(), 1800);
-        } else {
-            mostrarToast('✗', res.mensaje || 'Ocurrió un error al guardar', 'bg-red-800');
         }
-    })
-    .catch(err => {
-        console.error('Error al parsear:', err);
-        mostrarToast('✗', 'Error: ' + err.message, 'bg-red-800');
-    })
-    .finally(() => {
-        btn.textContent = '✓ Guardar Cambios';
-        btn.disabled = false;
+    }
+
+    // ── GUARDAR VÍA AJAX ──────────────────────────────
+    function guardarPerfil() {
+        const btn = document.getElementById('btn-guardar');
+        btn.textContent = 'Guardando…';
+        btn.disabled = true;
+
+        const campos = {};
+        document.querySelectorAll('.form-step [name]').forEach(el => {
+            if (!el.readOnly) campos[el.name] = el.value;
+        });
+        campos['id'] = <?php echo (int)($perfil['id'] ?? 0); ?>;
+
+        // Capturar datos de hijos
+        const hijos = [];
+        document.querySelectorAll('.hijo-row').forEach(row => {
+            const idx = row.dataset.index;
+            hijos.push({
+                id: row.querySelector(`[name="hijos[${idx}][id]"]`)?.value || '',
+                nombre: row.querySelector(`[name="hijos[${idx}][nombre]"]`)?.value || '',
+                parentesco: row.querySelector(`[name="hijos[${idx}][parentesco]"]`)?.value || 'HIJO',
+                fecha_nacimiento: row.querySelector(`[name="hijos[${idx}][fecha_nacimiento]"]`)?.value || '',
+                dni: row.querySelector(`[name="hijos[${idx}][dni]"]`)?.value || ''
+            });
+        });
+        campos['hijos'] = hijos;
+
+        fetch('<?php echo BASE_URL; ?>/perfil/actualizar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(campos)
+            })
+            .then(r => r.text()) // Leemos como texto primero para limpiar
+            .then(raw => {
+                const cleanJson = raw.trim(); // <--- ESTO ELIMINA EL ERROR DE CARACTERES
+                const res = JSON.parse(cleanJson);
+
+                if (res.success) {
+                    cerrarModal();
+                    mostrarToast('✓', 'Perfil actualizado correctamente', 'bg-slate-800');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    mostrarToast('✗', res.mensaje || 'Error al guardar', 'bg-red-800');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                mostrarToast('✗', 'Error de conexión', 'bg-red-800');
+            })
+            .finally(() => {
+                btn.textContent = '✓ Guardar Cambios';
+                btn.disabled = false;
+            });
+    }
+
+    // ── TOAST ─────────────────────────────────────────
+    function mostrarToast(icon, msg, bgClass) {
+        const t = document.getElementById('toast');
+        const div = t.querySelector('div');
+        document.getElementById('toast-icon').textContent = icon;
+        document.getElementById('toast-msg').textContent = msg;
+        div.className = `${bgClass} text-white px-6 py-3 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-2`;
+        t.classList.remove('hidden');
+        setTimeout(() => t.classList.add('hidden'), 3000);
+    }
+
+    // Cerrar modal con ESC
+    document.addEventListener('keydown', e => {
+        if (e.key === 'Escape') cerrarModal();
     });
-}
-
-// ── TOAST ─────────────────────────────────────────
-function mostrarToast(icon, msg, bgClass) {
-    const t   = document.getElementById('toast');
-    const div = t.querySelector('div');
-    document.getElementById('toast-icon').textContent = icon;
-    document.getElementById('toast-msg').textContent  = msg;
-    div.className = `${bgClass} text-white px-6 py-3 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-2`;
-    t.classList.remove('hidden');
-    setTimeout(() => t.classList.add('hidden'), 3000);
-}
-
-// Cerrar modal con ESC
-document.addEventListener('keydown', e => {
-    if (e.key === 'Escape') cerrarModal();
-});
 </script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>

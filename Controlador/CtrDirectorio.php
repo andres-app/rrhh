@@ -26,35 +26,15 @@ class CtrDirectorio
         return $respuesta;
     }
 
-    public function ctrActualizarPerfil()
+public function ctrActualizarPerfil($body)
     {
-        // Solo aceptar AJAX con JSON
-        if (
-            ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' ||
-            ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'XMLHttpRequest'
-        ) {
-            http_response_code(403);
-            echo json_encode(['success' => false, 'mensaje' => 'Acceso no permitido']);
-            return;
-        }
-
-        // Leer body JSON
-        $body = json_decode(file_get_contents('php://input'), true);
-        if (!$body || empty($body['id'])) {
-            echo json_encode(['success' => false, 'mensaje' => 'Datos inválidos']);
-            return;
-        }
-
-        // Verificar que el usuario solo edite su propio perfil
-        $idSesion = $_SESSION['user_id'] ?? null;
-        if ((int)$body['id'] !== (int)$idSesion) {
-            echo json_encode(['success' => false, 'mensaje' => 'Sin permiso']);
-            return;
-        }
-
+        // 1. Ya no validamos acá porque el router (index.php) ya lo hizo.
+        // 2. Solo llamamos al modelo para procesar los datos.
         $resultado = MdDirectorio::mdlActualizarPerfil($body);
 
-        header('Content-Type: application/json');
-        echo json_encode($resultado);
+        // 3. RETORNAMOS el array. 
+        // ¡IMPORTANTE! No uses "echo" ni "header" aquí, 
+        // porque el echo ya se hace en el index.php
+        return $resultado;
     }
 }

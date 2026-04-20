@@ -63,17 +63,9 @@ if ($module === 'perfil' && ($parts[1] ?? '') === 'actualizar') {
     require_once __DIR__ . '/../Modelo/MdDirectorio.php';
     require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
 
-    ob_clean();
-    header('Content-Type: application/json');
-
-    if (
-        ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' ||
-        ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'XMLHttpRequest'
-    ) {
-        http_response_code(403);
-        echo json_encode(['success' => false, 'mensaje' => 'Acceso no permitido']);
-        exit;
-    }
+    // Limpiamos cualquier salida previa para que no corrompa el JSON
+    if (ob_get_length()) ob_clean();
+    header('Content-Type: application/json; charset=utf-8');
 
     $body = json_decode(file_get_contents('php://input'), true);
 
@@ -88,7 +80,9 @@ if ($module === 'perfil' && ($parts[1] ?? '') === 'actualizar') {
     }
 
     $ctrl = new CtrDirectorio();
-    echo json_encode($ctrl->ctrActualizarPerfil($body));
+    // Ejecutamos el método. El echo se hace AQUÍ, no dentro del controlador.
+    $respuesta = $ctrl->ctrActualizarPerfil($body);
+    echo json_encode($respuesta);
     exit;
 }
 // ══════════════════════════════════════════════════════════════
