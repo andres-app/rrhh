@@ -1,4 +1,5 @@
 <?php
+//Vista/modulos/shared/perfil_base.php
 $titulo_pagina = "Perfil: " . ($data['nombres_apellidos'] ?? 'Colaborador');
 require_once ROOT_PATH . 'Vista/includes/header.php';
 require_once ROOT_PATH . 'Vista/includes/sidebar.php';
