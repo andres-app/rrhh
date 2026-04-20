@@ -865,15 +865,30 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     // ── MODAL ─────────────────────────────────────────
     const valoresOriginales = {};
 
+    // En tu <script> dentro de abrirModal()
     function abrirModal() {
         const m = document.getElementById('modal-perfil');
         m.classList.remove('hidden');
         requestAnimationFrame(() => m.classList.add('modal-open'));
 
-        // Capturar valores originales ANTES de que el usuario edite
+        // Capturar valores de inputs simples
         document.querySelectorAll('.form-step [name]').forEach(el => {
-            if (!el.readOnly) {
+            if (!el.readOnly && !el.name.includes('hijos')) {
                 valoresOriginales[el.name] = el.value;
+            }
+        });
+
+        // NUEVO: Capturar estado original de los hijos existentes
+        valoresOriginales['hijos'] = [];
+        document.querySelectorAll('.hijo-row').forEach(row => {
+            const id = row.querySelector('[name*="[id]"]')?.value;
+            if (id) { // Solo si ya tiene ID (es de la BD)
+                valoresOriginales['hijos'].push({
+                    id: id,
+                    nombre: row.querySelector('[name*="[nombre]"]')?.value,
+                    dni: row.querySelector('[name*="[dni]"]')?.value,
+                    fecha: row.querySelector('[name*="[fecha_nacimiento]"]')?.value
+                });
             }
         });
 
@@ -968,8 +983,9 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         const container = document.getElementById('resumen-cambios');
         const cambios = [];
 
+        // 1. Campos generales (lo que ya tenías)
         document.querySelectorAll('.form-step [name]').forEach(el => {
-            if (el.readOnly) return;
+            if (el.readOnly || el.name.includes('hijos')) return;
             if (!labelesCampos[el.name]) return;
 
             const original = valoresOriginales[el.name] ?? '';
@@ -987,29 +1003,47 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             }
         });
 
-        // Hijos nuevos o modificados
+        // 2. Lógica inteligente para HIJOS
         document.querySelectorAll('.hijo-row').forEach((row, i) => {
-            const nombre = row.querySelector('[name*="nombre"]')?.value ?? '';
-            if (nombre) {
+            const idActual = row.querySelector('[name*="[id]"]')?.value;
+            const nombreActual = row.querySelector('[name*="[nombre]"]')?.value ?? '';
+            const dniActual = row.querySelector('[name*="[dni]"]')?.value ?? '';
+            const fechaActual = row.querySelector('[name*="[fecha_nacimiento]"]')?.value ?? '';
+
+            if (!nombreActual) return;
+
+            // Buscar si este hijo ya existía en los valores originales
+            const original = valoresOriginales['hijos'].find(h => h.id == idActual);
+
+            if (!original) {
+                // Es un HIJO NUEVO
                 cambios.push(`
-                <div class="resumen-item">
-                    <span class="r-label">Hijo ${i + 1}</span>
-                    <span class="r-val">${nombre}</span>
+                <div class="resumen-item border-l-4 border-green-500">
+                    <span class="r-label text-green-600">Nuevo Hijo registrado</span>
+                    <span class="r-val">${nombreActual}</span>
                 </div>`);
+            } else {
+                // Es un hijo existente, verificar si cambió algo
+                if (original.nombre !== nombreActual || original.dni !== dniActual || original.fecha !== fechaActual) {
+                    cambios.push(`
+                    <div class="resumen-item border-l-4 border-amber-500">
+                        <span class="r-label text-amber-600">Datos actualizados: ${original.nombre}</span>
+                        <div class="text-right">
+                            <p class="r-val text-amber-700">${nombreActual}</p>
+                            <p class="text-[10px] text-slate-400">DNI: ${dniActual} | F.Nac: ${fechaActual}</p>
+                        </div>
+                    </div>`);
+                }
             }
         });
 
+        // Renderizado final
         if (cambios.length === 0) {
-            container.innerHTML = `
-            <div class="text-center py-8 text-slate-400 text-sm">
-                No realizaste ningún cambio.
-            </div>`;
+            container.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">No realizaste ningún cambio.</div>`;
         } else {
             container.innerHTML = `
-            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-3">
-                ${cambios.length} campo(s) modificado(s)
-            </p>
-            ${cambios.join('')}`;
+            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-3">${cambios.length} cambio(s) detectado(s)</p>
+            <div class="space-y-2">${cambios.join('')}</div>`;
         }
     }
 
