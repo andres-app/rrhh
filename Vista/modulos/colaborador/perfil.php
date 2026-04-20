@@ -66,7 +66,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                 <!-- Nombre y badges -->
                 <div class="flex-1 pb-4">
-                    <h1 class="text-2xl md:text-3xl font-black text-slate-800 tracking-tight leading-tight">
+                    <h1 class="text-2xl md:text-3xl font-black text-white tracking-tight leading-tight">
                         <?php echo htmlspecialchars($perfil['nombres_apellidos']); ?>
                     </h1>
                     <div class="flex flex-wrap gap-2 mt-2">
