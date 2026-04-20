@@ -240,7 +240,7 @@ $formacion = $data['formacion'] ?? [];   // múltiples registros de colab_formac
                                             <?php echo $i + 1; ?>
                                         </div>
                                         <!-- Fechas -->
-                                        <div class="flex-1 grid grid-cols-2 sm:grid-cols-4 gap-3 text-xs">
+                                        <div class="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
                                             <div>
                                                 <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Ingreso</p>
                                                 <p class="font-black text-slate-700"><?php echo formatFecha($contrato['fecha_ingreso']); ?></p>
@@ -252,18 +252,6 @@ $formacion = $data['formacion'] ?? [];   // múltiples registros de colab_formac
                                             <div>
                                                 <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Modalidad</p>
                                                 <p class="font-black text-slate-700"><?php echo htmlspecialchars($contrato['modalidad_contrato'] ?? '—'); ?></p>
-                                            </div>
-                                            <div>
-                                                <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Estado</p>
-                                                <?php
-                                                    $sit = $contrato['situacion'] ?? '';
-                                                    $sitColor = match(strtoupper($sit)) {
-                                                        'ACTIVO'   => 'text-green-700',
-                                                        'INACTIVO' => 'text-red-600',
-                                                        default    => 'text-slate-500',
-                                                    };
-                                                ?>
-                                                <p class="font-black <?php echo $sitColor; ?>"><?php echo htmlspecialchars($sit ?: '—'); ?></p>
                                             </div>
                                         </div>
                                     </div>
@@ -336,6 +324,17 @@ $formacion = $data['formacion'] ?? [];   // múltiples registros de colab_formac
                                 <div class="flex justify-between px-2">
                                     <span class="text-slate-400">NSA / CIP</span>
                                     <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['nsa_cip'] ?? '—'); ?></span>
+                                </div>
+                                <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
+                                    <span class="text-slate-400 font-medium">Situación</span>
+                                    <?php
+                                        $sit = $data['situacion'] ?? '';
+                                        $sitColor = match(strtoupper($sit)) {
+                                            'ACTIVO'  => 'text-green-700',
+                                            default   => 'text-red-700',
+                                        };
+                                    ?>
+                                    <span class="font-black <?php echo $sitColor; ?>"><?php echo htmlspecialchars($sit ?: '—'); ?></span>
                                 </div>
                             </div>
                         </div>
