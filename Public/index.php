@@ -41,6 +41,17 @@ $path   = trim((string)($_GET['url'] ?? 'login'), '/');
 $parts  = explode('/', $path);
 $module = $parts[0] ?: 'login';
 
+// ── REDIRECCIÓN INTELIGENTE POR ROL (ANTES DE PERMISOS) ──
+if (!empty($_SESSION['user_id'])) {
+
+    $rol = strtolower($_SESSION['user_role'] ?? '');
+
+    // Si es colaborador y entra a RRHH → lo mandas a su perfil
+    if ($rol === 'colaborador' && $module === 'rrhh') {
+        redirect(BASE_URL . '/perfil');
+    }
+}
+
 // ── Rutas públicas ────────────────────────────────────────────
 if ($module === 'login' || $module === 'logout') {
     if ($module === 'logout') {
@@ -89,7 +100,6 @@ if ($module === 'perfil' && ($parts[1] ?? '') === 'actualizar') {
 
         echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
         exit;
-
     } catch (Throwable $e) {
         echo json_encode([
             'success' => false,
