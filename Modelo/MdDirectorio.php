@@ -111,20 +111,30 @@ class MdDirectorio
         $stmt3->execute();
         $perfil['formacion'] = $stmt3->fetchAll(PDO::FETCH_ASSOC);
 
-        // 4. Cónyuge con fecha de nacimiento
+        // 4. Todos los familiares (cónyuge + hijos con datos completos)
         $stmt4 = $pdo->prepare("
             SELECT 
+                id,
+                parentesco,
                 nombre_completo,
-                fecha_nacimiento
+                dni_familiar,
+                fecha_nacimiento,
+                archivo_sustento,
+                estado_validacion
             FROM colab_familia
-            WHERE colab_id = :id AND parentesco = 'CONYUGE'
-            LIMIT 1
+            WHERE colab_id = :id
+            ORDER BY parentesco ASC, nombre_completo ASC
         ");
         $stmt4->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt4->execute();
-        $conyuge = $stmt4->fetch(PDO::FETCH_ASSOC);
-        $perfil['conyuge']            = $conyuge['nombre_completo'] ?? null;
-        $perfil['onomastico_conyuge'] = $conyuge['fecha_nacimiento'] ?? null;
+        $familia = $stmt4->fetchAll(PDO::FETCH_ASSOC);
+        $perfil['familia'] = $familia;
+
+        // Separar cónyuge de hijos para acceso rápido
+        $conyuge_row = array_filter($familia, fn($f) => $f['parentesco'] === 'CONYUGE');
+        $conyuge_row = reset($conyuge_row);
+        $perfil['conyuge']            = $conyuge_row['nombre_completo'] ?? null;
+        $perfil['onomastico_conyuge'] = $conyuge_row['fecha_nacimiento'] ?? null;
 
         // 5. Conteo de hijos (HIJO e HIJA)
         $stmt5 = $pdo->prepare("
