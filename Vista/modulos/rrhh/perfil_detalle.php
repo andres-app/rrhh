@@ -119,13 +119,15 @@ $perfil = $data;
 
                 <!-- Tabs de navegación -->
                 <div class="flex items-center gap-8 mt-10 border-t border-slate-100 pt-2 overflow-x-auto no-scrollbar">
-                    <button onclick="showTab('resumen')" class="tab-btn active-tab px-2 py-4 text-sm font-bold transition-all relative whitespace-nowrap" id="btn-resumen">
+                    <button onclick="switchTab('resumen')" id="btn-resumen" class="tab-btn tab-active px-2 py-4 text-sm font-bold">
                         RESUMEN PERFIL
                     </button>
-                    <button onclick="showTab('formacion')" class="tab-btn inactive-tab px-2 py-4 text-sm font-bold transition-all relative whitespace-nowrap" id="btn-formacion">
+
+                    <button onclick="switchTab('formacion')" id="btn-formacion" class="tab-btn tab-idle px-2 py-4 text-sm font-bold">
                         FORMACIÓN ACADÉMICA
                     </button>
-                    <button onclick="showTab('experiencia')" class="tab-btn inactive-tab px-2 py-4 text-sm font-bold transition-all relative whitespace-nowrap" id="btn-experiencia">
+
+                    <button onclick="switchTab('experiencia')" id="btn-experiencia" class="tab-btn tab-idle px-2 py-4 text-sm font-bold">
                         EXPERIENCIA LABORAL
                     </button>
                 </div>
@@ -530,7 +532,7 @@ $perfil = $data;
                     <div class="field-group">
                         <label class="field-label">DNI</label>
                         <input type="text" name="dni" class="field-input" maxlength="8"
-                            value="<?php echo htmlspecialchars($perfil['dni'] ?? ''); ?>" >
+                            value="<?php echo htmlspecialchars($perfil['dni'] ?? ''); ?>">
                     </div>
                     <div class="field-group">
                         <label class="field-label">Fecha de Nacimiento</label>
@@ -1161,26 +1163,29 @@ $perfil = $data;
     }
 
     // ── TABS PRINCIPALES ──────────────────────────────
-    function switchTab(id) {
-        document.querySelectorAll('.tab-panel').forEach(p => {
-            p.classList.add('hidden');
-            p.classList.remove('block');
-        });
-        document.querySelectorAll('.tab-btn').forEach(b => {
-            b.classList.remove('tab-active');
-            b.classList.add('tab-idle');
-        });
-        const panel = document.getElementById('tab-' + id);
-        panel.classList.remove('hidden');
-        panel.classList.add('block');
-        panel.classList.remove('animate-in');
-        void panel.offsetWidth;
-        panel.classList.add('animate-in');
+function switchTab(id) {
+    // ocultar todos los tabs
+    document.querySelectorAll('.tab-content').forEach(p => {
+        p.classList.add('hidden');
+        p.classList.remove('block');
+    });
 
-        const btn = document.getElementById('btn-' + id);
-        btn.classList.add('tab-active');
-        btn.classList.remove('tab-idle');
-    }
+    // reset botones
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('tab-active');
+        b.classList.add('tab-idle');
+    });
+
+    // mostrar el tab seleccionado
+    const panel = document.getElementById('tab-' + id);
+    panel.classList.remove('hidden');
+    panel.classList.add('block');
+
+    // activar botón
+    const btn = document.getElementById('btn-' + id);
+    btn.classList.add('tab-active');
+    btn.classList.remove('tab-idle');
+}
 
     // ── MODAL & WIZARD ────────────────────────────────
     const valoresOriginales = {};
@@ -1385,77 +1390,77 @@ $perfil = $data;
     }
 
     // ── GUARDAR VÍA AJAX ──────────────────────────────
-function guardarPerfil() {
-    const btn = document.getElementById('btn-guardar');
-    btn.textContent = 'Guardando…';
-    btn.disabled = true;
+    function guardarPerfil() {
+        const btn = document.getElementById('btn-guardar');
+        btn.textContent = 'Guardando…';
+        btn.disabled = true;
 
-    const campos = {};
-    document.querySelectorAll('.form-step [name]').forEach(el => {
-        if (!el.readOnly && !el.name.includes('hijos') && !el.name.includes('formacion')) {
-            campos[el.name] = el.value;
-        }
-    });
-
-    campos['id'] = <?php echo (int)($perfil['id'] ?? 0); ?>;
-
-    const hijos = [];
-    document.querySelectorAll('.hijo-row').forEach(row => {
-        const idx = row.dataset.index;
-        hijos.push({
-            id: row.querySelector(`[name="hijos[${idx}][id]"]`)?.value || '',
-            nombre: row.querySelector(`[name="hijos[${idx}][nombre]"]`)?.value || '',
-            parentesco: row.querySelector(`[name="hijos[${idx}][parentesco]"]`)?.value || 'HIJO',
-            fecha_nacimiento: row.querySelector(`[name="hijos[${idx}][fecha_nacimiento]"]`)?.value || '',
-            dni: row.querySelector(`[name="hijos[${idx}][dni]"]`)?.value || ''
+        const campos = {};
+        document.querySelectorAll('.form-step [name]').forEach(el => {
+            if (!el.readOnly && !el.name.includes('hijos') && !el.name.includes('formacion')) {
+                campos[el.name] = el.value;
+            }
         });
-    });
-    campos['hijos'] = hijos;
 
-    const formacion = [];
-    document.querySelectorAll('.formacion-row').forEach(row => {
-        const idx = row.dataset.index;
-        formacion.push({
-            id: row.querySelector(`[name="formacion[${idx}][id]"]`)?.value || '',
-            tipo_grado: row.querySelector(`[name="formacion[${idx}][tipo_grado]"]`)?.value || '',
-            descripcion_carrera: row.querySelector(`[name="formacion[${idx}][descripcion_carrera]"]`)?.value || '',
-            institucion: row.querySelector(`[name="formacion[${idx}][institucion]"]`)?.value || ''
+        campos['id'] = <?php echo (int)($perfil['id'] ?? 0); ?>;
+
+        const hijos = [];
+        document.querySelectorAll('.hijo-row').forEach(row => {
+            const idx = row.dataset.index;
+            hijos.push({
+                id: row.querySelector(`[name="hijos[${idx}][id]"]`)?.value || '',
+                nombre: row.querySelector(`[name="hijos[${idx}][nombre]"]`)?.value || '',
+                parentesco: row.querySelector(`[name="hijos[${idx}][parentesco]"]`)?.value || 'HIJO',
+                fecha_nacimiento: row.querySelector(`[name="hijos[${idx}][fecha_nacimiento]"]`)?.value || '',
+                dni: row.querySelector(`[name="hijos[${idx}][dni]"]`)?.value || ''
+            });
         });
-    });
-    campos['formacion'] = formacion;
+        campos['hijos'] = hijos;
 
-    fetch('<?php echo BASE_URL; ?>/perfil/actualizar', {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify(campos)
-    })
-    .then(response => response.text())
-    .then(raw => {
-        console.log('RESPUESTA RAW DEL SERVIDOR:', raw);
+        const formacion = [];
+        document.querySelectorAll('.formacion-row').forEach(row => {
+            const idx = row.dataset.index;
+            formacion.push({
+                id: row.querySelector(`[name="formacion[${idx}][id]"]`)?.value || '',
+                tipo_grado: row.querySelector(`[name="formacion[${idx}][tipo_grado]"]`)?.value || '',
+                descripcion_carrera: row.querySelector(`[name="formacion[${idx}][descripcion_carrera]"]`)?.value || '',
+                institucion: row.querySelector(`[name="formacion[${idx}][institucion]"]`)?.value || ''
+            });
+        });
+        campos['formacion'] = formacion;
 
-        const cleanJson = raw.trim();
-        const res = JSON.parse(cleanJson);
+        fetch('<?php echo BASE_URL; ?>/perfil/actualizar', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(campos)
+            })
+            .then(response => response.text())
+            .then(raw => {
+                console.log('RESPUESTA RAW DEL SERVIDOR:', raw);
 
-        if (res.success) {
-            cerrarModal();
-            mostrarToast('✓', 'Perfil actualizado correctamente', 'bg-slate-800');
-            setTimeout(() => location.reload(), 1500);
-        } else {
-            mostrarToast('✗', res.mensaje || 'Error al guardar', 'bg-red-800');
-        }
-    })
-    .catch(err => {
-        console.error('Error real:', err);
-        mostrarToast('✗', 'La respuesta del servidor no fue válida', 'bg-red-800');
-    })
-    .finally(() => {
-        btn.textContent = '✓ Guardar Cambios';
-        btn.disabled = false;
-    });
-}
+                const cleanJson = raw.trim();
+                const res = JSON.parse(cleanJson);
+
+                if (res.success) {
+                    cerrarModal();
+                    mostrarToast('✓', 'Perfil actualizado correctamente', 'bg-slate-800');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    mostrarToast('✗', res.mensaje || 'Error al guardar', 'bg-red-800');
+                }
+            })
+            .catch(err => {
+                console.error('Error real:', err);
+                mostrarToast('✗', 'La respuesta del servidor no fue válida', 'bg-red-800');
+            })
+            .finally(() => {
+                btn.textContent = '✓ Guardar Cambios';
+                btn.disabled = false;
+            });
+    }
 
     // ── TOAST ─────────────────────────────────────────
     function mostrarToast(icon, msg, bgClass) {
