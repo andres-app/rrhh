@@ -59,29 +59,27 @@ if (empty($_SESSION['user_id'])) {
 // ══════════════════════════════════════════════════════════════
 // RUTAS AJAX — van ANTES del check_access para no bloquearse
 // ══════════════════════════════════════════════════════════════
+// ══════════════════════════════════════════════════════════════
+// RUTAS AJAX 
+// ══════════════════════════════════════════════════════════════
 if ($module === 'perfil' && ($parts[1] ?? '') === 'actualizar') {
+    
+    // Cargamos dependencias
     require_once __DIR__ . '/../Modelo/MdDirectorio.php';
     require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
 
-    // Limpiamos cualquier salida previa para que no corrompa el JSON
+    // Limpieza técnica para evitar el error "Unexpected non-whitespace..."
     if (ob_get_length()) ob_clean();
     header('Content-Type: application/json; charset=utf-8');
 
+    // Leemos la entrada JSON
     $body = json_decode(file_get_contents('php://input'), true);
 
-    if (!$body || empty($body['id'])) {
-        echo json_encode(['success' => false, 'mensaje' => 'Datos inválidos']);
-        exit;
-    }
-
-    if ((int)$body['id'] !== (int)$_SESSION['user_id']) {
-        echo json_encode(['success' => false, 'mensaje' => 'Sin permiso']);
-        exit;
-    }
-
+    // Instanciamos el controlador y ejecutamos la lógica
     $ctrl = new CtrDirectorio();
-    // Ejecutamos el método. El echo se hace AQUÍ, no dentro del controlador.
     $respuesta = $ctrl->ctrActualizarPerfil($body);
+
+    // Único lugar donde se imprime el JSON
     echo json_encode($respuesta);
     exit;
 }

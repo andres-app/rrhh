@@ -28,13 +28,21 @@ class CtrDirectorio
 
 public function ctrActualizarPerfil($body)
     {
-        // 1. Ya no validamos acá porque el router (index.php) ya lo hizo.
-        // 2. Solo llamamos al modelo para procesar los datos.
+        // 1. Validación de datos (Lógica del Controlador)
+        if (!$body || empty($body['id'])) {
+            return ['success' => false, 'mensaje' => 'Datos inválidos o incompletos'];
+        }
+
+        // 2. Validación de seguridad (El usuario solo edita su propio ID)
+        $idSesion = $_SESSION['user_id'] ?? null;
+        if ((int)$body['id'] !== (int)$idSesion) {
+            return ['success' => false, 'mensaje' => 'No tienes permiso para editar este perfil'];
+        }
+
+        // 3. Llamada al Modelo
         $resultado = MdDirectorio::mdlActualizarPerfil($body);
 
-        // 3. RETORNAMOS el array. 
-        // ¡IMPORTANTE! No uses "echo" ni "header" aquí, 
-        // porque el echo ya se hace en el index.php
+        // 4. Retornamos el array de respuesta al Router
         return $resultado;
     }
 }
