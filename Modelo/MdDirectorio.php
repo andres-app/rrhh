@@ -49,16 +49,22 @@ class MdDirectorio
                 l.tipo_puesto, 
                 l.area, 
                 l.procedencia, 
-                l.modalidad_contrato AS mod_contrato, -- Alias para la vista
+                l.modalidad_contrato AS mod_contrato,
                 l.situacion, 
                 l.fecha_ingreso, 
                 l.fecha_cese,
-                (SELECT nombre_completo FROM colab_familia WHERE colab_id = m.id AND parentesco = 'CONYUGE' LIMIT 1) as conyuge,
-                (SELECT fecha_nacimiento FROM colab_familia WHERE colab_id = m.id AND parentesco = 'CONYUGE' LIMIT 1) as onomastico_conyuge,
-                (SELECT COUNT(*) FROM colab_familia WHERE colab_id = m.id AND parentesco LIKE 'HIJO%') as n_hijos
+                f.tipo_grado,
+                f.descripcion_carrera,
+                f.institucion,
+                (SELECT nombre_completo FROM colab_familia 
+                 WHERE colab_id = m.id AND parentesco = 'CONYUGE' LIMIT 1) AS conyuge,
+                (SELECT COUNT(*) FROM colab_familia 
+                 WHERE colab_id = m.id AND parentesco IN ('HIJO','HIJA')) AS n_hijos
             FROM colab_maestro m
             INNER JOIN colab_laboral l ON m.id = l.colab_id
+            LEFT JOIN colab_formacion f ON m.id = f.colab_id
             WHERE m.id = :id
+            LIMIT 1
         ");
         $stmt->bindParam(":id", $id, PDO::PARAM_INT);
         $stmt->execute();
