@@ -237,10 +237,10 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
 
             <!-- ─── TAB: FAMILIA ─── -->
-            <div id="tab-familia" class="tab-panel hidden animate-in">
+<div id="tab-familia" class="tab-panel hidden animate-in">
                 <h3 class="section-title">Carga Familiar</h3>
+                
                 <div class="grid grid-cols-1 sm:grid-cols-2 gap-6 mt-6">
-                    <!-- Cónyuge -->
                     <div class="bg-red-50 border border-red-100 rounded-2xl p-6">
                         <p class="info-label text-red-400">Cónyuge</p>
                         <p class="text-base font-black text-red-950 mt-1"><?php echo htmlspecialchars($perfil['conyuge'] ?: 'No registrado'); ?></p>
@@ -252,7 +252,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             <p class="text-xs text-red-300 italic mt-2">Fecha de nacimiento no registrada</p>
                         <?php endif; ?>
                     </div>
-                    <!-- Hijos -->
+                    
                     <div class="bg-slate-50 border border-slate-100 rounded-2xl p-6 flex items-center justify-between">
                         <div>
                             <p class="info-label">Hijos Registrados</p>
@@ -261,7 +261,57 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         <div class="w-14 h-14 rounded-2xl bg-red-100 flex items-center justify-center text-2xl">👨‍👩‍👧‍👦</div>
                     </div>
                 </div>
-            </div>
+
+                <?php 
+                // Filtramos solo los hijos del arreglo general de familia
+                $hijos_lista = array_filter($perfil['familia'] ?? [], function($f) {
+                    return in_array(strtoupper($f['parentesco']), ['HIJO', 'HIJA']);
+                });
+                ?>
+
+                <?php if (!empty($hijos_lista)): ?>
+                    <div class="mt-8">
+                        <h4 class="text-xs font-black text-slate-400 uppercase tracking-widest mb-4 flex items-center gap-2">
+                            Detalle de Hijos
+                            <span class="bg-slate-100 text-slate-500 px-2 py-0.5 rounded-md font-bold"><?php echo count($hijos_lista); ?></span>
+                        </h4>
+                        
+                        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                            <?php foreach ($hijos_lista as $hijo): ?>
+                                <div class="bg-white border border-slate-200 rounded-2xl p-5 hover:border-red-200 hover:shadow-md transition-all">
+                                    <div class="flex justify-between items-start mb-2">
+                                        <p class="text-sm font-bold text-slate-800 leading-tight">
+                                            <?php echo htmlspecialchars($hijo['nombre_completo']); ?>
+                                        </p>
+                                        <span class="bg-slate-100 text-slate-600 border border-slate-200 px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-widest shrink-0 ml-2">
+                                            <?php echo htmlspecialchars($hijo['parentesco']); ?>
+                                        </span>
+                                    </div>
+                                    
+                                    <div class="space-y-1.5 mt-3">
+                                        <?php if (!empty($hijo['fecha_nacimiento'])): ?>
+                                            <p class="text-xs text-slate-500 flex justify-between">
+                                                <span class="font-semibold text-slate-400">Nacimiento:</span> 
+                                                <span class="font-medium text-slate-700">
+                                                    <?php echo fmt($hijo['fecha_nacimiento']); ?> 
+                                                    <span class="text-red-800 font-bold ml-1">(<?php echo calcularEdad($hijo['fecha_nacimiento']); ?>)</span>
+                                                </span>
+                                            </p>
+                                        <?php endif; ?>
+                                        
+                                        <?php if (!empty($hijo['dni_familiar'])): ?>
+                                            <p class="text-xs text-slate-500 flex justify-between">
+                                                <span class="font-semibold text-slate-400">DNI:</span> 
+                                                <span class="font-medium text-slate-700"><?php echo htmlspecialchars($hijo['dni_familiar']); ?></span>
+                                            </p>
+                                        <?php endif; ?>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    </div>
+                <?php endif; ?>
+                </div>
 
             <!-- ─── TAB: FORMACIÓN ─── -->
             <div id="tab-formacion" class="tab-panel hidden animate-in">
