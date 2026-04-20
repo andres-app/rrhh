@@ -1,6 +1,7 @@
 <?php
 //Public/index.php
 declare(strict_types=1);
+ob_start();
 ini_set('display_errors', '1');
 error_reporting(E_ALL);
 
@@ -18,9 +19,14 @@ require_once __DIR__ . '/../Controlador/CtrUsuario.php';
 require_once __DIR__ . '/../Controlador/CtrPermisos.php';
 
 /* HELPERS */
-function redirect(string $to) { header('Location: ' . $to); exit; }
+function redirect(string $to)
+{
+    header('Location: ' . $to);
+    exit;
+}
 
-function check_access(string $module_path, string $role): array {
+function check_access(string $module_path, string $role): array
+{
     $db = Conexion::conectar();
     $stmt = $db->prepare("SELECT p.can_view, p.can_edit 
                           FROM permisos p 
@@ -35,30 +41,71 @@ $path   = trim((string)($_GET['url'] ?? 'login'), '/');
 $parts  = explode('/', $path);
 $module = $parts[0] ?: 'login';
 
-// Rutas públicas
+// ── Rutas públicas ────────────────────────────────────────────
 if ($module === 'login' || $module === 'logout') {
-    if ($module === 'logout') { session_destroy(); redirect(BASE_URL . '/login'); }
+    if ($module === 'logout') {
+        session_destroy();
+        redirect(BASE_URL . '/login');
+    }
     require_once __DIR__ . '/../Vista/modulos/login.php';
     exit;
 }
 
-// Validación de Sesión
-if (empty($_SESSION['user_id'])) { redirect(BASE_URL . '/login'); }
+// ── Validación de sesión ──────────────────────────────────────
+if (empty($_SESSION['user_id'])) {
+    redirect(BASE_URL . '/login');
+}
 
-$user_role = $_SESSION['user_role']; // Asegúrate de setear esto en el login
+// ══════════════════════════════════════════════════════════════
+// RUTAS AJAX — van ANTES del check_access para no bloquearse
+// ══════════════════════════════════════════════════════════════
+if ($module === 'perfil' && ($parts[1] ?? '') === 'actualizar') {
+    require_once __DIR__ . '/../Modelo/MdDirectorio.php';
+    require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
+
+    ob_clean();
+    header('Content-Type: application/json');
+
+    if (
+        ($_SERVER['REQUEST_METHOD'] ?? '') !== 'POST' ||
+        ($_SERVER['HTTP_X_REQUESTED_WITH'] ?? '') !== 'XMLHttpRequest'
+    ) {
+        http_response_code(403);
+        echo json_encode(['success' => false, 'mensaje' => 'Acceso no permitido']);
+        exit;
+    }
+
+    $body = json_decode(file_get_contents('php://input'), true);
+
+    if (!$body || empty($body['id'])) {
+        echo json_encode(['success' => false, 'mensaje' => 'Datos inválidos']);
+        exit;
+    }
+
+    if ((int)$body['id'] !== (int)$_SESSION['user_id']) {
+        echo json_encode(['success' => false, 'mensaje' => 'Sin permiso']);
+        exit;
+    }
+
+    $ctrl = new CtrDirectorio();
+    echo json_encode($ctrl->ctrActualizarPerfil($body));
+    exit;
+}
+// ══════════════════════════════════════════════════════════════
+
+// ── Permisos ──────────────────────────────────────────────────
+$user_role = $_SESSION['user_role'];
 $permisos  = check_access($module, $user_role);
 
 if (!$permisos['can_view']) {
     die("No tienes permiso para acceder a este módulo.");
 }
 
-// Guardar permisos en sesión para usar en las vistas (ocultar botones de edición)
 $_SESSION['current_module_can_edit'] = (bool)$permisos['can_edit'];
 
 /* CARGA DE MÓDULOS */
 switch ($module) {
     case 'documentos':
-        // Redirigimos la ruta virtual "documentos" al archivo físico real
         $file = __DIR__ . "/../Vista/modulos/colaborador/documentos.php";
         break;
 
@@ -72,11 +119,10 @@ switch ($module) {
         break;
 
     case 'configuracion':
-        // Solo Superadmin y Admin
         $file = __DIR__ . "/../Vista/modulos/configuracion/permisos.php";
         break;
 
-    case 'perfil': // Perfil del propio colaborador
+    case 'perfil':
         $file = __DIR__ . "/../Vista/modulos/colaborador/perfil.php";
         break;
 

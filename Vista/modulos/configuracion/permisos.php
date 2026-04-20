@@ -34,7 +34,7 @@ require_once ROOT_PATH . 'Vista/includes/sidebar.php';
         height: 24px;
     }
     .switch input { opacity: 0; width: 0; height: 0; }
-    .slider {
+    .slider {p
         position: absolute;
         cursor: pointer;
         top: 0; left: 0; right: 0; bottom: 0;
