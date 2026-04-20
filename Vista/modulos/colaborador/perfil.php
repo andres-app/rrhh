@@ -571,37 +571,54 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                             </div>
                             <?php else:
                             foreach (array_values($hijos) as $hi => $hijo): ?>
-                                <div class="hijo-row bg-white border border-slate-200 rounded-xl p-4 relative" data-index="<?php echo $hi; ?>">
-                                    <button type="button" onclick="eliminarHijo(this)"
-                                        class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors">
-                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                        </svg>
-                                    </button>
-                                    <div class="grid grid-cols-2 gap-3 pr-6">
-                                        <div class="field-group col-span-2">
-                                            <label class="field-label">Nombre Completo</label>
-                                            <input type="text" name="hijos[<?php echo $hi; ?>][nombre]" class="field-input"
-                                                value="<?php echo htmlspecialchars($hijo['nombre_completo'] ?? ''); ?>">
+                                <div class="hijo-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $hi; ?>">
+
+                                    <div class="item-resumen flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-bold text-slate-800 val-nombre"><?php echo htmlspecialchars($hijo['nombre_completo'] ?? ''); ?></p>
+                                            <p class="text-[11px] text-slate-500 mt-0.5">
+                                                <span class="val-parentesco"><?php echo htmlspecialchars($hijo['parentesco'] ?? 'HIJO'); ?></span>
+                                                • DNI: <span class="val-dni"><?php echo htmlspecialchars($hijo['dni_familiar'] ?: '—'); ?></span>
+                                            </p>
                                         </div>
-                                        <div class="field-group">
-                                            <label class="field-label">Parentesco</label>
-                                            <select name="hijos[<?php echo $hi; ?>][parentesco]" class="field-input">
-                                                <option value="HIJO" <?php echo ($hijo['parentesco'] === 'HIJO')  ? 'selected' : ''; ?>>Hijo</option>
-                                                <option value="HIJA" <?php echo ($hijo['parentesco'] === 'HIJA')  ? 'selected' : ''; ?>>Hija</option>
-                                            </select>
+                                        <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100">
+                                            Editar
+                                        </button>
+                                    </div>
+
+                                    <div class="item-form hidden mt-2 pt-3 border-t border-slate-100 relative animate-in">
+                                        <button type="button" onclick="eliminarFila(this)" class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1" title="Eliminar">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+                                        <div class="grid grid-cols-2 gap-3 pr-6">
+                                            <div class="field-group col-span-2">
+                                                <label class="field-label">Nombre Completo</label>
+                                                <input type="text" name="hijos[<?php echo $hi; ?>][nombre]" class="field-input input-nombre" value="<?php echo htmlspecialchars($hijo['nombre_completo'] ?? ''); ?>">
+                                            </div>
+                                            <div class="field-group">
+                                                <label class="field-label">Parentesco</label>
+                                                <select name="hijos[<?php echo $hi; ?>][parentesco]" class="field-input input-parentesco">
+                                                    <option value="HIJO" <?php echo ($hijo['parentesco'] === 'HIJO') ? 'selected' : ''; ?>>Hijo</option>
+                                                    <option value="HIJA" <?php echo ($hijo['parentesco'] === 'HIJA') ? 'selected' : ''; ?>>Hija</option>
+                                                </select>
+                                            </div>
+                                            <div class="field-group">
+                                                <label class="field-label">Fecha Nacimiento</label>
+                                                <input type="date" name="hijos[<?php echo $hi; ?>][fecha_nacimiento]" class="field-input input-fecha" value="<?php echo htmlspecialchars($hijo['fecha_nacimiento'] ?? ''); ?>">
+                                            </div>
+                                            <div class="field-group">
+                                                <label class="field-label">DNI</label>
+                                                <input type="text" name="hijos[<?php echo $hi; ?>][dni]" class="field-input input-dni" maxlength="8" value="<?php echo htmlspecialchars($hijo['dni_familiar'] ?? ''); ?>">
+                                            </div>
+                                            <input type="hidden" name="hijos[<?php echo $hi; ?>][id]" value="<?php echo $hijo['id'] ?? ''; ?>">
                                         </div>
-                                        <div class="field-group">
-                                            <label class="field-label">Fecha de Nacimiento</label>
-                                            <input type="date" name="hijos[<?php echo $hi; ?>][fecha_nacimiento]" class="field-input"
-                                                value="<?php echo htmlspecialchars($hijo['fecha_nacimiento'] ?? ''); ?>">
+                                        <div class="mt-3 text-right">
+                                            <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
+                                                ✓ Listo
+                                            </button>
                                         </div>
-                                        <div class="field-group">
-                                            <label class="field-label">DNI</label>
-                                            <input type="text" name="hijos[<?php echo $hi; ?>][dni]" class="field-input" maxlength="8"
-                                                value="<?php echo htmlspecialchars($hijo['dni_familiar'] ?? ''); ?>">
-                                        </div>
-                                        <input type="hidden" name="hijos[<?php echo $hi; ?>][id]" value="<?php echo $hijo['id'] ?? ''; ?>">
                                     </div>
                                 </div>
                         <?php endforeach;
@@ -631,33 +648,51 @@ require_once __DIR__ . '/../../includes/sidebar.php';
                         </div>
                         <?php else:
                         foreach (array_values($formacion) as $fi => $form): ?>
-                            <div class="formacion-row bg-white border border-slate-200 rounded-xl p-4 relative" data-index="<?php echo $fi; ?>">
-                                <button type="button" onclick="eliminarFormacion(this)"
-                                    class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors">
-                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                    </svg>
-                                </button>
-                                <div class="grid grid-cols-2 gap-3 pr-6">
-                                    <div class="field-group">
-                                        <label class="field-label">Tipo de Grado</label>
-                                        <select name="formacion[<?php echo $fi; ?>][tipo_grado]" class="field-input">
-                                            <?php foreach (['SECUNDARIA', 'TÉCNICO', 'BACHILLER', 'TÍTULO PROFESIONAL', 'MAESTRÍA', 'DOCTORADO', 'ESPECIALIZACIÓN'] as $t): ?>
-                                                <option value="<?php echo $t; ?>" <?php echo (strtoupper($form['tipo_grado'] ?? '') === $t) ? 'selected' : ''; ?>><?php echo $t; ?></option>
-                                            <?php endforeach; ?>
-                                        </select>
+                            <div class="formacion-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $fi; ?>">
+
+                                <div class="item-resumen flex items-center justify-between">
+                                    <div>
+                                        <p class="text-sm font-bold text-slate-800 val-carrera"><?php echo htmlspecialchars($form['descripcion_carrera'] ?? 'Sin carrera'); ?></p>
+                                        <p class="text-[11px] text-slate-500 mt-0.5">
+                                            <span class="val-grado"><?php echo htmlspecialchars($form['tipo_grado'] ?? 'BACHILLER'); ?></span>
+                                            • <span class="val-inst"><?php echo htmlspecialchars($form['institucion'] ?: 'Sin institución'); ?></span>
+                                        </p>
                                     </div>
-                                    <div class="field-group">
-                                        <label class="field-label">Carrera / Especialidad</label>
-                                        <input type="text" name="formacion[<?php echo $fi; ?>][descripcion_carrera]" class="field-input"
-                                            value="<?php echo htmlspecialchars($form['descripcion_carrera'] ?? ''); ?>">
+                                    <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100">
+                                        Editar
+                                    </button>
+                                </div>
+
+                                <div class="item-form hidden mt-2 pt-3 border-t border-slate-100 relative animate-in">
+                                    <button type="button" onclick="eliminarFila(this)" class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1" title="Eliminar">
+                                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                    <div class="grid grid-cols-2 gap-3 pr-6">
+                                        <div class="field-group">
+                                            <label class="field-label">Tipo de Grado</label>
+                                            <select name="formacion[<?php echo $fi; ?>][tipo_grado]" class="field-input input-grado">
+                                                <?php foreach (['SECUNDARIA', 'TÉCNICO', 'BACHILLER', 'TÍTULO PROFESIONAL', 'MAESTRÍA', 'DOCTORADO', 'ESPECIALIZACIÓN'] as $t): ?>
+                                                    <option value="<?php echo $t; ?>" <?php echo (strtoupper($form['tipo_grado'] ?? '') === $t) ? 'selected' : ''; ?>><?php echo $t; ?></option>
+                                                <?php endforeach; ?>
+                                            </select>
+                                        </div>
+                                        <div class="field-group">
+                                            <label class="field-label">Carrera / Especialidad</label>
+                                            <input type="text" name="formacion[<?php echo $fi; ?>][descripcion_carrera]" class="field-input input-carrera" value="<?php echo htmlspecialchars($form['descripcion_carrera'] ?? ''); ?>">
+                                        </div>
+                                        <div class="field-group col-span-2">
+                                            <label class="field-label">Institución</label>
+                                            <input type="text" name="formacion[<?php echo $fi; ?>][institucion]" class="field-input input-inst" value="<?php echo htmlspecialchars($form['institucion'] ?? ''); ?>">
+                                        </div>
+                                        <input type="hidden" name="formacion[<?php echo $fi; ?>][id]" value="<?php echo $form['id'] ?? ''; ?>">
                                     </div>
-                                    <div class="field-group col-span-2">
-                                        <label class="field-label">Institución</label>
-                                        <input type="text" name="formacion[<?php echo $fi; ?>][institucion]" class="field-input"
-                                            value="<?php echo htmlspecialchars($form['institucion'] ?? ''); ?>">
+                                    <div class="mt-3 text-right">
+                                        <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
+                                            ✓ Listo
+                                        </button>
                                     </div>
-                                    <input type="hidden" name="formacion[<?php echo $fi; ?>][id]" value="<?php echo $form['id'] ?? ''; ?>">
                                 </div>
                             </div>
                     <?php endforeach;
@@ -889,6 +924,57 @@ require_once __DIR__ . '/../../includes/sidebar.php';
      JAVASCRIPT
 ═══════════════════════════════════════════════ -->
 <script>
+    // ── MAGIA DE ABRIR/CERRAR FILAS ────────────────────────
+    function toggleFila(btn, abrir) {
+        const row = btn.closest('.hijo-row') || btn.closest('.formacion-row');
+        const resumen = row.querySelector('.item-resumen');
+        const form = row.querySelector('.item-form');
+
+        if (abrir) {
+            resumen.classList.add('hidden');
+            resumen.classList.remove('flex');
+            form.classList.remove('hidden');
+        } else {
+            // Sincronizar los textos al presionar "Listo"
+            if (row.classList.contains('hijo-row')) {
+                row.querySelector('.val-nombre').textContent = row.querySelector('.input-nombre').value || 'Sin nombre';
+                row.querySelector('.val-parentesco').textContent = row.querySelector('.input-parentesco').value || 'HIJO';
+                row.querySelector('.val-dni').textContent = row.querySelector('.input-dni').value || '—';
+            } else {
+                row.querySelector('.val-carrera').textContent = row.querySelector('.input-carrera').value || 'Sin carrera';
+                row.querySelector('.val-grado').textContent = row.querySelector('.input-grado').value || 'BACHILLER';
+                row.querySelector('.val-inst').textContent = row.querySelector('.input-inst').value || '—';
+            }
+            resumen.classList.remove('hidden');
+            resumen.classList.add('flex');
+            form.classList.add('hidden');
+        }
+    }
+
+    function eliminarFila(btn) {
+        const row = btn.closest('.hijo-row') || btn.closest('.formacion-row');
+        const isHijo = row.classList.contains('hijo-row');
+
+        row.style.opacity = '0';
+        row.style.transform = 'translateY(-6px)';
+        row.style.transition = 'all .2s ease';
+
+        setTimeout(() => {
+            row.remove();
+            if (isHijo) {
+                const lista = document.getElementById('lista-hijos');
+                if (!lista.querySelector('.hijo-row')) {
+                    lista.innerHTML = '<div id="sin-hijos" class="text-center py-5 text-slate-400 text-xs">No hay hijos registrados. Haz clic en "Agregar hijo" para añadir.</div>';
+                }
+            } else {
+                const lista = document.getElementById('lista-formacion');
+                if (!lista.querySelector('.formacion-row')) {
+                    lista.innerHTML = '<div id="sin-formacion" class="text-center py-5 text-slate-400 text-xs">No hay estudios registrados. Haz clic en "Agregar Estudio".</div>';
+                }
+            }
+        }, 200);
+    }
+
     // ── HIJOS DINÁMICOS ───────────────────────────────
     let hijoIdx = <?php echo max(count(array_filter($perfil['familia'] ?? [], fn($f) => in_array($f['parentesco'], ['HIJO', 'HIJA']))), 0); ?>;
 
@@ -899,50 +985,46 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         const idx = hijoIdx++;
         const html = `
         <div class="hijo-row bg-white border border-slate-200 rounded-xl p-4 relative animate-in" data-index="${idx}">
-            <button type="button" onclick="eliminarHijo(this)"
-                class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-            <div class="grid grid-cols-2 gap-3 pr-6">
-                <div class="field-group col-span-2">
-                    <label class="field-label">Nombre Completo</label>
-                    <input type="text" name="hijos[${idx}][nombre]" class="field-input" placeholder="Nombre y apellidos">
+            <div class="item-resumen hidden items-center justify-between">
+                <div>
+                    <p class="text-sm font-bold text-slate-800 val-nombre">Nuevo Hijo</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">
+                        <span class="val-parentesco">HIJO</span> • DNI: <span class="val-dni">—</span>
+                    </p>
                 </div>
-                <div class="field-group">
-                    <label class="field-label">Parentesco</label>
-                    <select name="hijos[${idx}][parentesco]" class="field-input">
-                        <option value="HIJO">Hijo</option>
-                        <option value="HIJA">Hija</option>
-                    </select>
+                <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100">Editar</button>
+            </div>
+
+            <div class="item-form mt-1 pt-1 relative">
+                <button type="button" onclick="eliminarFila(this)" class="absolute -top-2 right-0 text-slate-300 hover:text-red-500 transition-colors p-1"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                <div class="grid grid-cols-2 gap-3 pr-6">
+                    <div class="field-group col-span-2">
+                        <label class="field-label">Nombre Completo</label>
+                        <input type="text" name="hijos[${idx}][nombre]" class="field-input input-nombre" placeholder="Nombre y apellidos">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Parentesco</label>
+                        <select name="hijos[${idx}][parentesco]" class="field-input input-parentesco">
+                            <option value="HIJO">Hijo</option>
+                            <option value="HIJA">Hija</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Fecha Nacimiento</label>
+                        <input type="date" name="hijos[${idx}][fecha_nacimiento]" class="field-input input-fecha">
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">DNI</label>
+                        <input type="text" name="hijos[${idx}][dni]" class="field-input input-dni" maxlength="8" placeholder="Opcional">
+                    </div>
+                    <input type="hidden" name="hijos[${idx}][id]" value="">
                 </div>
-                <div class="field-group">
-                    <label class="field-label">Fecha de Nacimiento</label>
-                    <input type="date" name="hijos[${idx}][fecha_nacimiento]" class="field-input">
+                <div class="mt-3 text-right">
+                    <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">✓ Listo</button>
                 </div>
-                <div class="field-group">
-                    <label class="field-label">DNI</label>
-                    <input type="text" name="hijos[${idx}][dni]" class="field-input" maxlength="8" placeholder="Opcional">
-                </div>
-                <input type="hidden" name="hijos[${idx}][id]" value="">
             </div>
         </div>`;
         document.getElementById('lista-hijos').insertAdjacentHTML('beforeend', html);
-    }
-
-    function eliminarHijo(btn) {
-        const row = btn.closest('.hijo-row');
-        row.style.opacity = '0';
-        row.style.transform = 'translateY(-6px)';
-        row.style.transition = 'all .2s ease';
-        setTimeout(() => {
-            row.remove();
-            const lista = document.getElementById('lista-hijos');
-            if (!lista.querySelector('.hijo-row')) {
-                lista.innerHTML = '<div id="sin-hijos" class="text-center py-5 text-slate-400 text-xs">No hay hijos registrados. Haz clic en "Agregar hijo" para añadir.</div>';
-            }
-        }, 200);
     }
 
     // ── FORMACIÓN DINÁMICA ────────────────────────────
@@ -955,50 +1037,46 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         const idx = formIdx++;
         const html = `
         <div class="formacion-row bg-white border border-slate-200 rounded-xl p-4 relative animate-in" data-index="${idx}">
-            <button type="button" onclick="eliminarFormacion(this)"
-                class="absolute top-3 right-3 text-slate-300 hover:text-red-500 transition-colors">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-            <div class="grid grid-cols-2 gap-3 pr-6">
-                <div class="field-group">
-                    <label class="field-label">Tipo de Grado</label>
-                    <select name="formacion[${idx}][tipo_grado]" class="field-input">
-                        <option value="BACHILLER">Bachiller</option>
-                        <option value="TÍTULO PROFESIONAL">Título Profesional</option>
-                        <option value="TÉCNICO">Técnico</option>
-                        <option value="MAESTRÍA">Maestría</option>
-                        <option value="DOCTORADO">Doctorado</option>
-                        <option value="ESPECIALIZACIÓN">Especialización</option>
-                    </select>
+            <div class="item-resumen hidden items-center justify-between">
+                <div>
+                    <p class="text-sm font-bold text-slate-800 val-carrera">Nuevo Estudio</p>
+                    <p class="text-[11px] text-slate-500 mt-0.5">
+                        <span class="val-grado">BACHILLER</span> • <span class="val-inst">—</span>
+                    </p>
                 </div>
-                <div class="field-group">
-                    <label class="field-label">Carrera / Especialidad</label>
-                    <input type="text" name="formacion[${idx}][descripcion_carrera]" class="field-input" placeholder="Ej: Ing. Sistemas">
+                <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100">Editar</button>
+            </div>
+
+            <div class="item-form mt-1 pt-1 relative">
+                <button type="button" onclick="eliminarFila(this)" class="absolute -top-2 right-0 text-slate-300 hover:text-red-500 transition-colors p-1"><svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg></button>
+                <div class="grid grid-cols-2 gap-3 pr-6">
+                    <div class="field-group">
+                        <label class="field-label">Tipo de Grado</label>
+                        <select name="formacion[${idx}][tipo_grado]" class="field-input input-grado">
+                            <option value="BACHILLER">Bachiller</option>
+                            <option value="TÍTULO PROFESIONAL">Título Profesional</option>
+                            <option value="TÉCNICO">Técnico</option>
+                            <option value="MAESTRÍA">Maestría</option>
+                            <option value="DOCTORADO">Doctorado</option>
+                            <option value="ESPECIALIZACIÓN">Especialización</option>
+                        </select>
+                    </div>
+                    <div class="field-group">
+                        <label class="field-label">Carrera / Especialidad</label>
+                        <input type="text" name="formacion[${idx}][descripcion_carrera]" class="field-input input-carrera" placeholder="Ej: Ing. Sistemas">
+                    </div>
+                    <div class="field-group col-span-2">
+                        <label class="field-label">Institución</label>
+                        <input type="text" name="formacion[${idx}][institucion]" class="field-input input-inst" placeholder="Ej: Universidad Nacional...">
+                    </div>
+                    <input type="hidden" name="formacion[${idx}][id]" value="">
                 </div>
-                <div class="field-group col-span-2">
-                    <label class="field-label">Institución</label>
-                    <input type="text" name="formacion[${idx}][institucion]" class="field-input" placeholder="Ej: Universidad Nacional...">
+                <div class="mt-3 text-right">
+                    <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">✓ Listo</button>
                 </div>
-                <input type="hidden" name="formacion[${idx}][id]" value="">
             </div>
         </div>`;
         document.getElementById('lista-formacion').insertAdjacentHTML('beforeend', html);
-    }
-
-    function eliminarFormacion(btn) {
-        const row = btn.closest('.formacion-row');
-        row.style.opacity = '0';
-        row.style.transform = 'translateY(-6px)';
-        row.style.transition = 'all .2s ease';
-        setTimeout(() => {
-            row.remove();
-            const lista = document.getElementById('lista-formacion');
-            if (!lista.querySelector('.formacion-row')) {
-                lista.innerHTML = '<div id="sin-formacion" class="text-center py-5 text-slate-400 text-xs">No hay estudios registrados. Haz clic en "Agregar Estudio".</div>';
-            }
-        }, 200);
     }
 
     // ── TABS PRINCIPALES ──────────────────────────────
@@ -1026,21 +1104,19 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     // ── MODAL & WIZARD ────────────────────────────────
     const valoresOriginales = {};
     let pasoActual = 1;
-    const totalPasos = 5; // Ahora son 5 pasos
+    const totalPasos = 5;
 
     function abrirModal() {
         const m = document.getElementById('modal-perfil');
         m.classList.remove('hidden');
         requestAnimationFrame(() => m.classList.add('modal-open'));
 
-        // Capturar valores de inputs simples
         document.querySelectorAll('.form-step [name]').forEach(el => {
             if (!el.readOnly && !el.name.includes('hijos') && !el.name.includes('formacion')) {
                 valoresOriginales[el.name] = el.value;
             }
         });
 
-        // Capturar estado original de los hijos
         valoresOriginales['hijos'] = [];
         document.querySelectorAll('.hijo-row').forEach(row => {
             const id = row.querySelector('[name*="[id]"]')?.value;
@@ -1054,7 +1130,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             }
         });
 
-        // Capturar estado original de la formación
         valoresOriginales['formacion'] = [];
         document.querySelectorAll('.formacion-row').forEach(row => {
             const id = row.querySelector('[name*="[id]"]')?.value;
@@ -1078,7 +1153,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
     function irPaso(n) {
         document.querySelectorAll('.form-step').forEach(s => s.classList.add('hidden'));
         const pasoForm = document.getElementById('form-step-' + n);
-        if(pasoForm) pasoForm.classList.remove('hidden');
+        if (pasoForm) pasoForm.classList.remove('hidden');
 
         for (let i = 1; i <= totalPasos; i++) {
             const circle = document.querySelector(`.step-indicator[data-step="${i}"] .step-circle`);
@@ -1087,7 +1162,7 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             const label = document.getElementById('step-label-' + i);
             const line = document.getElementById('line-' + i);
 
-            if(!circle) continue; // Por si algún paso no tiene indicador visual
+            if (!circle) continue;
 
             circle.classList.remove('bg-red-900', 'border-red-900', 'text-white', 'bg-green-500', 'border-green-500', 'bg-white', 'border-slate-200', 'text-slate-400');
             label && label.classList.remove('text-red-900', 'text-green-600', 'text-slate-400');
@@ -1115,8 +1190,8 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
         const msActual = document.getElementById('paso-actual');
         const msTotal = document.getElementById('paso-total');
-        if(msActual) msActual.textContent = n;
-        if(msTotal) msTotal.textContent = totalPasos;
+        if (msActual) msActual.textContent = n;
+        if (msTotal) msTotal.textContent = totalPasos;
 
         const btnAnt = document.getElementById('btn-anterior');
         const btnSig = document.getElementById('btn-siguiente');
@@ -1158,7 +1233,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         const container = document.getElementById('resumen-cambios');
         const cambios = [];
 
-        // 1. Campos generales
         document.querySelectorAll('.form-step [name]').forEach(el => {
             if (el.readOnly || el.name.includes('hijos') || el.name.includes('formacion')) return;
             if (!labelesCampos[el.name]) return;
@@ -1178,7 +1252,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             }
         });
 
-        // 2. Hijos
         document.querySelectorAll('.hijo-row').forEach(row => {
             const idActual = row.querySelector('[name*="[id]"]')?.value;
             const nombreActual = row.querySelector('[name*="[nombre]"]')?.value ?? '';
@@ -1200,7 +1273,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             }
         });
 
-        // 3. Formación
         document.querySelectorAll('.formacion-row').forEach(row => {
             const idActual = row.querySelector('[name*="[id]"]')?.value;
             const carreraActual = row.querySelector('[name*="[descripcion_carrera]"]')?.value ?? '';
@@ -1222,7 +1294,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             }
         });
 
-        // Renderizado
         if (cambios.length === 0) {
             container.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">No realizaste ningún cambio.</div>`;
         } else {
@@ -1246,7 +1317,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         });
         campos['id'] = <?php echo (int)($perfil['id'] ?? 0); ?>;
 
-        // Capturar Hijos
         const hijos = [];
         document.querySelectorAll('.hijo-row').forEach(row => {
             const idx = row.dataset.index;
@@ -1260,7 +1330,6 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         });
         campos['hijos'] = hijos;
 
-        // Capturar Formación
         const formacion = [];
         document.querySelectorAll('.formacion-row').forEach(row => {
             const idx = row.dataset.index;
@@ -1274,34 +1343,34 @@ require_once __DIR__ . '/../../includes/sidebar.php';
         campos['formacion'] = formacion;
 
         fetch('<?php echo BASE_URL; ?>/perfil/actualizar', {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json',
-                'X-Requested-With': 'XMLHttpRequest'
-            },
-            body: JSON.stringify(campos)
-        })
-        .then(r => r.text())
-        .then(raw => {
-            const cleanJson = raw.trim();
-            const res = JSON.parse(cleanJson);
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify(campos)
+            })
+            .then(r => r.text())
+            .then(raw => {
+                const cleanJson = raw.trim();
+                const res = JSON.parse(cleanJson);
 
-            if (res.success) {
-                cerrarModal();
-                mostrarToast('✓', 'Perfil actualizado correctamente', 'bg-slate-800');
-                setTimeout(() => location.reload(), 1500);
-            } else {
-                mostrarToast('✗', res.mensaje || 'Error al guardar', 'bg-red-800');
-            }
-        })
-        .catch(err => {
-            console.error('Error:', err);
-            mostrarToast('✗', 'Error de conexión', 'bg-red-800');
-        })
-        .finally(() => {
-            btn.textContent = '✓ Guardar Cambios';
-            btn.disabled = false;
-        });
+                if (res.success) {
+                    cerrarModal();
+                    mostrarToast('✓', 'Perfil actualizado correctamente', 'bg-slate-800');
+                    setTimeout(() => location.reload(), 1500);
+                } else {
+                    mostrarToast('✗', res.mensaje || 'Error al guardar', 'bg-red-800');
+                }
+            })
+            .catch(err => {
+                console.error('Error:', err);
+                mostrarToast('✗', 'Error de conexión', 'bg-red-800');
+            })
+            .finally(() => {
+                btn.textContent = '✓ Guardar Cambios';
+                btn.disabled = false;
+            });
     }
 
     // ── TOAST ─────────────────────────────────────────
