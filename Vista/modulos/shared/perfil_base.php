@@ -655,7 +655,6 @@ $perfil = $data;
                         </h3>
 
                         <?php if (empty($formacion)): ?>
-                            <!-- Estado vacío -->
                             <div class="text-center py-16">
                                 <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">🎓</div>
                                 <h4 class="text-lg font-black text-slate-700 mb-2">Sin formación registrada</h4>
@@ -664,10 +663,8 @@ $perfil = $data;
                                 </p>
                             </div>
                         <?php else: ?>
-                            <!-- Timeline de formación: un ítem por cada fila de colab_formacion -->
                             <div class="relative pl-8 border-l-2 border-red-100 space-y-8">
                                 <?php foreach ($formacion as $idx => $item):
-                                    // Colores del punto según tipo de grado
                                     $tipo = strtoupper($item['tipo_grado'] ?? '');
                                     $dotColor = match (true) {
                                         str_contains($tipo, 'ESPECIALI') => 'bg-amber-500',
@@ -687,74 +684,58 @@ $perfil = $data;
                                     };
                                 ?>
                                     <div class="relative">
-                                        <!-- Punto en la línea de tiempo -->
                                         <div class="absolute -left-[41px] top-1 w-5 h-5 rounded-full <?php echo $dotColor; ?> border-4 border-white shadow-sm"></div>
 
-                                        <!-- Badge de tipo de grado -->
                                         <?php if (!empty($item['tipo_grado'])): ?>
                                             <span class="inline-block text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border mb-2 <?php echo $badgeColor; ?>">
                                                 <?php echo htmlspecialchars($item['tipo_grado']); ?>
                                             </span>
                                         <?php endif; ?>
 
-                                        <!-- Descripción / carrera -->
                                         <h4 class="text-lg font-bold text-slate-800 mb-1">
                                             <?php echo htmlspecialchars($item['descripcion_carrera'] ?? 'No registrado'); ?>
                                         </h4>
 
-                                        <!-- Institución -->
                                         <p class="text-slate-500 italic text-sm">
                                             <?php echo htmlspecialchars($item['institucion'] ?? 'Institución no registrada'); ?>
                                         </p>
 
-                                        <!-- Estado de validación -->
                                         <?php if (!empty($item['estado_validacion']) && $item['estado_validacion'] !== 'PENDIENTE'): ?>
-                                            <span class="inline-block mt-2 text-[10px] font-bold uppercase px-2 py-0.5 rounded
-                                        <?php echo $item['estado_validacion'] === 'APROBADO'
-                                                ? 'bg-green-50 text-green-700'
-                                                : 'bg-red-50 text-red-700'; ?>">
+                                            <span class="inline-block mt-2 text-[10px] font-bold uppercase px-2 py-0.5 rounded <?php echo $item['estado_validacion'] === 'APROBADO'
+                                                                                                                                    ? 'bg-green-50 text-green-700'
+                                                                                                                                    : 'bg-red-50 text-red-700'; ?>">
                                                 <?php echo htmlspecialchars($item['estado_validacion']); ?>
                                             </span>
                                         <?php endif; ?>
-
-                                        <!-- Idiomas -->
-                                        <div class="mt-8 pt-8 border-t border-slate-100">
-                                            <h3 class="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-                                                <span class="w-1.5 h-6 bg-slate-800 rounded-full"></span>
-                                                Idiomas
-                                                <?php if (!empty($idiomas)): ?>
-                                                    <span class="ml-auto bg-slate-100 text-slate-700 text-xs font-bold px-2 py-1 rounded-lg border border-slate-200">
-                                                        <?php echo count($idiomas); ?> registro(s)
-                                                    </span>
-                                                <?php endif; ?>
-                                            </h3>
-
-                                            <?php if (empty($idiomas)): ?>
-                                                <div class="text-center py-10">
-                                                    <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mx-auto mb-4 text-3xl">🌐</div>
-                                                    <h4 class="text-lg font-black text-slate-700 mb-2">Sin idiomas registrados</h4>
-                                                    <p class="text-slate-400 max-w-sm mx-auto text-sm">
-                                                        Aún no se han registrado idiomas para este colaborador.
-                                                    </p>
-                                                </div>
-                                            <?php else: ?>
-                                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                                    <?php foreach ($idiomas as $idioma): ?>
-                                                        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                                                            <p class="text-lg font-black text-slate-800">
-                                                                <?php echo htmlspecialchars($idioma['idioma'] ?? 'Sin idioma'); ?>
-                                                            </p>
-                                                            <p class="text-xs uppercase tracking-widest font-bold text-slate-400 mt-2">Nivel</p>
-                                                            <p class="text-sm font-bold text-red-900 mt-1">
-                                                                <?php echo htmlspecialchars($idioma['nivel'] ?? 'BASICO'); ?>
-                                                            </p>
-                                                        </div>
-                                                    <?php endforeach; ?>
-                                                </div>
-                                            <?php endif; ?>
-                                        </div>
                                     </div>
                                 <?php endforeach; ?>
+                            </div>
+                        <?php endif; ?>
+
+                        <?php $idiomas = $perfil['idiomas'] ?? []; ?>
+                        <?php if (!empty($idiomas)): ?>
+                            <div class="mt-10 pt-8 border-t border-slate-200">
+                                <h3 class="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
+                                    <span class="w-1.5 h-6 bg-slate-800 rounded-full"></span>
+                                    Idiomas
+                                    <span class="ml-auto bg-slate-50 text-slate-700 text-xs font-bold px-2 py-1 rounded-lg border border-slate-200">
+                                        <?php echo count($idiomas); ?> registro(s)
+                                    </span>
+                                </h3>
+
+                                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <?php foreach ($idiomas as $idioma): ?>
+                                        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                                            <p class="text-lg font-black text-slate-800 mb-2">
+                                                <?php echo htmlspecialchars($idioma['idioma'] ?? 'Sin idioma'); ?>
+                                            </p>
+                                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Nivel</p>
+                                            <p class="text-sm font-black text-red-800 mt-1">
+                                                <?php echo htmlspecialchars($idioma['nivel'] ?? 'BASICO'); ?>
+                                            </p>
+                                        </div>
+                                    <?php endforeach; ?>
+                                </div>
                             </div>
                         <?php endif; ?>
                     </div>
