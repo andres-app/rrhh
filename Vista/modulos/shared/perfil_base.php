@@ -528,17 +528,9 @@ $perfil = $data;
                                     <span class="text-slate-400 font-medium">Sistema</span>
                                     <span class="font-bold text-slate-700"><?php echo htmlspecialchars($pension['sistema_pension'] ?? '—'); ?></span>
                                 </div>
-                                <div class="flex justify-between border-b border-slate-50 pb-2 gap-4">
-                                    <span class="text-slate-400 font-medium">Detalle Sistema</span>
-                                    <span class="font-bold text-slate-700 text-right"><?php echo htmlspecialchars($pension['sistema_pension_detalle'] ?? '—'); ?></span>
-                                </div>
                                 <div class="flex justify-between border-b border-slate-50 pb-2">
                                     <span class="text-slate-400 font-medium">AFP</span>
                                     <span class="font-bold text-slate-700"><?php echo htmlspecialchars($pension['afp'] ?? '—'); ?></span>
-                                </div>
-                                <div class="flex justify-between border-b border-slate-50 pb-2 gap-4">
-                                    <span class="text-slate-400 font-medium">Detalle AFP</span>
-                                    <span class="font-bold text-slate-700 text-right"><?php echo htmlspecialchars($pension['afp_detalle'] ?? '—'); ?></span>
                                 </div>
                                 <div class="flex justify-between border-b border-slate-50 pb-2">
                                     <span class="text-slate-400 font-medium">CUSPP</span>
@@ -1178,12 +1170,6 @@ $perfil = $data;
                                 </select>
                             </div>
 
-                            <div class="field-group col-span-2">
-                                <label class="field-label">Detalle sistema (si es otros)</label>
-                                <input type="text" name="pension[sistema_pension_detalle]" class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['pension']['sistema_pension_detalle'] ?? ''); ?>">
-                            </div>
-
                             <div class="field-group">
                                 <label class="field-label">AFP</label>
                                 <select name="pension[afp]" class="field-input">
@@ -1194,12 +1180,6 @@ $perfil = $data;
                                         </option>
                                     <?php endforeach; ?>
                                 </select>
-                            </div>
-
-                            <div class="field-group">
-                                <label class="field-label">Detalle AFP (si es otro)</label>
-                                <input type="text" name="pension[afp_detalle]" class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['pension']['afp_detalle'] ?? ''); ?>">
                             </div>
 
                             <div class="field-group">
@@ -1236,6 +1216,7 @@ $perfil = $data;
                         </div>
                     </div>
                 </div>
+
 
                 <!-- ── PASO 5: Bancarios ── -->
                 <div id="form-step-5" class="form-step space-y-5 hidden">
@@ -2708,9 +2689,7 @@ $perfil = $data;
         // Pensión
         campos['pension'] = {
             sistema_pension: document.querySelector('[name="pension[sistema_pension]"]')?.value || '',
-            sistema_pension_detalle: document.querySelector('[name="pension[sistema_pension_detalle]"]')?.value || '',
             afp: document.querySelector('[name="pension[afp]"]')?.value || '',
-            afp_detalle: document.querySelector('[name="pension[afp_detalle]"]')?.value || '',
             cuspp: document.querySelector('[name="pension[cuspp]"]')?.value || '',
             tipo_comision: document.querySelector('[name="pension[tipo_comision]"]')?.value || '',
             fecha_inscripcion: document.querySelector('[name="pension[fecha_inscripcion]"]')?.value || '',

@@ -179,9 +179,7 @@ class MdDirectorio
             SELECT
                 id,
                 sistema_pension,
-                sistema_pension_detalle,
                 afp,
-                afp_detalle,
                 cuspp,
                 tipo_comision,
                 fecha_inscripcion,
@@ -631,28 +629,24 @@ class MdDirectorio
                 $pensionId = (int)($stmtPen->fetchColumn() ?: 0);
 
                 $payloadPension = [
-                    ':colab_id'                 => (int)$datos['id'],
-                    ':sistema_pension'          => !empty($pension['sistema_pension']) ? $pension['sistema_pension'] : null,
-                    ':sistema_pension_detalle'  => !empty($pension['sistema_pension_detalle']) ? trim((string)$pension['sistema_pension_detalle']) : null,
-                    ':afp'                      => !empty($pension['afp']) ? $pension['afp'] : null,
-                    ':afp_detalle'              => !empty($pension['afp_detalle']) ? trim((string)$pension['afp_detalle']) : null,
-                    ':cuspp'                    => !empty($pension['cuspp']) ? trim((string)$pension['cuspp']) : null,
-                    ':tipo_comision'            => !empty($pension['tipo_comision']) ? $pension['tipo_comision'] : null,
-                    ':fecha_inscripcion'        => !empty($pension['fecha_inscripcion']) ? $pension['fecha_inscripcion'] : null,
-                    ':sin_afp_afiliarme'        => !empty($pension['sin_afp_afiliarme']) ? 1 : 0,
+                    ':colab_id'          => (int)$datos['id'],
+                    ':sistema_pension'   => !empty($pension['sistema_pension']) ? $pension['sistema_pension'] : null,
+                    ':afp'               => !empty($pension['afp']) ? $pension['afp'] : null,
+                    ':cuspp'             => !empty($pension['cuspp']) ? trim((string)$pension['cuspp']) : null,
+                    ':tipo_comision'     => !empty($pension['tipo_comision']) ? $pension['tipo_comision'] : null,
+                    ':fecha_inscripcion' => !empty($pension['fecha_inscripcion']) ? $pension['fecha_inscripcion'] : null,
+                    ':sin_afp_afiliarme' => !empty($pension['sin_afp_afiliarme']) ? 1 : 0,
                 ];
 
                 if ($pensionId > 0) {
                     $pdo->prepare("
             UPDATE colab_pension SET
-                sistema_pension         = :sistema_pension,
-                sistema_pension_detalle = :sistema_pension_detalle,
-                afp                     = :afp,
-                afp_detalle             = :afp_detalle,
-                cuspp                   = :cuspp,
-                tipo_comision           = :tipo_comision,
-                fecha_inscripcion       = :fecha_inscripcion,
-                sin_afp_afiliarme       = :sin_afp_afiliarme
+                sistema_pension   = :sistema_pension,
+                afp               = :afp,
+                cuspp             = :cuspp,
+                tipo_comision     = :tipo_comision,
+                fecha_inscripcion = :fecha_inscripcion,
+                sin_afp_afiliarme = :sin_afp_afiliarme
             WHERE colab_id = :colab_id
         ")->execute($payloadPension);
                 } else {
@@ -660,9 +654,7 @@ class MdDirectorio
             INSERT INTO colab_pension (
                 colab_id,
                 sistema_pension,
-                sistema_pension_detalle,
                 afp,
-                afp_detalle,
                 cuspp,
                 tipo_comision,
                 fecha_inscripcion,
@@ -670,9 +662,7 @@ class MdDirectorio
             ) VALUES (
                 :colab_id,
                 :sistema_pension,
-                :sistema_pension_detalle,
                 :afp,
-                :afp_detalle,
                 :cuspp,
                 :tipo_comision,
                 :fecha_inscripcion,
@@ -681,7 +671,6 @@ class MdDirectorio
         ")->execute($payloadPension);
                 }
             }
-
             // ── 7. Sincronizar datos bancarios ───────────────────
             $bancario = $datos['bancario'] ?? null;
 
@@ -692,7 +681,7 @@ class MdDirectorio
         FROM colab_bancario
         WHERE colab_id = :id
         LIMIT 1
-    ");
+     ");
                 $stmtBan->execute([
                     ':id' => (int)$datos['id'],
                 ]);
@@ -739,7 +728,7 @@ class MdDirectorio
                 $pdo->prepare("
         DELETE FROM colab_idioma
         WHERE colab_id = :id
-    ")->execute([
+        ")->execute([
                     ':id' => (int)$datos['id'],
                 ]);
 
