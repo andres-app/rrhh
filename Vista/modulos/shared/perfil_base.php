@@ -1167,7 +1167,7 @@ $perfil = $data;
                     <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="field-group col-span-2">
-                                <label class="field-label">Tipo</label>
+                                <label class="field-label">Sistema de Pensiones</label>
                                 <select name="pension[sistema_pension]" class="field-input">
                                     <option value="">Seleccionar</option>
                                     <?php foreach (['CNP', 'D.L 20520', 'CAJA MILITAR', 'OTROS'] as $opt): ?>
