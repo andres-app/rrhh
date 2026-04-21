@@ -765,8 +765,8 @@ $perfil = $data;
                                 </p>
                             </div>
                         <?php else: ?>
-                            <div class="relative pl-8 border-l-2 border-red-100 space-y-8">
-                                <?php foreach ($perfil['experiencia'] as $item): ?>
+                            <div class="relative pl-8 border-l-2 border-red-100 space-y-5">
+                                <?php foreach ($perfil['experiencia'] as $i => $item): ?>
                                     <?php
                                     $inicio = !empty($item['fecha_inicio']) ? new DateTime($item['fecha_inicio']) : null;
                                     $fin = !empty($item['fecha_fin'])
@@ -788,75 +788,102 @@ $perfil = $data;
                                         'RECHAZADO' => 'bg-red-50 text-red-700 border-red-200',
                                         default => 'bg-amber-50 text-amber-700 border-amber-200',
                                     };
+
+                                    $idExp = 'exp-detalle-' . $i;
                                     ?>
                                     <div class="relative">
-                                        <div class="absolute -left-[41px] top-1 w-5 h-5 rounded-full bg-red-900 border-4 border-white shadow-sm"></div>
+                                        <div class="absolute -left-[41px] top-5 w-5 h-5 rounded-full bg-red-900 border-4 border-white shadow-sm"></div>
 
-                                        <div class="bg-slate-50 border border-slate-200 rounded-2xl p-6">
-                                            <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4">
-                                                <div>
-                                                    <h4 class="text-lg font-black text-slate-800">
-                                                        <?php echo htmlspecialchars($item['cargo_puesto'] ?? 'Sin cargo'); ?>
-                                                    </h4>
-                                                    <p class="text-sm font-bold text-red-900 mt-1">
-                                                        <?php echo htmlspecialchars($item['empresa_entidad'] ?? 'Sin empresa'); ?>
-                                                    </p>
+                                        <div class="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden">
+                                            <!-- Cabecera compacta -->
+                                            <div class="p-5">
+                                                <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
+                                                    <div class="min-w-0">
+                                                        <h4 class="text-base font-black text-slate-800 leading-tight">
+                                                            <?php echo htmlspecialchars($item['cargo_puesto'] ?? 'Sin cargo'); ?>
+                                                        </h4>
 
-                                                    <?php if (!empty($item['unidad_organica_area'])): ?>
-                                                        <p class="text-sm text-slate-500 mt-1">
-                                                            <?php echo htmlspecialchars($item['unidad_organica_area']); ?>
+                                                        <p class="text-sm font-bold text-red-900 mt-1">
+                                                            <?php echo htmlspecialchars($item['empresa_entidad'] ?? 'Sin empresa'); ?>
                                                         </p>
-                                                    <?php endif; ?>
-                                                </div>
 
-                                                <div class="flex flex-wrap gap-2">
-                                                    <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border <?php echo $badgeEstado; ?>">
-                                                        <?php echo htmlspecialchars($item['estado_validacion'] ?? 'PENDIENTE'); ?>
-                                                    </span>
+                                                        <p class="text-xs text-slate-500 mt-1">
+                                                            <?php echo !empty($item['fecha_inicio']) ? formatFecha($item['fecha_inicio']) : '—'; ?>
+                                                            —
+                                                            <?php echo !empty($item['actualmente_trabaja']) ? 'Actualidad' : (!empty($item['fecha_fin']) ? formatFecha($item['fecha_fin']) : '—'); ?>
+                                                        </p>
 
-                                                    <?php if (!empty($item['actualmente_trabaja'])): ?>
-                                                        <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border bg-blue-50 text-blue-700 border-blue-200">
-                                                            Actual
+                                                        <?php if (!empty($item['unidad_organica_area'])): ?>
+                                                            <p class="text-xs text-slate-400 mt-1">
+                                                                <?php echo htmlspecialchars($item['unidad_organica_area']); ?>
+                                                            </p>
+                                                        <?php endif; ?>
+                                                    </div>
+
+                                                    <div class="flex flex-wrap items-center gap-2 shrink-0">
+                                                        <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border <?php echo $badgeEstado; ?>">
+                                                            <?php echo htmlspecialchars($item['estado_validacion'] ?? 'PENDIENTE'); ?>
                                                         </span>
-                                                    <?php endif; ?>
-                                                </div>
-                                            </div>
 
-                                            <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mt-5">
-                                                <div class="bg-white border border-slate-200 rounded-xl p-4">
-                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Fecha Inicio</p>
-                                                    <p class="text-sm font-bold text-slate-700">
-                                                        <?php echo !empty($item['fecha_inicio']) ? formatFecha($item['fecha_inicio']) : '—'; ?>
-                                                    </p>
-                                                </div>
+                                                        <?php if (!empty($item['actualmente_trabaja'])): ?>
+                                                            <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border bg-blue-50 text-blue-700 border-blue-200">
+                                                                Actual
+                                                            </span>
+                                                        <?php endif; ?>
 
-                                                <div class="bg-white border border-slate-200 rounded-xl p-4">
-                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Fecha Fin</p>
-                                                    <p class="text-sm font-bold text-slate-700">
-                                                        <?php
-                                                        echo !empty($item['actualmente_trabaja'])
-                                                            ? 'Actualidad'
-                                                            : (!empty($item['fecha_fin']) ? formatFecha($item['fecha_fin']) : '—');
-                                                        ?>
-                                                    </p>
-                                                </div>
-
-                                                <div class="bg-white border border-slate-200 rounded-xl p-4">
-                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Tiempo de Servicio</p>
-                                                    <p class="text-sm font-bold text-slate-700">
-                                                        <?php echo htmlspecialchars($tiempoServicio); ?>
-                                                    </p>
-                                                </div>
-                                            </div>
-
-                                            <?php if (!empty($item['funciones_principales'])): ?>
-                                                <div class="mt-5">
-                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Funciones Principales</p>
-                                                    <div class="bg-white border border-slate-200 rounded-xl p-4 text-sm text-slate-700 leading-relaxed">
-                                                        <?php echo nl2br(htmlspecialchars($item['funciones_principales'])); ?>
+                                                        <button
+                                                            type="button"
+                                                            class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-100 transition-all"
+                                                            onclick="toggleExperienciaDetalle('<?php echo $idExp; ?>', this)">
+                                                            <span class="exp-toggle-text">Ver más</span>
+                                                            <svg class="exp-toggle-icon w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                                            </svg>
+                                                        </button>
                                                     </div>
                                                 </div>
-                                            <?php endif; ?>
+                                            </div>
+
+                                            <!-- Detalle desplegable -->
+                                            <div id="<?php echo $idExp; ?>" class="hidden border-t border-slate-200 bg-white">
+                                                <div class="p-5">
+                                                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                                                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Fecha Inicio</p>
+                                                            <p class="text-sm font-bold text-slate-700">
+                                                                <?php echo !empty($item['fecha_inicio']) ? formatFecha($item['fecha_inicio']) : '—'; ?>
+                                                            </p>
+                                                        </div>
+
+                                                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Fecha Fin</p>
+                                                            <p class="text-sm font-bold text-slate-700">
+                                                                <?php
+                                                                echo !empty($item['actualmente_trabaja'])
+                                                                    ? 'Actualidad'
+                                                                    : (!empty($item['fecha_fin']) ? formatFecha($item['fecha_fin']) : '—');
+                                                                ?>
+                                                            </p>
+                                                        </div>
+
+                                                        <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Tiempo de Servicio</p>
+                                                            <p class="text-sm font-bold text-slate-700">
+                                                                <?php echo htmlspecialchars($tiempoServicio); ?>
+                                                            </p>
+                                                        </div>
+                                                    </div>
+
+                                                    <?php if (!empty($item['funciones_principales'])): ?>
+                                                        <div class="mt-4">
+                                                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Funciones Principales</p>
+                                                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700 leading-relaxed">
+                                                                <?php echo nl2br(htmlspecialchars($item['funciones_principales'])); ?>
+                                                            </div>
+                                                        </div>
+                                                    <?php endif; ?>
+                                                </div>
+                                            </div>
                                         </div>
                                     </div>
                                 <?php endforeach; ?>
@@ -2553,6 +2580,26 @@ $perfil = $data;
         div.className = `${bgClass} text-white px-6 py-3 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-2`;
         t.classList.remove('hidden');
         setTimeout(() => t.classList.add('hidden'), 3000);
+    }
+
+    function toggleExperienciaDetalle(id, btn) {
+        const panel = document.getElementById(id);
+        if (!panel) return;
+
+        const text = btn.querySelector('.exp-toggle-text');
+        const icon = btn.querySelector('.exp-toggle-icon');
+
+        const abierto = !panel.classList.contains('hidden');
+
+        if (abierto) {
+            panel.classList.add('hidden');
+            if (text) text.textContent = 'Ver más';
+            if (icon) icon.classList.remove('rotate-180');
+        } else {
+            panel.classList.remove('hidden');
+            if (text) text.textContent = 'Ver menos';
+            if (icon) icon.classList.add('rotate-180');
+        }
     }
 
     document.addEventListener('keydown', e => {
