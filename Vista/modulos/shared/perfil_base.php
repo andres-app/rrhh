@@ -525,7 +525,7 @@ $perfil = $data;
             <div class="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-gradient-to-r from-[#310404] to-red-900">
                 <div>
                     <h2 class="text-white font-black text-lg">Modificar Perfil del Colaborador</h2>
-                    <p class="text-red-200 text-xs mt-0.5">Paso <span id="paso-actual">1</span> de <span id="paso-total">6</span></p>
+                    <p class="text-red-200 text-xs mt-0.5">Paso <span id="paso-actual">1</span> de <span id="paso-total">9</span></p>
                 </div>
                 <button onclick="cerrarModal()" class="text-red-200 hover:text-white transition-colors">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -543,9 +543,12 @@ $perfil = $data;
                         ['num' => 1, 'label' => 'Personal'],
                         ['num' => 2, 'label' => 'Contacto'],
                         ['num' => 3, 'label' => 'Familia'],
-                        ['num' => 4, 'label' => 'Formación'],
-                        ['num' => 5, 'label' => 'Experiencia'],
-                        ['num' => 6, 'label' => 'Confirmar'],
+                        ['num' => 4, 'label' => 'Pensión'],
+                        ['num' => 5, 'label' => 'Banco'],
+                        ['num' => 6, 'label' => 'Formación'],
+                        ['num' => 7, 'label' => 'Idiomas'],
+                        ['num' => 8, 'label' => 'Experiencia'],
+                        ['num' => 9, 'label' => 'Confirmar'],
                     ];
                     $total = count($steps);
                     foreach ($steps as $idx => $step):
@@ -770,8 +773,112 @@ $perfil = $data;
                     </div>
                 </div>
 
-                <!-- ── PASO 4: Formación ── -->
+                <!-- ── PASO 4: Pensiones ── -->
                 <div id="form-step-4" class="form-step space-y-5 hidden">
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Sistema de Pensiones</p>
+
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="field-group col-span-2">
+                                <label class="field-label">Sistema de pensiones</label>
+                                <select name="pension[sistema_pension]" class="field-input">
+                                    <option value="">Seleccionar</option>
+                                    <?php foreach (['CNP', 'D.L 20520', 'CAJA MILITAR', 'OTROS'] as $opt): ?>
+                                        <option value="<?php echo $opt; ?>" <?php echo (($perfil['pension']['sistema_pension'] ?? '') === $opt) ? 'selected' : ''; ?>>
+                                            <?php echo $opt; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="field-group col-span-2">
+                                <label class="field-label">Detalle sistema (si es otros)</label>
+                                <input type="text" name="pension[sistema_pension_detalle]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['pension']['sistema_pension_detalle'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">AFP</label>
+                                <select name="pension[afp]" class="field-input">
+                                    <option value="">Seleccionar</option>
+                                    <?php foreach (['PRIMA', 'INTEGRA', 'PROFUTURO', 'HABITAT', 'OTRO'] as $opt): ?>
+                                        <option value="<?php echo $opt; ?>" <?php echo (($perfil['pension']['afp'] ?? '') === $opt) ? 'selected' : ''; ?>>
+                                            <?php echo $opt; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Detalle AFP (si es otro)</label>
+                                <input type="text" name="pension[afp_detalle]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['pension']['afp_detalle'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Número de CUSPP</label>
+                                <input type="text" name="pension[cuspp]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['pension']['cuspp'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Tipo de Comisión</label>
+                                <select name="pension[tipo_comision]" class="field-input">
+                                    <option value="">Seleccionar</option>
+                                    <?php foreach (['MIXTA', 'FLUJO'] as $opt): ?>
+                                        <option value="<?php echo $opt; ?>" <?php echo (($perfil['pension']['tipo_comision'] ?? '') === $opt) ? 'selected' : ''; ?>>
+                                            <?php echo $opt; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Fecha de Inscripción</label>
+                                <input type="date" name="pension[fecha_inscripcion]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['pension']['fecha_inscripcion'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group col-span-2">
+                                <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                    <input type="checkbox" name="pension[sin_afp_afiliarme]" value="1"
+                                        <?php echo !empty($perfil['pension']['sin_afp_afiliarme']) ? 'checked' : ''; ?>>
+                                    No tengo AFP (deseo afiliarme)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── PASO 5: Bancarios ── -->
+                <div id="form-step-5" class="form-step space-y-5 hidden">
+                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Datos Bancarios</p>
+
+                    <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
+                        <div class="grid grid-cols-2 gap-4">
+                            <div class="field-group col-span-2">
+                                <label class="field-label">Nombre Banco Haberes</label>
+                                <input type="text" name="bancario[banco_haberes]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['bancario']['banco_haberes'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Número de Cuenta</label>
+                                <input type="text" name="bancario[numero_cuenta]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['bancario']['numero_cuenta'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Número de Cuenta CCI</label>
+                                <input type="text" name="bancario[numero_cuenta_cci]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['bancario']['numero_cuenta_cci'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ── PASO 6: Academico ── -->
+                <div id="form-step-6" class="form-step space-y-5 hidden">
                     <div class="flex items-center justify-between mb-2">
                         <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Formación Académica</p>
                         <button type="button" onclick="agregarFormacion()"
@@ -843,7 +950,81 @@ $perfil = $data;
                     </div>
                 </div>
 
-                <div id="form-step-5" class="form-step space-y-5 hidden">
+                <!-- ── PASO 7: Idiomas ── -->
+                <div id="form-step-7" class="form-step space-y-5 hidden">
+                    <div class="flex items-center justify-between mb-2">
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Idiomas</p>
+                        <button type="button" onclick="agregarIdioma()"
+                            class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all">
+                            <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                            </svg>
+                            Agregar Idioma
+                        </button>
+                    </div>
+
+                    <div id="lista-idiomas" class="space-y-3">
+                        <?php $idiomas = $perfil['idiomas'] ?? []; ?>
+                        <?php if (empty($idiomas)): ?>
+                            <div id="sin-idiomas" class="text-center py-5 text-slate-400 text-xs">
+                                No hay idiomas registrados. Haz clic en "Agregar Idioma".
+                            </div>
+                        <?php else: ?>
+                            <?php foreach (array_values($idiomas) as $ii => $idioma): ?>
+                                <div class="idioma-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $ii; ?>">
+                                    <div class="item-resumen flex items-center justify-between">
+                                        <div>
+                                            <p class="text-sm font-bold text-slate-800 val-idioma"><?php echo htmlspecialchars($idioma['idioma'] ?? 'Sin idioma'); ?></p>
+                                            <p class="text-[11px] text-slate-500 mt-0.5">
+                                                Nivel: <span class="val-nivel"><?php echo htmlspecialchars($idioma['nivel'] ?? 'BASICO'); ?></span>
+                                            </p>
+                                        </div>
+                                        <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100">
+                                            Editar
+                                        </button>
+                                    </div>
+
+                                    <div class="item-form hidden mt-2 pt-3 border-t border-slate-100 relative animate-in">
+                                        <button type="button" onclick="eliminarFila(this)" class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1" title="Eliminar">
+                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                            </svg>
+                                        </button>
+
+                                        <div class="grid grid-cols-2 gap-3 pr-6">
+                                            <div class="field-group">
+                                                <label class="field-label">Idioma</label>
+                                                <input type="text" name="idiomas[<?php echo $ii; ?>][idioma]" class="field-input input-idioma"
+                                                    value="<?php echo htmlspecialchars($idioma['idioma'] ?? ''); ?>">
+                                            </div>
+
+                                            <div class="field-group">
+                                                <label class="field-label">Nivel</label>
+                                                <select name="idiomas[<?php echo $ii; ?>][nivel]" class="field-input input-nivel">
+                                                    <?php foreach (['BASICO', 'INTERMEDIO', 'AVANZADO'] as $nivel): ?>
+                                                        <option value="<?php echo $nivel; ?>" <?php echo (($idioma['nivel'] ?? 'BASICO') === $nivel) ? 'selected' : ''; ?>>
+                                                            <?php echo $nivel; ?>
+                                                        </option>
+                                                    <?php endforeach; ?>
+                                                </select>
+                                            </div>
+                                        </div>
+
+                                        <div class="mt-3 text-right">
+                                            <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
+                                                ✓ Listo
+                                            </button>
+                                        </div>
+                                    </div>
+                                </div>
+                            <?php endforeach; ?>
+                        <?php endif; ?>
+                    </div>
+                </div>
+
+
+                <!-- ── PASO 8: Exp. Laboral ── -->
+                <div id="form-step-8" class="form-step space-y-5 hidden">
                     <div class="flex items-center justify-between mb-2">
                         <p class="text-xs text-slate-400 font-bold uppercase tracking-widest">Experiencia Laboral</p>
                         <button type="button" onclick="agregarExperiencia()"
@@ -941,8 +1122,8 @@ $perfil = $data;
                         <?php endif; ?>
                     </div>
                 </div>
-
-                <div id="form-step-6" class="form-step hidden">
+                <!-- ── PASO 9: Resumen Cambios ── -->
+                <div id="form-step-9" class="form-step hidden">
                     <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-6">Resumen de Cambios</p>
 
                     <div class="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6 flex items-start gap-3">
@@ -1169,7 +1350,7 @@ $perfil = $data;
 <script>
     // ── MAGIA DE ABRIR/CERRAR FILAS ────────────────────────
     function toggleFila(btn, abrir) {
-        const row = btn.closest('.hijo-row') || btn.closest('.formacion-row') || btn.closest('.experiencia-row');
+        const row = btn.closest('.hijo-row') || btn.closest('.formacion-row') || btn.closest('.idioma-row') || btn.closest('.experiencia-row');
         if (!row) return;
 
         const resumen = row.querySelector('.item-resumen');
@@ -1205,6 +1386,13 @@ $perfil = $data;
             row.querySelector('.val-inst').textContent =
                 row.querySelector('.input-inst')?.value || '—';
 
+        } else if (row.classList.contains('idioma-row')) {
+            row.querySelector('.val-idioma').textContent =
+                row.querySelector('.input-idioma')?.value || 'Sin idioma';
+
+            row.querySelector('.val-nivel').textContent =
+                row.querySelector('.input-nivel')?.value || 'BASICO';
+
         } else if (row.classList.contains('experiencia-row')) {
             const cargo = row.querySelector('.input-cargo')?.value || 'Sin cargo';
             const empresa = row.querySelector('.input-empresa')?.value || 'Sin empresa';
@@ -1224,7 +1412,8 @@ $perfil = $data;
     }
 
     function eliminarFila(btn) {
-        const row = btn.closest('.hijo-row') || btn.closest('.formacion-row') || btn.closest('.experiencia-row');
+        const row = btn.closest('.hijo-row') || btn.closest('.formacion-row') || btn.closest('.idioma-row') || btn.closest('.experiencia-row');
+        const isIdioma = row.classList.contains('idioma-row');
         if (!row) return;
 
         const isHijo = row.classList.contains('hijo-row');
@@ -1242,6 +1431,13 @@ $perfil = $data;
                 const lista = document.getElementById('lista-hijos');
                 if (lista && !lista.querySelector('.hijo-row')) {
                     lista.innerHTML = '<div id="sin-hijos" class="text-center py-5 text-slate-400 text-xs">No hay hijos registrados. Haz clic en "Agregar hijo" para añadir.</div>';
+                }
+            }
+
+            if (isIdioma) {
+                const lista = document.getElementById('lista-idiomas');
+                if (lista && !lista.querySelector('.idioma-row')) {
+                    lista.innerHTML = '<div id="sin-idiomas" class="text-center py-5 text-slate-400 text-xs">No hay idiomas registrados. Haz clic en "Agregar Idioma".</div>';
                 }
             }
 
@@ -1320,6 +1516,7 @@ $perfil = $data;
     // ── FORMACIÓN Y EXPERIENCIA DINÁMICA ────────────────────────────
     let formIdx = <?php echo count($formacion ?? []); ?>;
     let expIdx = <?php echo count($perfil['experiencia'] ?? []); ?>;
+    let idiomaIdx = <?php echo count($perfil['idiomas'] ?? []); ?>;
 
     function agregarFormacion() {
         const sinForm = document.getElementById('sin-formacion');
@@ -1372,6 +1569,52 @@ $perfil = $data;
             </div>
         </div>`;
         document.getElementById('lista-formacion').insertAdjacentHTML('beforeend', html);
+    }
+
+
+    function agregarIdioma() {
+        const sinIdiomas = document.getElementById('sin-idiomas');
+        if (sinIdiomas) sinIdiomas.remove();
+
+        const idx = idiomaIdx++;
+        const html = `
+            <div class="idioma-row bg-white border border-slate-200 rounded-xl p-4 relative animate-in" data-index="${idx}">
+                <div class="item-resumen hidden items-center justify-between">
+                    <div>
+                        <p class="text-sm font-bold text-slate-800 val-idioma">Nuevo idioma</p>
+                        <p class="text-[11px] text-slate-500 mt-0.5">
+                            Nivel: <span class="val-nivel">BASICO</span>
+                        </p>
+                    </div>
+                    <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100">Editar</button>
+                </div>
+
+                <div class="item-form mt-1 pt-1 relative">
+                    <button type="button" onclick="eliminarFila(this)" class="absolute -top-2 right-0 text-slate-300 hover:text-red-500 transition-colors p-1">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                        </svg>
+                    </button>
+                    <div class="grid grid-cols-2 gap-3 pr-6">
+                        <div class="field-group">
+                            <label class="field-label">Idioma</label>
+                            <input type="text" name="idiomas[${idx}][idioma]" class="field-input input-idioma" placeholder="Ej: Inglés">
+                        </div>
+                        <div class="field-group">
+                            <label class="field-label">Nivel</label>
+                            <select name="idiomas[${idx}][nivel]" class="field-input input-nivel">
+                                <option value="BASICO">Básico</option>
+                                <option value="INTERMEDIO">Intermedio</option>
+                                <option value="AVANZADO">Avanzado</option>
+                            </select>
+                        </div>
+                    </div>
+                    <div class="mt-3 text-right">
+                        <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">✓ Listo</button>
+                    </div>
+                </div>
+            </div>`;
+        document.getElementById('lista-idiomas').insertAdjacentHTML('beforeend', html);
     }
 
     function agregarExperiencia() {
@@ -1475,7 +1718,7 @@ $perfil = $data;
     // ── MODAL & WIZARD ────────────────────────────────
     const valoresOriginales = {};
     let pasoActual = 1;
-    const totalPasos = 6;
+    const totalPasos = 9;
 
     function abrirModal() {
         const m = document.getElementById('modal-perfil');
@@ -1812,7 +2055,10 @@ $perfil = $data;
                 !el.readOnly &&
                 !el.name.includes('hijos') &&
                 !el.name.includes('formacion') &&
-                !el.name.includes('experiencia')
+                !el.name.includes('experiencia') &&
+                !el.name.includes('idiomas[') &&
+                !el.name.startsWith('pension[') &&
+                !el.name.startsWith('bancario[')
             ) {
                 if (el.type === 'checkbox') {
                     campos[el.name] = el.checked ? 1 : 0;
@@ -1846,7 +2092,11 @@ $perfil = $data;
                 id: row.querySelector(`[name="formacion[${idx}][id]"]`)?.value || '',
                 tipo_grado: row.querySelector(`[name="formacion[${idx}][tipo_grado]"]`)?.value || '',
                 descripcion_carrera: row.querySelector(`[name="formacion[${idx}][descripcion_carrera]"]`)?.value || '',
-                institucion: row.querySelector(`[name="formacion[${idx}][institucion]"]`)?.value || ''
+                institucion: row.querySelector(`[name="formacion[${idx}][institucion]"]`)?.value || '',
+                anio_realizacion: row.querySelector(`[name="formacion[${idx}][anio_realizacion]"]`)?.value || '',
+                horas_lectivas: row.querySelector(`[name="formacion[${idx}][horas_lectivas]"]`)?.value || '',
+                especialidad: row.querySelector(`[name="formacion[${idx}][especialidad]"]`)?.value || '',
+                grado_alcanzado: row.querySelector(`[name="formacion[${idx}][grado_alcanzado]"]`)?.value || ''
             });
         });
         campos['formacion'] = formacion;
@@ -1867,6 +2117,41 @@ $perfil = $data;
             });
         });
         campos['experiencia'] = experiencia;
+
+        // Pensión
+        campos['pension'] = {
+            sistema_pension: document.querySelector('[name="pension[sistema_pension]"]')?.value || '',
+            sistema_pension_detalle: document.querySelector('[name="pension[sistema_pension_detalle]"]')?.value || '',
+            afp: document.querySelector('[name="pension[afp]"]')?.value || '',
+            afp_detalle: document.querySelector('[name="pension[afp_detalle]"]')?.value || '',
+            cuspp: document.querySelector('[name="pension[cuspp]"]')?.value || '',
+            tipo_comision: document.querySelector('[name="pension[tipo_comision]"]')?.value || '',
+            fecha_inscripcion: document.querySelector('[name="pension[fecha_inscripcion]"]')?.value || '',
+            sin_afp_afiliarme: document.querySelector('[name="pension[sin_afp_afiliarme]"]')?.checked ? 1 : 0
+        };
+
+        // Bancario
+        campos['bancario'] = {
+            banco_haberes: document.querySelector('[name="bancario[banco_haberes]"]')?.value || '',
+            numero_cuenta: document.querySelector('[name="bancario[numero_cuenta]"]')?.value || '',
+            numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value || ''
+        };
+
+        // Idiomas
+        const idiomas = [];
+        document.querySelectorAll('.idioma-row').forEach(row => {
+            const idx = row.dataset.index;
+            const idioma = row.querySelector(`[name="idiomas[${idx}][idioma]"]`)?.value || '';
+            const nivel = row.querySelector(`[name="idiomas[${idx}][nivel]"]`)?.value || 'BASICO';
+
+            if (idioma.trim() !== '') {
+                idiomas.push({
+                    idioma: idioma,
+                    nivel: nivel
+                });
+            }
+        });
+        campos['idiomas'] = idiomas;
 
         console.log('DATOS A ENVIAR:', campos);
 
