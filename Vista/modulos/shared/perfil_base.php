@@ -892,10 +892,10 @@ $perfil = $data;
     <div id="modal-perfil" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
 
         <!-- Backdrop -->
-        <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cerrarModal()"></div>
+        <div class="modal-backdrop absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cerrarModal()"></div>
 
         <!-- Panel -->
-        <div class="absolute inset-0 w-screen h-screen bg-white shadow-2xl flex flex-col">
+        <div class="modal-panel absolute inset-0 w-screen h-screen bg-white shadow-2xl flex flex-col">
 
             <!-- Header del modal -->
             <div class="sticky top-0 z-20 flex items-center justify-between px-6 lg:px-8 py-5 border-b border-slate-100 bg-gradient-to-r from-[#310404] to-red-900">
@@ -955,92 +955,112 @@ $perfil = $data;
             </div>
 
             <!-- Modal Cuerpo scrollable del formulario de Pasos -->
-            <div class="flex-1 overflow-y-auto px-6 lg:px-10 py-7 lg:py-10 bg-gradient-to-b from-slate-50 to-slate-100/70">
+            <div class="modal-body flex-1 overflow-y-auto px-6 lg:px-10 py-7 lg:py-10">
 
                 <!-- ── PASO 1: Datos Personales ── -->
                 <div id="form-step-1" class="form-step">
-                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm space-y-4">
-                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Información Personal</p>
-                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                            <div class="field-group col-span-2">
-                                <label class="field-label">Nombres y Apellidos</label>
-                                <input type="text" name="nombres_apellidos" class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['nombres_apellidos'] ?? ''); ?>"
-                                    title="Este campo solo puede ser modificado por RRHH">
-                                <p class="text-[10px] text-slate-400 mt-1">Solo RRHH puede modificar el nombre.</p>
-                            </div>
-                            <div class="field-group">
-                                <label class="field-label">DNI</label>
-                                <input type="text" name="dni" class="field-input" maxlength="8"
-                                    value="<?php echo htmlspecialchars($perfil['dni'] ?? ''); ?>">
-                            </div>
-                            <div class="field-group">
-                                <label class="field-label">Fecha de Nacimiento</label>
-                                <input type="date" name="fecha_nacimiento" class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['fecha_nacimiento'] ?? ''); ?>">
-                            </div>
-                            <div class="field-group">
-                                <label class="field-label">Lugar de Nacimiento</label>
-                                <input type="text" name="lugar_nacimiento" class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['lugar_nacimiento'] ?? ''); ?>">
-                            </div>
-                            <div class="field-group">
-                                <label class="field-label">Estado Civil</label>
-                                <select name="estado_civil" class="field-input">
-                                    <?php foreach (['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente'] as $opt):
-                                        $sel = ($perfil['estado_civil'] ?? '') === $opt ? 'selected' : ''; ?>
-                                        <option value="<?php echo $opt; ?>" <?php echo $sel; ?>><?php echo $opt; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="field-group">
-                                <label class="field-label">Grupo Sanguíneo</label>
-                                <select name="grupo_sanguineo" class="field-input">
-                                    <?php foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $g):
-                                        $sel = ($perfil['grupo_sanguineo'] ?? '') === $g ? 'selected' : ''; ?>
-                                        <option value="<?php echo $g; ?>" <?php echo $sel; ?>><?php echo $g; ?></option>
-                                    <?php endforeach; ?>
-                                </select>
-                            </div>
-                            <div class="field-group">
-                                <label class="field-label">Talla</label>
-                                <input type="text" name="talla" class="field-input" placeholder="Ej: 1.70"
-                                    value="<?php echo htmlspecialchars($perfil['talla'] ?? ''); ?>">
-                            </div>
-                        </div>
-                    </div>
-                </div>
+                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
-                <!-- ── PASO 2: Contacto ── -->
-                <div id="form-step-2" class="form-step space-y-4 hidden">
-                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Contacto y Domicilio</p>
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="field-group col-span-2">
-                            <label class="field-label">Dirección de Residencia</label>
-                            <input type="text" name="direccion_residencia" class="field-input"
-                                value="<?php echo htmlspecialchars($perfil['direccion_residencia'] ?? ''); ?>">
+                        <!-- BLOQUE 1: INFORMACIÓN PERSONAL -->
+                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm space-y-4">
+                            <div class="mb-4">
+                                <p class="section-title">Información Personal</p>
+                                <div class="section-divider"></div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="field-group span-full">
+                                    <label class="field-label">Nombres y Apellidos</label>
+                                    <input type="text" name="nombres_apellidos" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['nombres_apellidos'] ?? ''); ?>"
+                                        title="Este campo solo puede ser modificado por RRHH">
+                                    <p class="text-[10px] text-slate-400 mt-1">Solo RRHH puede modificar el nombre.</p>
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">DNI</label>
+                                    <input type="text" name="dni" class="field-input" maxlength="8"
+                                        value="<?php echo htmlspecialchars($perfil['dni'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Fecha de Nacimiento</label>
+                                    <input type="date" name="fecha_nacimiento" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['fecha_nacimiento'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Lugar de Nacimiento</label>
+                                    <input type="text" name="lugar_nacimiento" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['lugar_nacimiento'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Estado Civil</label>
+                                    <select name="estado_civil" class="field-input">
+                                        <?php foreach (['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente'] as $opt):
+                                            $sel = ($perfil['estado_civil'] ?? '') === $opt ? 'selected' : ''; ?>
+                                            <option value="<?php echo $opt; ?>" <?php echo $sel; ?>><?php echo $opt; ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Grupo Sanguíneo</label>
+                                    <select name="grupo_sanguineo" class="field-input">
+                                        <?php foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $g):
+                                            $sel = ($perfil['grupo_sanguineo'] ?? '') === $g ? 'selected' : ''; ?>
+                                            <option value="<?php echo $g; ?>" <?php echo $sel; ?>><?php echo $g; ?></option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Talla</label>
+                                    <input type="text" name="talla" class="field-input" placeholder="Ej: 1.70"
+                                        value="<?php echo htmlspecialchars($perfil['talla'] ?? ''); ?>">
+                                </div>
+                            </div>
                         </div>
-                        <div class="field-group">
-                            <label class="field-label">Distrito</label>
-                            <input type="text" name="distrito" class="field-input"
-                                value="<?php echo htmlspecialchars($perfil['distrito'] ?? ''); ?>">
+
+                        <!-- BLOQUE 2: CONTACTO Y DOMICILIO -->
+                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm space-y-4">
+                            <div class="mb-4">
+                                <p class="section-title">Contacto y Domicilio</p>
+                                <div class="section-divider"></div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="field-group span-full">
+                                    <label class="field-label">Dirección de Residencia</label>
+                                    <input type="text" name="direccion_residencia" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['direccion_residencia'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Distrito</label>
+                                    <input type="text" name="distrito" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['distrito'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Celular</label>
+                                    <input type="tel" name="celular" class="field-input" maxlength="9"
+                                        value="<?php echo htmlspecialchars($perfil['celular'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Correo Personal</label>
+                                    <input type="email" name="correo_personal" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['correo_personal'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Correo Institucional</label>
+                                    <input type="email" name="correo_institucional" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['correo_institucional'] ?? ''); ?>">
+                                </div>
+                            </div>
                         </div>
-                        <div class="field-group">
-                            <label class="field-label">Celular</label>
-                            <input type="tel" name="celular" class="field-input" maxlength="9"
-                                value="<?php echo htmlspecialchars($perfil['celular'] ?? ''); ?>">
-                        </div>
-                        <div class="field-group col-span-2">
-                            <label class="field-label">Correo Personal</label>
-                            <input type="email" name="correo_personal" class="field-input"
-                                value="<?php echo htmlspecialchars($perfil['correo_personal'] ?? ''); ?>">
-                        </div>
-                        <div class="field-group col-span-2">
-                            <label class="field-label">Correo Institucional</label>
-                            <input type="email" name="correo_institucional" class="field-input"
-                                value="<?php echo htmlspecialchars($perfil['correo_institucional'] ?? ''); ?>">
-                            <p class="text-[10px] text-slate-400 mt-1">Gestionado por RRHH.</p>
-                        </div>
+
                     </div>
                 </div>
 
@@ -1516,7 +1536,7 @@ $perfil = $data;
         </div><!-- /overflow-y-auto -->
 
         <!-- Footer con navegación del wizard -->
-        <div class="sticky bottom-0 z-20 px-6 lg:px-8 py-5 border-t border-slate-100 flex items-center justify-between bg-slate-50">
+        <div class="modal-footer sticky bottom-0 z-20 px-6 lg:px-8 py-5 border-t border-slate-100 flex items-center justify-between">
             <button id="btn-anterior" onclick="pasoAnterior()"
                 class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition-all hidden">
                 ← Anterior
@@ -1548,7 +1568,9 @@ $perfil = $data;
         ESTILOS
     ═══════════════════════════════════════════════ -->
 <style>
-    /* Tabs */
+    /* ===============================
+       TABS
+    =============================== */
     .tab-btn {
         border-bottom: 3px solid transparent;
     }
@@ -1566,7 +1588,9 @@ $perfil = $data;
         color: #475569;
     }
 
-    /* Animación entrada */
+    /* ===============================
+       ANIMACIONES
+    =============================== */
     @keyframes fadeSlideIn {
         from {
             opacity: 0;
@@ -1583,11 +1607,14 @@ $perfil = $data;
         animation: fadeSlideIn .25s ease-out forwards;
     }
 
-    /* Form fields */
+    /* ===============================
+       CAMPOS
+    =============================== */
     .field-group {
         display: flex;
         flex-direction: column;
         gap: 6px;
+        min-width: 0;
     }
 
     .field-label {
@@ -1600,8 +1627,8 @@ $perfil = $data;
 
     .field-input {
         width: 100%;
-        min-height: 46px;
-        padding: 12px 14px;
+        min-height: 44px;
+        padding: 11px 14px;
         border: 1.5px solid #dbe3ee;
         border-radius: 14px;
         font-size: 14px;
@@ -1610,6 +1637,7 @@ $perfil = $data;
         background: #f8fafc;
         transition: border-color .2s, background .2s, box-shadow .2s;
         outline: none;
+        box-sizing: border-box;
     }
 
     .field-input:focus {
@@ -1628,7 +1656,14 @@ $perfil = $data;
         color: #cbd5e1;
     }
 
-    /* Scrollbar */
+    textarea.field-input {
+        min-height: 110px;
+        resize: vertical;
+    }
+
+    /* ===============================
+       SCROLLBAR
+    =============================== */
     .no-scrollbar::-webkit-scrollbar {
         display: none;
     }
@@ -1638,28 +1673,51 @@ $perfil = $data;
         scrollbar-width: none;
     }
 
-    /* Modal pantalla completa */
-    #modal-perfil .absolute.inset-0:last-child {
+    /* ===============================
+       MODAL BASE
+    =============================== */
+    #modal-perfil .modal-backdrop {
+        transition: opacity .35s ease;
+        opacity: 0;
+    }
+
+    #modal-perfil .modal-panel {
         transition: transform .35s cubic-bezier(.4, 0, .2, 1), opacity .35s ease;
         transform: translateY(16px);
         opacity: 0;
     }
 
-    #modal-perfil.modal-open .absolute.inset-0:last-child {
+    #modal-perfil.modal-open .modal-backdrop {
+        opacity: 1;
+    }
+
+    #modal-perfil.modal-open .modal-panel {
         transform: translateY(0);
         opacity: 1;
     }
 
-    #modal-perfil>.absolute.inset-0:first-child {
-        transition: opacity .35s ease;
-        opacity: 0;
+    /* ===============================
+       HEADER / BODY / FOOTER MODAL
+    =============================== */
+    #modal-perfil .modal-progress {
+        border-bottom: 1px solid #e2e8f0;
+        background: #fff;
     }
 
-    #modal-perfil.modal-open>.absolute.inset-0:first-child {
-        opacity: 1;
+    #modal-perfil .modal-body {
+        padding-top: 28px;
+        padding-bottom: 40px;
+        background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
     }
 
-    /* Stepper superior */
+    #modal-perfil .modal-footer {
+        box-shadow: 0 -8px 30px rgba(15, 23, 42, .06);
+        background: #f8fafc;
+    }
+
+    /* ===============================
+       STEPPER
+    =============================== */
     #modal-perfil .step-indicator {
         min-height: 76px;
         border-radius: 22px;
@@ -1675,16 +1733,16 @@ $perfil = $data;
         flex-shrink: 0;
     }
 
-    /* Área scroll */
-    #modal-perfil .flex-1.overflow-y-auto {
-        padding-top: 28px;
-        padding-bottom: 40px;
-        background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
-    }
-
-    /* ===== CADA STEP REAL COMO BLOQUE BLANCO ===== */
+    /* ===============================
+       STEP WRAPPER
+    =============================== */
     #modal-perfil .form-step {
-        margin-bottom: 24px;
+        margin-bottom: 20px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
     }
 
     #modal-perfil .form-step.hidden {
@@ -1695,122 +1753,8 @@ $perfil = $data;
         display: block !important;
     }
 
-    /* PASO 1 */
-    #modal-perfil #form-step-1 {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 28px;
-        padding: 24px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
-    }
-
-    #modal-perfil #form-step-1>.bg-white.border {
-        background: transparent !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-    }
-
-    /* PASO 2 */
-    #modal-perfil #form-step-2 {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 28px;
-        padding: 24px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
-    }
-
-    /* PASO 3 */
-    #modal-perfil #form-step-3 {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 28px;
-        padding: 24px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
-    }
-
-    #modal-perfil #form-step-3>.bg-slate-50.border {
-        background: transparent !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-    }
-
-    /* PASO 4 */
-    #modal-perfil #form-step-4 {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 28px;
-        padding: 24px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
-    }
-
-    #modal-perfil #form-step-4>.bg-slate-50.border {
-        background: transparent !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-    }
-
-    /* PASO 5 */
-    #modal-perfil #form-step-5 {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 28px;
-        padding: 24px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
-    }
-
-    #modal-perfil #form-step-5>.bg-slate-50.border {
-        background: transparent !important;
-        border: 0 !important;
-        border-radius: 0 !important;
-        box-shadow: none !important;
-        padding: 0 !important;
-    }
-
-    /* PASO 6 */
-    #modal-perfil #form-step-6 {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 28px;
-        padding: 24px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
-    }
-
-    /* PASO 7 */
-    #modal-perfil #form-step-7 {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 28px;
-        padding: 24px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
-    }
-
-    /* PASO 8 */
-    #modal-perfil #form-step-8 {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 28px;
-        padding: 24px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
-    }
-
-    /* PASO 9 */
-    #modal-perfil #form-step-9 {
-        background: #fff;
-        border: 1px solid #e2e8f0;
-        border-radius: 28px;
-        padding: 24px;
-        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
-    }
-
-    /* títulos de cada bloque */
     #modal-perfil .form-step>p.text-xs,
-    #modal-perfil .form-step .bg-white.border>p.text-xs {
+    #modal-perfil .form-step .step-title {
         margin-bottom: 16px;
         font-size: 11px;
         font-weight: 800;
@@ -1819,26 +1763,75 @@ $perfil = $data;
         text-transform: uppercase;
     }
 
-    /* bloques internos grises */
+    /* Limpia wrappers internos repetidos */
+    #modal-perfil #form-step-1>.bg-white.border,
+    #modal-perfil #form-step-3>.bg-slate-50.border,
+    #modal-perfil #form-step-4>.bg-slate-50.border,
+    #modal-perfil #form-step-5>.bg-slate-50.border {
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+
+    /* ===============================
+       GRID DEL MODAL
+    =============================== */
+    #modal-perfil .form-grid-2 {
+        display: grid;
+        grid-template-columns: repeat(1, minmax(0, 1fr));
+        gap: 16px;
+    }
+
+    @media (min-width: 768px) {
+        #modal-perfil .form-grid-2 {
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+        }
+    }
+
+    #modal-perfil .span-full {
+        grid-column: span 1 / span 1;
+    }
+
+    @media (min-width: 768px) {
+        #modal-perfil .span-full {
+            grid-column: span 2 / span 2;
+        }
+    }
+
+    /* ===============================
+       BLOQUES INTERNOS
+    =============================== */
+    #modal-perfil .step-card,
     #modal-perfil .bg-slate-50.border {
         border-radius: 22px;
         padding: 20px;
+        background: #f8fafc;
+        border: 1px solid #e2e8f0;
     }
 
-    /* filas dinámicas */
+    /* ===============================
+       FILAS DINÁMICAS
+    =============================== */
     #modal-perfil .hijo-row,
     #modal-perfil .formacion-row,
     #modal-perfil .idioma-row,
     #modal-perfil .experiencia-row {
         border-radius: 18px;
         padding: 18px;
+        background: #fff;
+        border: 1px solid #e2e8f0;
     }
 
-    /* Resumen paso final */
+    /* ===============================
+       RESUMEN FINAL
+    =============================== */
     .resumen-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
+        gap: 16px;
         padding: 12px 14px;
         background: #f8fafc;
         border-radius: 14px;
@@ -1859,11 +1852,16 @@ $perfil = $data;
         color: #1e293b;
     }
 
-    /* Footer */
-    #modal-perfil .sticky.bottom-0 {
-        box-shadow: 0 -8px 30px rgba(15, 23, 42, .06);
+    /* ===============================
+       EXPERIENCIA DETALLE
+    =============================== */
+    .exp-toggle-icon.rotate-180 {
+        transform: rotate(180deg);
     }
 
+    /* ===============================
+       MOBILE
+    =============================== */
     @media (max-width: 640px) {
         #modal-perfil .step-indicator {
             min-height: auto;
@@ -1874,23 +1872,53 @@ $perfil = $data;
             display: none;
         }
 
-        #modal-perfil #form-step-1,
-        #modal-perfil #form-step-2,
-        #modal-perfil #form-step-3,
-        #modal-perfil #form-step-4,
-        #modal-perfil #form-step-5,
-        #modal-perfil #form-step-6,
-        #modal-perfil #form-step-7,
-        #modal-perfil #form-step-8,
-        #modal-perfil #form-step-9 {
+        #modal-perfil .form-step {
             padding: 18px;
             border-radius: 22px;
         }
 
+        #modal-perfil .step-card,
         #modal-perfil .bg-slate-50.border {
             padding: 16px;
             border-radius: 18px;
         }
+
+        .resumen-item {
+            flex-direction: column;
+            align-items: flex-start;
+        }
+    }
+
+    /* ===== TITULOS PREMIUM DE BLOQUES ===== */
+    .section-title {
+        position: relative;
+        font-size: 12px;
+        font-weight: 800;
+        letter-spacing: .12em;
+        text-transform: uppercase;
+        color: #64748b;
+        padding-left: 14px;
+    }
+
+    /* línea roja lateral */
+    .section-title::before {
+        content: "";
+        position: absolute;
+        left: 0;
+        top: 50%;
+        transform: translateY(-50%);
+        width: 4px;
+        height: 20px;
+        border-radius: 4px;
+        background: linear-gradient(180deg, #7f1d1d, #b91c1c);
+    }
+
+    /* opcional: línea sutil debajo */
+    .section-divider {
+        height: 1px;
+        background: linear-gradient(to right, #7f1d1d, transparent);
+        margin-top: 8px;
+        margin-bottom: 18px;
     }
 </style>
 
