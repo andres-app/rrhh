@@ -903,13 +903,15 @@ $perfil = $data;
         <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cerrarModal()"></div>
 
         <!-- Panel -->
-        <div class="absolute inset-y-0 right-0 w-full max-w-2xl bg-white shadow-2xl flex flex-col">
+        <div class="absolute inset-0 w-screen h-screen bg-white shadow-2xl flex flex-col">
 
             <!-- Header del modal -->
-            <div class="flex items-center justify-between px-8 py-5 border-b border-slate-100 bg-gradient-to-r from-[#310404] to-red-900">
+            <div class="sticky top-0 z-20 flex items-center justify-between px-6 lg:px-8 py-5 border-b border-slate-100 bg-gradient-to-r from-[#310404] to-red-900">
                 <div>
                     <h2 class="text-white font-black text-lg">Modificar Perfil del Colaborador</h2>
-                    <p class="text-red-200 text-xs mt-0.5">Paso <span id="paso-actual">1</span> de <span id="paso-total">9</span></p>
+                    <p class="text-red-200 text-xs mt-0.5">
+                        Sección <span id="paso-actual">1</span> de <span id="paso-total">4</span>
+                    </p>
                 </div>
                 <button onclick="cerrarModal()" class="text-red-200 hover:text-white transition-colors">
                     <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
@@ -918,101 +920,101 @@ $perfil = $data;
                 </button>
             </div>
 
-            <!-- Barra de progreso + steps -->
-            <div class="px-8 pt-5 pb-0 border-b border-slate-100">
-                <!-- Indicadores de paso -->
-                <div class="flex items-center gap-0 mb-4">
-                    <?php
-                    $steps = [
-                        ['num' => 1, 'label' => 'Personal'],
-                        ['num' => 2, 'label' => 'Contacto'],
-                        ['num' => 3, 'label' => 'Familia'],
-                        ['num' => 4, 'label' => 'Pensión'],
-                        ['num' => 5, 'label' => 'Banco'],
-                        ['num' => 6, 'label' => 'Formación'],
-                        ['num' => 7, 'label' => 'Idiomas'],
-                        ['num' => 8, 'label' => 'Experiencia'],
-                        ['num' => 9, 'label' => 'Confirmar'],
-                    ];
-                    $total = count($steps);
-                    foreach ($steps as $idx => $step):
-                        $isLast = $idx === $total - 1;
-                    ?>
-                        <div class="flex items-center <?php echo $isLast ? '' : 'flex-1'; ?>">
-                            <div class="step-indicator flex flex-col items-center" data-step="<?php echo $step['num']; ?>">
-                                <div class="step-circle w-8 h-8 rounded-full border-2 flex items-center justify-center text-xs font-black transition-all duration-300
-                                <?php echo $step['num'] === 1 ? 'bg-red-900 border-red-900 text-white' : 'bg-white border-slate-200 text-slate-400'; ?>">
-                                    <span class="step-num"><?php echo $step['num']; ?></span>
-                                    <svg class="step-check w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                    </svg>
-                                </div>
-                                <p class="text-[10px] font-bold mt-1 transition-colors
-                                <?php echo $step['num'] === 1 ? 'text-red-900' : 'text-slate-400'; ?>"
+            <!-- Barra de progreso + steps compactos -->
+            <div class="sticky top-[82px] z-10 px-6 lg:px-8 pt-4 pb-4 border-b border-slate-100 bg-white">
+                <?php
+                $steps = [
+                    ['num' => 1, 'label' => 'Personal',   'desc' => 'Datos personales y contacto'],
+                    ['num' => 2, 'label' => 'Familia',    'desc' => 'Familia, pensión y banco'],
+                    ['num' => 3, 'label' => 'Trayectoria', 'desc' => 'Formación, idiomas y experiencia'],
+                    ['num' => 4, 'label' => 'Confirmar',  'desc' => 'Resumen final'],
+                ];
+                ?>
+
+                <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                    <?php foreach ($steps as $step): ?>
+                        <button
+                            type="button"
+                            onclick="irPaso(<?php echo $step['num']; ?>)"
+                            class="step-indicator flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-all duration-300 hover:border-red-200 hover:bg-red-50/40"
+                            data-step="<?php echo $step['num']; ?>">
+
+                            <div class="step-circle w-10 h-10 rounded-2xl border-2 flex items-center justify-center text-xs font-black shrink-0 transition-all duration-300
+                    <?php echo $step['num'] === 1 ? 'bg-red-900 border-red-900 text-white' : 'bg-white border-slate-200 text-slate-400'; ?>">
+                                <span class="step-num"><?php echo $step['num']; ?></span>
+                                <svg class="step-check w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                                </svg>
+                            </div>
+
+                            <div class="min-w-0">
+                                <p class="text-xs font-black uppercase tracking-widest transition-colors
+                        <?php echo $step['num'] === 1 ? 'text-red-900' : 'text-slate-400'; ?>"
                                     id="step-label-<?php echo $step['num']; ?>">
                                     <?php echo $step['label']; ?>
                                 </p>
+                                <p class="text-[11px] text-slate-500 mt-1 leading-tight">
+                                    <?php echo $step['desc']; ?>
+                                </p>
                             </div>
-                            <?php if (!$isLast): ?>
-                                <div class="step-line flex-1 h-0.5 mx-2 mb-4 rounded-full bg-slate-200 transition-all duration-500"
-                                    id="line-<?php echo $step['num']; ?>"></div>
-                            <?php endif; ?>
-                        </div>
+                        </button>
                     <?php endforeach; ?>
                 </div>
             </div>
 
-            <!-- Cuerpo scrollable del formulario -->
-            <div class="flex-1 overflow-y-auto px-8 py-6">
+            <!-- Modal Cuerpo scrollable del formulario de Pasos -->
+            <div class="flex-1 overflow-y-auto px-6 lg:px-10 py-7 lg:py-10 bg-gradient-to-b from-slate-50 to-slate-100/70">
 
                 <!-- ── PASO 1: Datos Personales ── -->
-                <div id="form-step-1" class="form-step space-y-4">
-                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Información Personal</p>
-                    <div class="grid grid-cols-2 gap-4">
-                        <div class="field-group col-span-2">
-                            <label class="field-label">Nombres y Apellidos</label>
-                            <input type="text" name="nombres_apellidos" class="field-input"
-                                value="<?php echo htmlspecialchars($perfil['nombres_apellidos'] ?? ''); ?>"
-                                title="Este campo solo puede ser modificado por RRHH">
-                            <p class="text-[10px] text-slate-400 mt-1">Solo RRHH puede modificar el nombre.</p>
-                        </div>
-                        <div class="field-group">
-                            <label class="field-label">DNI</label>
-                            <input type="text" name="dni" class="field-input" maxlength="8"
-                                value="<?php echo htmlspecialchars($perfil['dni'] ?? ''); ?>">
-                        </div>
-                        <div class="field-group">
-                            <label class="field-label">Fecha de Nacimiento</label>
-                            <input type="date" name="fecha_nacimiento" class="field-input"
-                                value="<?php echo htmlspecialchars($perfil['fecha_nacimiento'] ?? ''); ?>">
-                        </div>
-                        <div class="field-group">
-                            <label class="field-label">Lugar de Nacimiento</label>
-                            <input type="text" name="lugar_nacimiento" class="field-input"
-                                value="<?php echo htmlspecialchars($perfil['lugar_nacimiento'] ?? ''); ?>">
-                        </div>
-                        <div class="field-group">
-                            <label class="field-label">Estado Civil</label>
-                            <select name="estado_civil" class="field-input">
-                                <?php foreach (['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente'] as $opt):
-                                    $sel = ($perfil['estado_civil'] ?? '') === $opt ? 'selected' : ''; ?>
-                                    <option value="<?php echo $opt; ?>" <?php echo $sel; ?>><?php echo $opt; ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="field-group">
-                            <label class="field-label">Grupo Sanguíneo</label>
-                            <select name="grupo_sanguineo" class="field-input">
-                                <?php foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $g):
-                                    $sel = ($perfil['grupo_sanguineo'] ?? '') === $g ? 'selected' : ''; ?>
-                                    <option value="<?php echo $g; ?>" <?php echo $sel; ?>><?php echo $g; ?></option>
-                                <?php endforeach; ?>
-                            </select>
-                        </div>
-                        <div class="field-group">
-                            <label class="field-label">Talla</label>
-                            <input type="text" name="talla" class="field-input" placeholder="Ej: 1.70"
-                                value="<?php echo htmlspecialchars($perfil['talla'] ?? ''); ?>">
+                <div id="form-step-1" class="form-step">
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm space-y-4">
+                        <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Información Personal</p>
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                            <div class="field-group col-span-2">
+                                <label class="field-label">Nombres y Apellidos</label>
+                                <input type="text" name="nombres_apellidos" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['nombres_apellidos'] ?? ''); ?>"
+                                    title="Este campo solo puede ser modificado por RRHH">
+                                <p class="text-[10px] text-slate-400 mt-1">Solo RRHH puede modificar el nombre.</p>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">DNI</label>
+                                <input type="text" name="dni" class="field-input" maxlength="8"
+                                    value="<?php echo htmlspecialchars($perfil['dni'] ?? ''); ?>">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Fecha de Nacimiento</label>
+                                <input type="date" name="fecha_nacimiento" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['fecha_nacimiento'] ?? ''); ?>">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Lugar de Nacimiento</label>
+                                <input type="text" name="lugar_nacimiento" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['lugar_nacimiento'] ?? ''); ?>">
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Estado Civil</label>
+                                <select name="estado_civil" class="field-input">
+                                    <?php foreach (['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente'] as $opt):
+                                        $sel = ($perfil['estado_civil'] ?? '') === $opt ? 'selected' : ''; ?>
+                                        <option value="<?php echo $opt; ?>" <?php echo $sel; ?>><?php echo $opt; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Grupo Sanguíneo</label>
+                                <select name="grupo_sanguineo" class="field-input">
+                                    <?php foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $g):
+                                        $sel = ($perfil['grupo_sanguineo'] ?? '') === $g ? 'selected' : ''; ?>
+                                        <option value="<?php echo $g; ?>" <?php echo $sel; ?>><?php echo $g; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+                            <div class="field-group">
+                                <label class="field-label">Talla</label>
+                                <input type="text" name="talla" class="field-input" placeholder="Ej: 1.70"
+                                    value="<?php echo htmlspecialchars($perfil['talla'] ?? ''); ?>">
+                            </div>
                         </div>
                     </div>
                 </div>
@@ -1020,7 +1022,7 @@ $perfil = $data;
                 <!-- ── PASO 2: Contacto ── -->
                 <div id="form-step-2" class="form-step space-y-4 hidden">
                     <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Contacto y Domicilio</p>
-                    <div class="grid grid-cols-2 gap-4">
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="field-group col-span-2">
                             <label class="field-label">Dirección de Residencia</label>
                             <input type="text" name="direccion_residencia" class="field-input"
@@ -1057,7 +1059,7 @@ $perfil = $data;
                     <!-- Cónyuge -->
                     <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5 space-y-4">
                         <p class="text-[11px] font-black text-slate-500 uppercase tracking-widest">Cónyuge</p>
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="field-group col-span-2">
                                 <label class="field-label">Nombre Completo</label>
                                 <input type="text" name="conyuge" class="field-input"
@@ -1163,9 +1165,9 @@ $perfil = $data;
                     <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Sistema de Pensiones</p>
 
                     <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="field-group col-span-2">
-                                <label class="field-label">Sistema de pensiones</label>
+                                <label class="field-label">Tipo</label>
                                 <select name="pension[sistema_pension]" class="field-input">
                                     <option value="">Seleccionar</option>
                                     <?php foreach (['CNP', 'D.L 20520', 'CAJA MILITAR', 'OTROS'] as $opt): ?>
@@ -1240,7 +1242,7 @@ $perfil = $data;
                     <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-4">Datos Bancarios</p>
 
                     <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                        <div class="grid grid-cols-2 gap-4">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             <div class="field-group col-span-2">
                                 <label class="field-label">Nombre Banco Haberes</label>
                                 <input type="text" name="bancario[banco_haberes]" class="field-input"
@@ -1407,7 +1409,6 @@ $perfil = $data;
                     </div>
                 </div>
 
-
                 <!-- ── PASO 8: Exp. Laboral ── -->
                 <div id="form-step-8" class="form-step space-y-5 hidden">
                     <div class="flex items-center justify-between mb-2">
@@ -1507,6 +1508,7 @@ $perfil = $data;
                         <?php endif; ?>
                     </div>
                 </div>
+
                 <!-- ── PASO 9: Resumen Cambios ── -->
                 <div id="form-step-9" class="form-step hidden">
                     <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-6">Resumen de Cambios</p>
@@ -1529,27 +1531,27 @@ $perfil = $data;
                         <!-- Se rellena dinámicamente con JS -->
                     </div>
                 </div>
-
-            </div><!-- /overflow-y-auto -->
-
-            <!-- Footer con navegación del wizard -->
-            <div class="px-8 py-5 border-t border-slate-100 flex items-center justify-between bg-slate-50">
-                <button id="btn-anterior" onclick="pasoAnterior()"
-                    class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition-all hidden">
-                    ← Anterior
-                </button>
-                <div class="flex-1"></div>
-                <button id="btn-siguiente" onclick="pasoSiguiente()"
-                    class="px-6 py-2.5 rounded-xl bg-red-900 text-white text-sm font-bold hover:bg-[#310404] transition-all shadow-md shadow-red-900/20 active:scale-95">
-                    Siguiente →
-                </button>
-                <button id="btn-guardar" onclick="guardarPerfil()"
-                    class="px-6 py-2.5 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all shadow-md hidden active:scale-95">
-                    ✓ Guardar Cambios
-                </button>
             </div>
+        </div><!-- /overflow-y-auto -->
 
-        </div><!-- /panel -->
+        <!-- Footer con navegación del wizard -->
+        <div class="sticky bottom-0 z-20 px-6 lg:px-8 py-5 border-t border-slate-100 flex items-center justify-between bg-slate-50">
+            <button id="btn-anterior" onclick="pasoAnterior()"
+                class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition-all hidden">
+                ← Anterior
+            </button>
+            <div class="flex-1"></div>
+            <button id="btn-siguiente" onclick="pasoSiguiente()"
+                class="px-6 py-2.5 rounded-xl bg-red-900 text-white text-sm font-bold hover:bg-[#310404] transition-all shadow-md shadow-red-900/20 active:scale-95">
+                Siguiente →
+            </button>
+            <button id="btn-guardar" onclick="guardarPerfil()"
+                class="px-6 py-2.5 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all shadow-md hidden active:scale-95">
+                ✓ Guardar Cambios
+            </button>
+        </div>
+
+    </div><!-- /panel -->
     </div><!-- /modal -->
 <?php endif; ?>
 
@@ -1600,68 +1602,39 @@ $perfil = $data;
         animation: fadeSlideIn .25s ease-out forwards;
     }
 
-    /* Cards de información */
-    .info-card {
-        background: #f8fafc;
-        border: 1px solid #e2e8f0;
-        border-radius: 16px;
-        padding: 16px 20px;
-    }
-
-    .info-label {
-        font-size: 10px;
-        font-weight: 800;
-        text-transform: uppercase;
-        letter-spacing: .1em;
-        color: #94a3b8;
-        margin-bottom: 4px;
-    }
-
-    .info-value {
-        font-weight: 700;
-        color: #1e293b;
-    }
-
-    /* Section title */
-    .section-title {
-        font-size: 1rem;
-        font-weight: 900;
-        color: #1e293b;
-        letter-spacing: -.01em;
-    }
-
     /* Form fields */
     .field-group {
         display: flex;
         flex-direction: column;
-        gap: 4px;
+        gap: 6px;
     }
 
     .field-label {
         font-size: 11px;
-        font-weight: 700;
+        font-weight: 800;
         color: #64748b;
         text-transform: uppercase;
-        letter-spacing: .06em;
+        letter-spacing: .08em;
     }
 
     .field-input {
         width: 100%;
-        padding: 10px 14px;
-        border: 1.5px solid #e2e8f0;
-        border-radius: 12px;
+        min-height: 46px;
+        padding: 12px 14px;
+        border: 1.5px solid #dbe3ee;
+        border-radius: 14px;
         font-size: 14px;
         font-weight: 600;
         color: #1e293b;
         background: #f8fafc;
-        transition: border-color .2s, background .2s;
+        transition: border-color .2s, background .2s, box-shadow .2s;
         outline: none;
     }
 
     .field-input:focus {
         border-color: #7f1d1d;
         background: #fff;
-        box-shadow: 0 0 0 3px rgba(127, 29, 29, .08);
+        box-shadow: 0 0 0 4px rgba(127, 29, 29, .08);
     }
 
     .field-input[readonly] {
@@ -1684,33 +1657,210 @@ $perfil = $data;
         scrollbar-width: none;
     }
 
-    /* Modal deslizante */
-    #modal-perfil .absolute.inset-y-0 {
-        transition: transform .35s cubic-bezier(.4, 0, .2, 1);
-        transform: translateX(100%);
-    }
-
-    #modal-perfil.modal-open .absolute.inset-y-0 {
-        transform: translateX(0);
-    }
-
-    #modal-perfil .absolute.inset-0 {
-        transition: opacity .35s;
+    /* Modal pantalla completa */
+    #modal-perfil .absolute.inset-0:last-child {
+        transition: transform .35s cubic-bezier(.4, 0, .2, 1), opacity .35s ease;
+        transform: translateY(16px);
         opacity: 0;
     }
 
-    #modal-perfil.modal-open .absolute.inset-0 {
+    #modal-perfil.modal-open .absolute.inset-0:last-child {
+        transform: translateY(0);
         opacity: 1;
     }
 
-    /* Resumen paso 4 */
+    #modal-perfil>.absolute.inset-0:first-child {
+        transition: opacity .35s ease;
+        opacity: 0;
+    }
+
+    #modal-perfil.modal-open>.absolute.inset-0:first-child {
+        opacity: 1;
+    }
+
+    /* Stepper superior */
+    #modal-perfil .step-indicator {
+        min-height: 76px;
+        border-radius: 22px;
+        padding: 16px 18px;
+        box-shadow: 0 1px 2px rgba(15, 23, 42, .03);
+    }
+
+    #modal-perfil .step-indicator .step-circle {
+        width: 34px;
+        height: 34px;
+        border-radius: 9999px;
+        font-size: 11px;
+        flex-shrink: 0;
+    }
+
+    /* Área scroll */
+    #modal-perfil .flex-1.overflow-y-auto {
+        padding-top: 28px;
+        padding-bottom: 40px;
+        background: linear-gradient(to bottom, #f8fafc 0%, #f1f5f9 100%);
+    }
+
+    /* ===== CADA STEP REAL COMO BLOQUE BLANCO ===== */
+    #modal-perfil .form-step {
+        margin-bottom: 24px;
+    }
+
+    #modal-perfil .form-step.hidden {
+        display: none !important;
+    }
+
+    #modal-perfil .form-step.block {
+        display: block !important;
+    }
+
+    /* PASO 1 */
+    #modal-perfil #form-step-1 {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
+    }
+
+    #modal-perfil #form-step-1>.bg-white.border {
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+
+    /* PASO 2 */
+    #modal-perfil #form-step-2 {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
+    }
+
+    /* PASO 3 */
+    #modal-perfil #form-step-3 {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
+    }
+
+    #modal-perfil #form-step-3>.bg-slate-50.border {
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+
+    /* PASO 4 */
+    #modal-perfil #form-step-4 {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
+    }
+
+    #modal-perfil #form-step-4>.bg-slate-50.border {
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+
+    /* PASO 5 */
+    #modal-perfil #form-step-5 {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
+    }
+
+    #modal-perfil #form-step-5>.bg-slate-50.border {
+        background: transparent !important;
+        border: 0 !important;
+        border-radius: 0 !important;
+        box-shadow: none !important;
+        padding: 0 !important;
+    }
+
+    /* PASO 6 */
+    #modal-perfil #form-step-6 {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
+    }
+
+    /* PASO 7 */
+    #modal-perfil #form-step-7 {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
+    }
+
+    /* PASO 8 */
+    #modal-perfil #form-step-8 {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
+    }
+
+    /* PASO 9 */
+    #modal-perfil #form-step-9 {
+        background: #fff;
+        border: 1px solid #e2e8f0;
+        border-radius: 28px;
+        padding: 24px;
+        box-shadow: 0 10px 30px rgba(15, 23, 42, .05);
+    }
+
+    /* títulos de cada bloque */
+    #modal-perfil .form-step>p.text-xs,
+    #modal-perfil .form-step .bg-white.border>p.text-xs {
+        margin-bottom: 16px;
+        font-size: 11px;
+        font-weight: 800;
+        letter-spacing: .12em;
+        color: #94a3b8;
+        text-transform: uppercase;
+    }
+
+    /* bloques internos grises */
+    #modal-perfil .bg-slate-50.border {
+        border-radius: 22px;
+        padding: 20px;
+    }
+
+    /* filas dinámicas */
+    #modal-perfil .hijo-row,
+    #modal-perfil .formacion-row,
+    #modal-perfil .idioma-row,
+    #modal-perfil .experiencia-row {
+        border-radius: 18px;
+        padding: 18px;
+    }
+
+    /* Resumen paso final */
     .resumen-item {
         display: flex;
         justify-content: space-between;
         align-items: center;
-        padding: 10px 14px;
+        padding: 12px 14px;
         background: #f8fafc;
-        border-radius: 12px;
+        border-radius: 14px;
         border: 1px solid #e2e8f0;
     }
 
@@ -1726,6 +1876,40 @@ $perfil = $data;
         font-size: 13px;
         font-weight: 800;
         color: #1e293b;
+    }
+
+    /* Footer */
+    #modal-perfil .sticky.bottom-0 {
+        box-shadow: 0 -8px 30px rgba(15, 23, 42, .06);
+    }
+
+    @media (max-width: 640px) {
+        #modal-perfil .step-indicator {
+            min-height: auto;
+            padding: 12px 14px;
+        }
+
+        #modal-perfil .step-indicator p:last-child {
+            display: none;
+        }
+
+        #modal-perfil #form-step-1,
+        #modal-perfil #form-step-2,
+        #modal-perfil #form-step-3,
+        #modal-perfil #form-step-4,
+        #modal-perfil #form-step-5,
+        #modal-perfil #form-step-6,
+        #modal-perfil #form-step-7,
+        #modal-perfil #form-step-8,
+        #modal-perfil #form-step-9 {
+            padding: 18px;
+            border-radius: 22px;
+        }
+
+        #modal-perfil .bg-slate-50.border {
+            padding: 16px;
+            border-radius: 18px;
+        }
     }
 </style>
 
@@ -2100,7 +2284,15 @@ $perfil = $data;
     // ── MODAL & WIZARD ────────────────────────────────
     const valoresOriginales = {};
     let pasoActual = 1;
-    const totalPasos = 9;
+    const totalPasos = 4;
+
+    // Cada macro-paso agrupa varios pasos reales del formulario
+    const gruposPasos = {
+        1: [1, 2], // Personal + Contacto
+        2: [3, 4, 5], // Familia + Pensión + Banco
+        3: [6, 7, 8], // Formación + Idiomas + Experiencia
+        4: [9] // Confirmación
+    };
 
     function abrirModal() {
         const m = document.getElementById('modal-perfil');
@@ -2169,44 +2361,53 @@ $perfil = $data;
     }
 
     function irPaso(n) {
-        document.querySelectorAll('.form-step').forEach(s => s.classList.add('hidden'));
-        const pasoForm = document.getElementById('form-step-' + n);
-        if (pasoForm) pasoForm.classList.remove('hidden');
+        document.querySelectorAll('.form-step').forEach(s => {
+            s.classList.add('hidden');
+            s.classList.remove('block');
+        });
+
+        (gruposPasos[n] || []).forEach(realStep => {
+            const bloque = document.getElementById('form-step-' + realStep);
+            if (bloque) {
+                bloque.classList.remove('hidden');
+                bloque.classList.add('block');
+            }
+        });
 
         for (let i = 1; i <= totalPasos; i++) {
-            const circle = document.querySelector(`.step-indicator[data-step="${i}"] .step-circle`);
-            const numEl = document.querySelector(`.step-indicator[data-step="${i}"] .step-num`);
-            const chkEl = document.querySelector(`.step-indicator[data-step="${i}"] .step-check`);
+            const indicator = document.querySelector(`.step-indicator[data-step="${i}"]`);
+            const circle = indicator?.querySelector('.step-circle');
+            const numEl = indicator?.querySelector('.step-num');
+            const chkEl = indicator?.querySelector('.step-check');
             const label = document.getElementById('step-label-' + i);
-            const line = document.getElementById('line-' + i);
 
             if (!circle) continue;
 
+            indicator.classList.remove('border-red-200', 'bg-red-50', 'border-green-200', 'bg-green-50');
             circle.classList.remove(
                 'bg-red-900', 'border-red-900', 'text-white',
                 'bg-green-500', 'border-green-500',
                 'bg-white', 'border-slate-200', 'text-slate-400'
             );
-            label && label.classList.remove('text-red-900', 'text-green-600', 'text-slate-400');
+            label?.classList.remove('text-red-900', 'text-green-600', 'text-slate-400');
 
             if (i < n) {
+                indicator.classList.add('border-green-200', 'bg-green-50');
                 circle.classList.add('bg-green-500', 'border-green-500', 'text-white');
-                numEl && numEl.classList.add('hidden');
-                chkEl && chkEl.classList.remove('hidden');
-                label && label.classList.add('text-green-600');
-                if (line) line.style.background = '#22c55e';
+                numEl?.classList.add('hidden');
+                chkEl?.classList.remove('hidden');
+                label?.classList.add('text-green-600');
             } else if (i === n) {
+                indicator.classList.add('border-red-200', 'bg-red-50');
                 circle.classList.add('bg-red-900', 'border-red-900', 'text-white');
-                numEl && numEl.classList.remove('hidden');
-                chkEl && chkEl.classList.add('hidden');
-                label && label.classList.add('text-red-900');
-                if (line) line.style.background = '#e2e8f0';
+                numEl?.classList.remove('hidden');
+                chkEl?.classList.add('hidden');
+                label?.classList.add('text-red-900');
             } else {
                 circle.classList.add('bg-white', 'border-slate-200', 'text-slate-400');
-                numEl && numEl.classList.remove('hidden');
-                chkEl && chkEl.classList.add('hidden');
-                label && label.classList.add('text-slate-400');
-                if (line) line.style.background = '#e2e8f0';
+                numEl?.classList.remove('hidden');
+                chkEl?.classList.add('hidden');
+                label?.classList.add('text-slate-400');
             }
         }
 
@@ -2226,6 +2427,9 @@ $perfil = $data;
         if (n === totalPasos) construirResumen();
 
         pasoActual = n;
+
+        const contenedorScroll = document.querySelector('#modal-perfil .flex-1.overflow-y-auto');
+        if (contenedorScroll) contenedorScroll.scrollTop = 0;
     }
 
     function pasoSiguiente() {
