@@ -33,13 +33,13 @@ $perfil = $data;
 
                     <!-- Avatar inicial -->
                     <div class="h-36 w-36 rounded-3xl bg-red-900 flex items-center justify-center text-5xl font-black text-white shadow-2xl ring-8 ring-white shrink-0">
-                        <?php echo mb_substr($data['nombres_apellidos'], 0, 1); ?>
+                        <?php echo mb_substr($data['nombres_apellidos'] ?? 'C', 0, 1); ?>
                     </div>
 
                     <!-- Nombre y badges -->
                     <div class="flex-1 text-center md:text-left">
                         <h1 class="text-3xl font-black text-slate-800 tracking-tight mb-2">
-                            <?php echo htmlspecialchars($data['nombres_apellidos']); ?>
+                            <?php echo htmlspecialchars($data['nombres_apellidos'] ?? 'Colaborador'); ?>
                         </h1>
                         <div class="flex flex-wrap justify-center md:justify-start gap-2">
                             <span class="bg-red-50 text-red-900 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-red-100">
@@ -243,7 +243,7 @@ $perfil = $data;
                                 <div class="p-4 bg-red-50 rounded-2xl mb-3 border border-red-100">
                                     <p class="text-[10px] font-bold text-red-400 uppercase tracking-tighter mb-1">Cónyuge</p>
                                     <p class="font-black text-red-950 mb-1">
-                                        <?php echo htmlspecialchars($data['conyuge'] ?: 'No registrado'); ?>
+                                        <?php echo htmlspecialchars(($data['conyuge'] ?? '') ?: 'No registrado'); ?>
                                     </p>
                                     <!-- CORRECCIÓN 3: Fecha de nacimiento cónyuge -->
                                     <?php if (!empty($data['onomastico_conyuge'])): ?>
@@ -1160,7 +1160,7 @@ $perfil = $data;
 
                             <div id="lista-hijos" class="space-y-3">
                                 <?php
-                                $hijos = array_filter($perfil['familia'] ?? [], fn($f) => in_array($f['parentesco'], ['HIJO', 'HIJA']));
+                                $hijos = array_filter($perfil['familia'] ?? [], fn($f) => in_array(($f['parentesco'] ?? ''), ['HIJO', 'HIJA'], true));
                                 if (empty($hijos)): ?>
                                     <div id="sin-hijos" class="text-center py-5 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50/70">
                                         No hay hijos registrados. Haz clic en "Agregar hijo" para añadir.
@@ -2189,9 +2189,9 @@ $perfil = $data;
 
     function eliminarFila(btn) {
         const row = btn.closest('.hijo-row') || btn.closest('.formacion-row') || btn.closest('.idioma-row') || btn.closest('.experiencia-row');
-        const isIdioma = row.classList.contains('idioma-row');
         if (!row) return;
 
+        const isIdioma = row.classList.contains('idioma-row');
         const isHijo = row.classList.contains('hijo-row');
         const isFormacion = row.classList.contains('formacion-row');
         const isExperiencia = row.classList.contains('experiencia-row');
@@ -2715,21 +2715,6 @@ $perfil = $data;
         if (pasoActual > 1) irPaso(pasoActual - 1);
     }
 
-    // ── RESUMEN EN ÚLTIMO PASO ────────────────────────
-    const labelesCampos = {
-        fecha_nacimiento: 'Fecha de Nacimiento',
-        lugar_nacimiento: 'Lugar de Nacimiento',
-        estado_civil: 'Estado Civil',
-        grupo_sanguineo: 'Grupo Sanguíneo',
-        talla: 'Talla',
-        direccion_residencia: 'Dirección',
-        distrito: 'Distrito',
-        celular: 'Celular',
-        correo_personal: 'Correo Personal',
-        conyuge: 'Cónyuge',
-        onomastico_conyuge: 'Fecha Nac. Cónyuge',
-    };
-
     function construirResumen() {
         const container = document.getElementById('resumen-cambios');
         if (!container) return;
@@ -3194,7 +3179,7 @@ $perfil = $data;
     document.querySelectorAll('.idioma-row').forEach(row => {
 
         const idioma = row.querySelector('.input-idioma')?.value || 'Sin idioma';
-        const nivel = row.querySelector('.input-nivel')?.value || 'BÁSICO';
+        const nivel = row.querySelector('.input-nivel')?.value || 'BASICO';
 
         if (row.querySelector('.val-idioma')) {
             row.querySelector('.val-idioma').textContent = idioma;
