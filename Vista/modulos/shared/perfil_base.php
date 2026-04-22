@@ -2101,83 +2101,81 @@ $perfil = $data;
     // ── MAGIA DE ABRIR/CERRAR FILAS ────────────────────────
     function toggleFila(btn, editar) {
         const row = btn.closest('.hijo-row, .formacion-row, .experiencia-row, .idioma-row');
-
         if (!row) return;
 
         const resumen = row.querySelector('.item-resumen');
         const form = row.querySelector('.item-form');
 
+        if (!resumen || !form) return;
+
         if (editar) {
             resumen.classList.add('hidden');
+            resumen.classList.remove('flex');
             form.classList.remove('hidden');
         } else {
             resumen.classList.remove('hidden');
+            resumen.classList.add('flex');
             form.classList.add('hidden');
 
-            // HIJOS
             if (row.classList.contains('hijo-row')) {
-                row.querySelector('.val-nombre').textContent =
-                    row.querySelector('.input-nombre')?.value || 'Sin nombre';
+                const nombre = row.querySelector('.input-nombre')?.value?.trim() || 'Sin nombre';
+                const parentesco = row.querySelector('.input-parentesco')?.value || 'HIJO';
+                const dni = row.querySelector('.input-dni')?.value?.trim() || '—';
 
-                row.querySelector('.val-parentesco').textContent =
-                    row.querySelector('.input-parentesco')?.value || 'HIJO';
+                const elNombre = row.querySelector('.val-nombre');
+                const elParentesco = row.querySelector('.val-parentesco');
+                const elDni = row.querySelector('.val-dni');
 
-                row.querySelector('.val-dni').textContent =
-                    row.querySelector('.input-dni')?.value || '—';
-            }
+                if (elNombre) elNombre.textContent = nombre;
+                if (elParentesco) elParentesco.textContent = parentesco;
+                if (elDni) elDni.textContent = dni;
+            } else if (row.classList.contains('formacion-row')) {
+                const carrera = row.querySelector('.input-carrera')?.value?.trim() || 'Sin carrera';
+                const grado = row.querySelector('.input-grado')?.value || 'BACHILLER';
+                const inst = row.querySelector('.input-inst')?.value?.trim() || 'Sin institución';
 
-            // FORMACIÓN
-            else if (row.classList.contains('formacion-row')) {
-                row.querySelector('.val-carrera').textContent =
-                    row.querySelector('.input-carrera')?.value || 'Sin carrera';
+                const elCarrera = row.querySelector('.val-carrera');
+                const elGrado = row.querySelector('.val-grado');
+                const elInst = row.querySelector('.val-inst');
 
-                row.querySelector('.val-grado').textContent =
-                    row.querySelector('.input-grado')?.value || 'BACHILLER';
-
-                row.querySelector('.val-inst').textContent =
-                    row.querySelector('.input-inst')?.value || 'Sin institución';
-            }
-
-            // EXPERIENCIA
-            else if (row.classList.contains('experiencia-row')) {
-                const cargo = row.querySelector('.input-cargo')?.value || 'Sin cargo';
-                const empresa = row.querySelector('.input-empresa')?.value || 'Sin empresa';
-
+                if (elCarrera) elCarrera.textContent = carrera;
+                if (elGrado) elGrado.textContent = grado;
+                if (elInst) elInst.textContent = inst;
+            } else if (row.classList.contains('experiencia-row')) {
+                const cargo = row.querySelector('.input-cargo')?.value?.trim() || 'Sin cargo';
+                const empresa = row.querySelector('.input-empresa')?.value?.trim() || 'Sin empresa';
                 const fechaInicio = row.querySelector('.input-inicio')?.value || '';
                 const fechaFin = row.querySelector('.input-fin')?.value || '';
                 const actual = row.querySelector('.input-actual')?.checked;
 
-                row.querySelector('.val-cargo').textContent = cargo;
-                row.querySelector('.val-empresa').textContent = empresa;
-
                 let textoFechas = 'Sin fechas';
-
                 if (fechaInicio) {
                     const ini = formatearFecha(fechaInicio);
-
                     if (actual) {
                         textoFechas = `${ini} - Actualidad`;
                     } else if (fechaFin) {
-                        const fin = formatearFecha(fechaFin);
-                        textoFechas = `${ini} - ${fin}`;
+                        textoFechas = `${ini} - ${formatearFecha(fechaFin)}`;
                     } else {
                         textoFechas = ini;
                     }
                 }
 
+                const elCargo = row.querySelector('.val-cargo');
+                const elEmpresa = row.querySelector('.val-empresa');
                 const elFechas = row.querySelector('.val-fechas');
-                if (elFechas) {
-                    elFechas.textContent = textoFechas;
-                }
-            }
 
-            // IDIOMAS
-            else if (row.classList.contains('idioma-row')) {
-                row.querySelector('.val-idioma').textContent =
-                    row.querySelector('.input-idioma')?.value || 'Sin idioma';
+                if (elCargo) elCargo.textContent = cargo;
+                if (elEmpresa) elEmpresa.textContent = empresa;
+                if (elFechas) elFechas.textContent = textoFechas;
+            } else if (row.classList.contains('idioma-row')) {
+                const idioma = row.querySelector('.input-idioma')?.value?.trim() || 'Sin idioma';
+                const nivel = row.querySelector('.input-nivel')?.value || 'BASICO';
 
-                row.querySelector('.val-nivel').textContent =
-                    row.querySelector('.input-nivel')?.value || 'BASICO';
+                const elIdioma = row.querySelector('.val-idioma');
+                const elNivel = row.querySelector('.val-nivel');
+
+                if (elIdioma) elIdioma.textContent = idioma;
+                if (elNivel) elNivel.textContent = nivel;
             }
         }
     }
@@ -2521,23 +2519,24 @@ $perfil = $data;
 
     // ── MODAL & WIZARD ────────────────────────────────
     const valoresOriginales = {};
+
     let pasoActual = 1;
     const totalPasos = 4;
 
-    // Cada macro-paso agrupa varios pasos reales del formulario
     const gruposPasos = {
-        1: [1, 2], // Personal + Contacto
-        2: [3, 4, 5], // Familia + Pensión + Banco
-        3: [6, 7, 8], // Formación + Idiomas + Experiencia
-        4: [9] // Confirmación
+        1: [1],
+        2: [3, 4],
+        3: [6, 7],
+        4: [9]
     };
 
-    function abrirModal() {
 
-        // 🔥 LIMPIAR ESTADO ANTERIOR (CRÍTICO)
+    function abrirModal() {
         Object.keys(valoresOriginales).forEach(key => delete valoresOriginales[key]);
 
         const m = document.getElementById('modal-perfil');
+        if (!m) return;
+
         m.classList.remove('hidden');
         requestAnimationFrame(() => m.classList.add('modal-open'));
 
@@ -2547,84 +2546,80 @@ $perfil = $data;
                 !el.name.includes('hijos') &&
                 !el.name.includes('formacion') &&
                 !el.name.includes('experiencia') &&
-                !el.name.includes('idiomas[')
+                !el.name.includes('idiomas[') &&
+                !el.name.startsWith('pension[') &&
+                !el.name.startsWith('bancario[')
             ) {
-                if (el.type === 'checkbox') {
-                    valoresOriginales[el.name] = el.checked ? 1 : 0;
-                } else {
-                    valoresOriginales[el.name] = el.value ?? '';
-                }
+                valoresOriginales[el.name] = el.type === 'checkbox' ?
+                    (el.checked ? 1 : 0) :
+                    (el.value ?? '').trim();
             }
         });
 
-        valoresOriginales['hijos'] = [];
-        document.querySelectorAll('.hijo-row').forEach(row => {
-            const id = row.querySelector('[name*="[id]"]')?.value;
-            if (id) {
-                valoresOriginales['hijos'].push({
-                    id: id,
-                    nombre: row.querySelector('[name*="[nombre]"]')?.value,
-                    dni: row.querySelector('[name*="[dni]"]')?.value,
-                    fecha: row.querySelector('[name*="[fecha_nacimiento]"]')?.value
-                });
-            }
+        valoresOriginales.hijos = [];
+        document.querySelectorAll('.hijo-row').forEach((row, index) => {
+            valoresOriginales.hijos.push({
+                idx: String(row.dataset.index ?? index),
+                id: row.querySelector('[name*="[id]"]')?.value || '',
+                nombre: row.querySelector('[name*="[nombre]"]')?.value?.trim() || '',
+                parentesco: row.querySelector('[name*="[parentesco]"]')?.value || 'HIJO',
+                fecha: row.querySelector('[name*="[fecha_nacimiento]"]')?.value || '',
+                dni: row.querySelector('[name*="[dni]"]')?.value?.trim() || ''
+            });
         });
 
-        valoresOriginales['formacion'] = [];
-        document.querySelectorAll('.formacion-row').forEach(row => {
-            const id = row.querySelector('[name*="[id]"]')?.value;
-            if (id) {
-                valoresOriginales['formacion'].push({
-                    id: id,
-                    tipo_grado: row.querySelector('[name*="[tipo_grado]"]')?.value || '',
-                    descripcion_carrera: row.querySelector('[name*="[descripcion_carrera]"]')?.value || '',
-                    institucion: row.querySelector('[name*="[institucion]"]')?.value || '',
-                    anio_realizacion: row.querySelector('[name*="[anio_realizacion]"]')?.value || '',
-                    horas_lectivas: row.querySelector('[name*="[horas_lectivas]"]')?.value || '',
-                    especialidad: row.querySelector('[name*="[especialidad]"]')?.value || '',
-                    grado_alcanzado: row.querySelector('[name*="[grado_alcanzado]"]')?.value || ''
-                });
-            }
+        valoresOriginales.formacion = [];
+        document.querySelectorAll('.formacion-row').forEach((row, index) => {
+            valoresOriginales.formacion.push({
+                idx: String(row.dataset.index ?? index),
+                id: row.querySelector('[name*="[id]"]')?.value || '',
+                tipo_grado: row.querySelector('[name*="[tipo_grado]"]')?.value || '',
+                descripcion_carrera: row.querySelector('[name*="[descripcion_carrera]"]')?.value?.trim() || '',
+                institucion: row.querySelector('[name*="[institucion]"]')?.value?.trim() || '',
+                anio_realizacion: row.querySelector('[name*="[anio_realizacion]"]')?.value || '',
+                horas_lectivas: row.querySelector('[name*="[horas_lectivas]"]')?.value || '',
+                especialidad: row.querySelector('[name*="[especialidad]"]')?.value?.trim() || '',
+                grado_alcanzado: row.querySelector('[name*="[grado_alcanzado]"]')?.value?.trim() || ''
+            });
         });
 
-        valoresOriginales['experiencia'] = [];
-        document.querySelectorAll('.experiencia-row').forEach(row => {
-            const id = row.querySelector('[name*="[id]"]')?.value;
-            if (id) {
-                valoresOriginales['experiencia'].push({
-                    id: id,
-                    empresa_entidad: row.querySelector('[name*="[empresa_entidad]"]')?.value || '',
-                    unidad_organica_area: row.querySelector('[name*="[unidad_organica_area]"]')?.value || '',
-                    cargo_puesto: row.querySelector('[name*="[cargo_puesto]"]')?.value || '',
-                    fecha_inicio: row.querySelector('[name*="[fecha_inicio]"]')?.value || '',
-                    fecha_fin: row.querySelector('[name*="[fecha_fin]"]')?.value || '',
-                    actualmente_trabaja: row.querySelector('[name*="[actualmente_trabaja]"]')?.checked ? 1 : 0,
-                    funciones_principales: row.querySelector('[name*="[funciones_principales]"]')?.value || ''
-                });
-            }
+        valoresOriginales.experiencia = [];
+        document.querySelectorAll('.experiencia-row').forEach((row, index) => {
+            valoresOriginales.experiencia.push({
+                idx: String(row.dataset.index ?? index),
+                id: row.querySelector('[name*="[id]"]')?.value || '',
+                empresa_entidad: row.querySelector('[name*="[empresa_entidad]"]')?.value?.trim() || '',
+                unidad_organica_area: row.querySelector('[name*="[unidad_organica_area]"]')?.value?.trim() || '',
+                cargo_puesto: row.querySelector('[name*="[cargo_puesto]"]')?.value?.trim() || '',
+                fecha_inicio: row.querySelector('[name*="[fecha_inicio]"]')?.value || '',
+                fecha_fin: row.querySelector('[name*="[fecha_fin]"]')?.value || '',
+                actualmente_trabaja: row.querySelector('[name*="[actualmente_trabaja]"]')?.checked ? 1 : 0,
+                funciones_principales: row.querySelector('[name*="[funciones_principales]"]')?.value?.trim() || ''
+            });
         });
 
-        valoresOriginales['idiomas'] = [];
-        document.querySelectorAll('.idioma-row').forEach(row => {
-            valoresOriginales['idiomas'].push({
-                idioma: row.querySelector('[name*="[idioma]"]')?.value || '',
+        valoresOriginales.idiomas = [];
+        document.querySelectorAll('.idioma-row').forEach((row, index) => {
+            valoresOriginales.idiomas.push({
+                idx: String(row.dataset.index ?? index),
+                idioma: row.querySelector('[name*="[idioma]"]')?.value?.trim() || '',
                 nivel: row.querySelector('[name*="[nivel]"]')?.value || 'BASICO'
             });
         });
 
-        valoresOriginales['pension'] = {
+        valoresOriginales.pension = {
             sistema_pension: document.querySelector('[name="pension[sistema_pension]"]')?.value || '',
             afp: document.querySelector('[name="pension[afp]"]')?.value || '',
-            cuspp: document.querySelector('[name="pension[cuspp]"]')?.value || '',
+            cuspp: document.querySelector('[name="pension[cuspp]"]')?.value?.trim() || '',
             tipo_comision: document.querySelector('[name="pension[tipo_comision]"]')?.value || '',
             fecha_inscripcion: document.querySelector('[name="pension[fecha_inscripcion]"]')?.value || '',
             sin_afp_afiliarme: document.querySelector('[name="pension[sin_afp_afiliarme]"]')?.checked ? 1 : 0
         };
 
-        valoresOriginales['bancario'] = {
-            banco_haberes: document.querySelector('[name="bancario[banco_haberes]"]')?.value || '',
-            numero_cuenta: document.querySelector('[name="bancario[numero_cuenta]"]')?.value || '',
-            numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value || ''
+        valoresOriginales.bancario = {
+            banco_haberes: document.querySelector('[name="bancario[banco_haberes]"]')?.value?.trim() || '',
+            numero_cuenta: document.querySelector('[name="bancario[numero_cuenta]"]')?.value?.trim() || '',
+            numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value?.trim() || ''
         };
 
         irPaso(1);
@@ -2632,8 +2627,12 @@ $perfil = $data;
 
     function cerrarModal() {
         const m = document.getElementById('modal-perfil');
+        if (!m) return;
+
         m.classList.remove('modal-open');
-        setTimeout(() => m.classList.add('hidden'), 350);
+        setTimeout(() => {
+            if (m) m.classList.add('hidden');
+        }, 350);
     }
 
     function irPaso(n) {
@@ -2733,16 +2732,35 @@ $perfil = $data;
 
     function construirResumen() {
         const container = document.getElementById('resumen-cambios');
+        if (!container) return;
+
         const cambios = [];
 
         const safe = (v) => {
-            if (v === null || v === undefined || v === '') return '—';
+            if (v === null || v === undefined || String(v).trim() === '') return '—';
             return String(v);
         };
 
-        const boolTexto = (v) => Number(v) === 1 ? 'Sí' : 'No';
+        const iguales = (a, b) => JSON.stringify(a) === JSON.stringify(b);
 
-        // ── Campos simples ─────────────────────────
+        const labelsCampos = {
+            nombres_apellidos: 'Nombres y Apellidos',
+            dni: 'DNI',
+            fecha_nacimiento: 'Fecha de Nacimiento',
+            lugar_nacimiento: 'Lugar de Nacimiento',
+            estado_civil: 'Estado Civil',
+            grupo_sanguineo: 'Grupo Sanguíneo',
+            talla: 'Talla',
+            direccion_residencia: 'Dirección',
+            distrito: 'Distrito',
+            celular: 'Celular',
+            correo_personal: 'Correo Personal',
+            correo_institucional: 'Correo Institucional',
+            conyuge: 'Cónyuge',
+            onomastico_conyuge: 'Fecha Nac. Cónyuge',
+            dni_conyuge: 'DNI Cónyuge'
+        };
+
         document.querySelectorAll('.form-step [name]').forEach(el => {
             if (
                 el.readOnly ||
@@ -2754,285 +2772,228 @@ $perfil = $data;
                 el.name.startsWith('bancario[')
             ) return;
 
-            if (!labelesCampos[el.name]) return;
+            if (!labelsCampos[el.name]) return;
 
             const original = valoresOriginales[el.name] ?? '';
-            const actual = el.type === 'checkbox' ? (el.checked ? 1 : 0) : (el.value ?? '');
+            const actual = el.type === 'checkbox' ? (el.checked ? 1 : 0) : ((el.value ?? '').trim());
 
             if (String(original) !== String(actual)) {
                 cambios.push(`
                 <div class="resumen-item">
-                    <span class="r-label">${labelesCampos[el.name]}</span>
+                    <span class="r-label">${labelsCampos[el.name]}</span>
                     <div class="text-right">
                         <p class="text-[11px] text-slate-400 line-through">${safe(original)}</p>
-                        <p class="r-val text-green-700">${el.type === 'checkbox' ? boolTexto(actual) : safe(actual)}</p>
+                        <p class="r-val text-green-700">${safe(actual)}</p>
                     </div>
                 </div>
             `);
             }
         });
 
-        // ── HIJOS: nuevos / editados / eliminados ─────────────────────────
-        const hijosActualesIds = [];
-
-        document.querySelectorAll('.hijo-row').forEach(row => {
-            const idActual = row.querySelector('[name*="[id]"]')?.value || '';
-            const nombreActual = row.querySelector('[name*="[nombre]"]')?.value ?? '';
-            const dniActual = row.querySelector('[name*="[dni]"]')?.value ?? '';
-            const fechaActual = row.querySelector('[name*="[fecha_nacimiento]"]')?.value ?? '';
-            const parentescoActual = row.querySelector('[name*="[parentesco]"]')?.value ?? 'HIJO';
-
-            if (!nombreActual && !dniActual && !fechaActual) return;
-
-            if (idActual) hijosActualesIds.push(String(idActual));
-
-            const original = (valoresOriginales['hijos'] || []).find(h => String(h.id) === String(idActual));
-
-            if (!original) {
-                cambios.push(`
-                <div class="resumen-item border-l-4 border-green-500">
-                    <span class="r-label text-green-600">Nuevo Hijo</span>
-                    <span class="r-val">${safe(nombreActual)} (${safe(parentescoActual)})</span>
-                </div>
-            `);
-            } else if (
-                String(original.nombre ?? '') !== String(nombreActual) ||
-                String(original.dni ?? '') !== String(dniActual) ||
-                String(original.fecha ?? '') !== String(fechaActual)
-            ) {
-                cambios.push(`
-                <div class="resumen-item border-l-4 border-amber-500">
-                    <span class="r-label text-amber-600">Hijo Editado</span>
-                    <span class="r-val">${safe(nombreActual)} (${safe(parentescoActual)})</span>
-                </div>
-            `);
-            }
-        });
-
-        (valoresOriginales['hijos'] || []).forEach(hijoOriginal => {
-            if (!hijosActualesIds.includes(String(hijoOriginal.id))) {
-                cambios.push(`
-                <div class="resumen-item border-l-4 border-red-500">
-                    <span class="r-label text-red-600">Hijo Eliminado</span>
-                    <span class="r-val">${safe(hijoOriginal.nombre)}</span>
-                </div>
-            `);
-            }
-        });
-
-        // ── FORMACIÓN: nuevos / editados / eliminados ─────────────────────────
-        const formacionActualIds = [];
-
-        document.querySelectorAll('.formacion-row').forEach(row => {
-            const idActual = row.querySelector('[name*="[id]"]')?.value || '';
-            const actual = {
-                tipo_grado: row.querySelector('[name*="[tipo_grado]"]')?.value ?? '',
-                descripcion_carrera: row.querySelector('[name*="[descripcion_carrera]"]')?.value ?? '',
-                institucion: row.querySelector('[name*="[institucion]"]')?.value ?? '',
-                anio_realizacion: row.querySelector('[name*="[anio_realizacion]"]')?.value ?? '',
-                horas_lectivas: row.querySelector('[name*="[horas_lectivas]"]')?.value ?? '',
-                especialidad: row.querySelector('[name*="[especialidad]"]')?.value ?? '',
-                grado_alcanzado: row.querySelector('[name*="[grado_alcanzado]"]')?.value ?? ''
-            };
-
-            if (
-                !actual.tipo_grado &&
-                !actual.descripcion_carrera &&
-                !actual.institucion &&
-                !actual.anio_realizacion &&
-                !actual.horas_lectivas &&
-                !actual.especialidad &&
-                !actual.grado_alcanzado
-            ) return;
-
-            if (idActual) formacionActualIds.push(String(idActual));
-
-            const original = (valoresOriginales['formacion'] || []).find(f => String(f.id) === String(idActual));
-            const textoActual = `${safe(actual.descripcion_carrera)} - ${safe(actual.institucion)}`;
-
-            if (!original) {
-                cambios.push(`
-                <div class="resumen-item border-l-4 border-green-500">
-                    <span class="r-label text-green-600">Nuevo Estudio</span>
-                    <span class="r-val">${textoActual}</span>
-                </div>
-            `);
-            } else if (
-                String(original.tipo_grado ?? '') !== String(actual.tipo_grado) ||
-                String(original.descripcion_carrera ?? '') !== String(actual.descripcion_carrera) ||
-                String(original.institucion ?? '') !== String(actual.institucion) ||
-                String(original.anio_realizacion ?? '') !== String(actual.anio_realizacion) ||
-                String(original.horas_lectivas ?? '') !== String(actual.horas_lectivas) ||
-                String(original.especialidad ?? '') !== String(actual.especialidad) ||
-                String(original.grado_alcanzado ?? '') !== String(actual.grado_alcanzado)
-            ) {
-                cambios.push(`
-                <div class="resumen-item border-l-4 border-amber-500">
-                    <span class="r-label text-amber-600">Estudio Editado</span>
-                    <span class="r-val">${textoActual}</span>
-                </div>
-            `);
-            }
-        });
-
-        (valoresOriginales['formacion'] || []).forEach(formOriginal => {
-            if (!formacionActualIds.includes(String(formOriginal.id))) {
-                cambios.push(`
-                <div class="resumen-item border-l-4 border-red-500">
-                    <span class="r-label text-red-600">Estudio Eliminado</span>
-                    <span class="r-val">${safe(formOriginal.descripcion_carrera || formOriginal.carrera)}</span>
-                </div>
-            `);
-            }
-        });
-
-        // ── EXPERIENCIA: nuevos / editados / eliminados ─────────────────────────
-        const experienciaActualIds = [];
-
-        document.querySelectorAll('.experiencia-row').forEach(row => {
-            const idActual = row.querySelector('[name*="[id]"]')?.value || '';
-            const actual = {
-                empresa_entidad: row.querySelector('[name*="[empresa_entidad]"]')?.value ?? '',
-                unidad_organica_area: row.querySelector('[name*="[unidad_organica_area]"]')?.value ?? '',
-                cargo_puesto: row.querySelector('[name*="[cargo_puesto]"]')?.value ?? '',
-                fecha_inicio: row.querySelector('[name*="[fecha_inicio]"]')?.value ?? '',
-                fecha_fin: row.querySelector('[name*="[fecha_fin]"]')?.value ?? '',
-                actualmente_trabaja: row.querySelector('[name*="[actualmente_trabaja]"]')?.checked ? 1 : 0,
-                funciones_principales: row.querySelector('[name*="[funciones_principales]"]')?.value ?? ''
-            };
-
-            if (
-                !actual.empresa_entidad &&
-                !actual.unidad_organica_area &&
-                !actual.cargo_puesto &&
-                !actual.fecha_inicio &&
-                !actual.fecha_fin &&
-                !actual.actualmente_trabaja &&
-                !actual.funciones_principales
-            ) return;
-
-            if (idActual) experienciaActualIds.push(String(idActual));
-
-            const original = (valoresOriginales['experiencia'] || []).find(e => String(e.id) === String(idActual));
-            const textoActual = `${safe(actual.cargo_puesto)} - ${safe(actual.empresa_entidad)}`;
-
-            if (!original) {
-                cambios.push(`
-                <div class="resumen-item border-l-4 border-green-500">
-                    <span class="r-label text-green-600">Nueva Experiencia</span>
-                    <span class="r-val">${textoActual}</span>
-                </div>
-            `);
-            } else if (
-                String(original.empresa_entidad ?? '') !== String(actual.empresa_entidad) ||
-                String(original.unidad_organica_area ?? '') !== String(actual.unidad_organica_area) ||
-                String(original.cargo_puesto ?? '') !== String(actual.cargo_puesto) ||
-                String(original.fecha_inicio ?? '') !== String(actual.fecha_inicio) ||
-                String(original.fecha_fin ?? '') !== String(actual.fecha_fin) ||
-                String(original.actualmente_trabaja ?? 0) !== String(actual.actualmente_trabaja) ||
-                String(original.funciones_principales ?? '') !== String(actual.funciones_principales)
-            ) {
-                cambios.push(`
-                <div class="resumen-item border-l-4 border-amber-500">
-                    <span class="r-label text-amber-600">Experiencia Editada</span>
-                    <span class="r-val">${textoActual}</span>
-                </div>
-            `);
-            }
-        });
-
-        (valoresOriginales['experiencia'] || []).forEach(expOriginal => {
-            if (!experienciaActualIds.includes(String(expOriginal.id))) {
-                const textoEliminado = `${safe(expOriginal.cargo_puesto)} - ${safe(expOriginal.empresa_entidad)}`;
-
-                cambios.push(`
-                <div class="resumen-item border-l-4 border-red-500">
-                    <span class="r-label text-red-600">Experiencia Eliminada</span>
-                    <span class="r-val">${textoEliminado}</span>
-                </div>
-            `);
-            }
-        });
-
-        // ── IDIOMAS ─────────────────────────
-        const idiomasActuales = [];
-        document.querySelectorAll('.idioma-row').forEach(row => {
-            const idioma = row.querySelector('[name*="[idioma]"]')?.value ?? '';
-            const nivel = row.querySelector('[name*="[nivel]"]')?.value ?? 'BASICO';
-
-            if (!idioma) return;
-
-            idiomasActuales.push({
-                idioma: idioma,
-                nivel: nivel
+        // HIJOS
+        const hijosActuales = [];
+        document.querySelectorAll('.hijo-row').forEach((row, index) => {
+            hijosActuales.push({
+                idx: String(row.dataset.index ?? index),
+                id: row.querySelector('[name*="[id]"]')?.value || '',
+                nombre: row.querySelector('[name*="[nombre]"]')?.value?.trim() || '',
+                parentesco: row.querySelector('[name*="[parentesco]"]')?.value || 'HIJO',
+                fecha: row.querySelector('[name*="[fecha_nacimiento]"]')?.value || '',
+                dni: row.querySelector('[name*="[dni]"]')?.value?.trim() || ''
             });
         });
 
-        const idiomasOriginales = valoresOriginales['idiomas'] || [];
+        hijosActuales.forEach(actual => {
+            const original = (valoresOriginales.hijos || []).find(x => x.idx === actual.idx);
+            if (!original) return;
 
-        if (JSON.stringify(idiomasOriginales) !== JSON.stringify(idiomasActuales)) {
-            cambios.push(`
-                <div class="resumen-item border-l-4 border-sky-500">
-                    <span class="r-label text-sky-600">Idiomas</span>
-                    <span class="r-val">${idiomasActuales.length ? idiomasActuales.map(i => `${safe(i.idioma)} - ${safe(i.nivel)}`).join(', ') : 'Actualizados'}</span>
+            const originalCmp = {
+                nombre: original.nombre,
+                parentesco: original.parentesco,
+                fecha: original.fecha,
+                dni: original.dni
+            };
+            const actualCmp = {
+                nombre: actual.nombre,
+                parentesco: actual.parentesco,
+                fecha: actual.fecha,
+                dni: actual.dni
+            };
+
+            if (!iguales(originalCmp, actualCmp)) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-amber-500">
+                    <span class="r-label text-amber-600">Hijo Editado</span>
+                    <span class="r-val">${safe(actual.nombre)} (${safe(actual.parentesco)})</span>
                 </div>
             `);
+            }
+        });
+
+        // FORMACIÓN
+        const formacionActual = [];
+        document.querySelectorAll('.formacion-row').forEach((row, index) => {
+            formacionActual.push({
+                idx: String(row.dataset.index ?? index),
+                id: row.querySelector('[name*="[id]"]')?.value || '',
+                tipo_grado: row.querySelector('[name*="[tipo_grado]"]')?.value || '',
+                descripcion_carrera: row.querySelector('[name*="[descripcion_carrera]"]')?.value?.trim() || '',
+                institucion: row.querySelector('[name*="[institucion]"]')?.value?.trim() || '',
+                anio_realizacion: row.querySelector('[name*="[anio_realizacion]"]')?.value || '',
+                horas_lectivas: row.querySelector('[name*="[horas_lectivas]"]')?.value || '',
+                especialidad: row.querySelector('[name*="[especialidad]"]')?.value?.trim() || '',
+                grado_alcanzado: row.querySelector('[name*="[grado_alcanzado]"]')?.value?.trim() || ''
+            });
+        });
+
+        formacionActual.forEach(actual => {
+            const original = (valoresOriginales.formacion || []).find(x => x.idx === actual.idx);
+            if (!original) return;
+
+            const originalCmp = {
+                tipo_grado: original.tipo_grado,
+                descripcion_carrera: original.descripcion_carrera,
+                institucion: original.institucion,
+                anio_realizacion: original.anio_realizacion,
+                horas_lectivas: original.horas_lectivas,
+                especialidad: original.especialidad,
+                grado_alcanzado: original.grado_alcanzado
+            };
+            const actualCmp = {
+                tipo_grado: actual.tipo_grado,
+                descripcion_carrera: actual.descripcion_carrera,
+                institucion: actual.institucion,
+                anio_realizacion: actual.anio_realizacion,
+                horas_lectivas: actual.horas_lectivas,
+                especialidad: actual.especialidad,
+                grado_alcanzado: actual.grado_alcanzado
+            };
+
+            if (!iguales(originalCmp, actualCmp)) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-amber-500">
+                    <span class="r-label text-amber-600">Estudio Editado</span>
+                    <span class="r-val">${safe(actual.descripcion_carrera)} - ${safe(actual.institucion)}</span>
+                </div>
+            `);
+            }
+        });
+
+        // EXPERIENCIA
+        const experienciaActual = [];
+        document.querySelectorAll('.experiencia-row').forEach((row, index) => {
+            experienciaActual.push({
+                idx: String(row.dataset.index ?? index),
+                id: row.querySelector('[name*="[id]"]')?.value || '',
+                empresa_entidad: row.querySelector('[name*="[empresa_entidad]"]')?.value?.trim() || '',
+                unidad_organica_area: row.querySelector('[name*="[unidad_organica_area]"]')?.value?.trim() || '',
+                cargo_puesto: row.querySelector('[name*="[cargo_puesto]"]')?.value?.trim() || '',
+                fecha_inicio: row.querySelector('[name*="[fecha_inicio]"]')?.value || '',
+                fecha_fin: row.querySelector('[name*="[fecha_fin]"]')?.value || '',
+                actualmente_trabaja: row.querySelector('[name*="[actualmente_trabaja]"]')?.checked ? 1 : 0,
+                funciones_principales: row.querySelector('[name*="[funciones_principales]"]')?.value?.trim() || ''
+            });
+        });
+
+        experienciaActual.forEach(actual => {
+            const original = (valoresOriginales.experiencia || []).find(x => x.idx === actual.idx);
+            if (!original) return;
+
+            const originalCmp = {
+                empresa_entidad: original.empresa_entidad,
+                unidad_organica_area: original.unidad_organica_area,
+                cargo_puesto: original.cargo_puesto,
+                fecha_inicio: original.fecha_inicio,
+                fecha_fin: original.fecha_fin,
+                actualmente_trabaja: original.actualmente_trabaja,
+                funciones_principales: original.funciones_principales
+            };
+            const actualCmp = {
+                empresa_entidad: actual.empresa_entidad,
+                unidad_organica_area: actual.unidad_organica_area,
+                cargo_puesto: actual.cargo_puesto,
+                fecha_inicio: actual.fecha_inicio,
+                fecha_fin: actual.fecha_fin,
+                actualmente_trabaja: actual.actualmente_trabaja,
+                funciones_principales: actual.funciones_principales
+            };
+
+            if (!iguales(originalCmp, actualCmp)) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-amber-500">
+                    <span class="r-label text-amber-600">Experiencia Editada</span>
+                    <span class="r-val">${safe(actual.cargo_puesto)} - ${safe(actual.empresa_entidad)}</span>
+                </div>
+            `);
+            }
+        });
+
+        // IDIOMAS
+        const idiomasActuales = [];
+        document.querySelectorAll('.idioma-row').forEach((row, index) => {
+            idiomasActuales.push({
+                idx: String(row.dataset.index ?? index),
+                idioma: row.querySelector('[name*="[idioma]"]')?.value?.trim() || '',
+                nivel: row.querySelector('[name*="[nivel]"]')?.value || 'BASICO'
+            });
+        });
+
+        const idiomasOriginalesCmp = (valoresOriginales.idiomas || []).map(x => ({
+            idioma: x.idioma,
+            nivel: x.nivel
+        }));
+        const idiomasActualesCmp = idiomasActuales.map(x => ({
+            idioma: x.idioma,
+            nivel: x.nivel
+        }));
+
+        if (!iguales(idiomasOriginalesCmp, idiomasActualesCmp)) {
+            cambios.push(`
+            <div class="resumen-item border-l-4 border-sky-500">
+                <span class="r-label text-sky-600">Idiomas</span>
+                <span class="r-val">${idiomasActualesCmp.length ? idiomasActualesCmp.map(i => `${safe(i.idioma)} - ${safe(i.nivel)}`).join(', ') : 'Actualizados'}</span>
+            </div>
+        `);
         }
 
-        // ── PENSIÓN ─────────────────────────
+        // PENSIÓN
         const pensionActual = {
-            sistema_pension: document.querySelector('[name="pension[sistema_pension]"]')?.value ?? '',
-            afp: document.querySelector('[name="pension[afp]"]')?.value ?? '',
-            cuspp: document.querySelector('[name="pension[cuspp]"]')?.value ?? '',
-            tipo_comision: document.querySelector('[name="pension[tipo_comision]"]')?.value ?? '',
-            fecha_inscripcion: document.querySelector('[name="pension[fecha_inscripcion]"]')?.value ?? '',
+            sistema_pension: document.querySelector('[name="pension[sistema_pension]"]')?.value || '',
+            afp: document.querySelector('[name="pension[afp]"]')?.value || '',
+            cuspp: document.querySelector('[name="pension[cuspp]"]')?.value?.trim() || '',
+            tipo_comision: document.querySelector('[name="pension[tipo_comision]"]')?.value || '',
+            fecha_inscripcion: document.querySelector('[name="pension[fecha_inscripcion]"]')?.value || '',
             sin_afp_afiliarme: document.querySelector('[name="pension[sin_afp_afiliarme]"]')?.checked ? 1 : 0
         };
 
-        const pensionOriginal = valoresOriginales['pension'] || {};
-
-        if (JSON.stringify(pensionOriginal) !== JSON.stringify(pensionActual)) {
-            const pensionTexto = [
-                pensionActual.sistema_pension,
-                pensionActual.afp,
-                pensionActual.cuspp
-            ].filter(Boolean).join(' / ');
-
+        if (!iguales(valoresOriginales.pension || {}, pensionActual)) {
             cambios.push(`
-                <div class="resumen-item border-l-4 border-violet-500">
-                    <span class="r-label text-violet-600">Pensión</span>
-                    <span class="r-val">${safe(pensionTexto || 'Actualizada')} ${pensionActual.sin_afp_afiliarme ? '(Desea afiliarse)' : ''}</span>
-                </div>
-            `);
+            <div class="resumen-item border-l-4 border-violet-500">
+                <span class="r-label text-violet-600">Pensión</span>
+                <span class="r-val">Actualizada</span>
+            </div>
+        `);
         }
 
-        // ── BANCARIO ─────────────────────────
+        // BANCARIO
         const bancarioActual = {
-            banco_haberes: document.querySelector('[name="bancario[banco_haberes]"]')?.value ?? '',
-            numero_cuenta: document.querySelector('[name="bancario[numero_cuenta]"]')?.value ?? '',
-            numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value ?? ''
+            banco_haberes: document.querySelector('[name="bancario[banco_haberes]"]')?.value?.trim() || '',
+            numero_cuenta: document.querySelector('[name="bancario[numero_cuenta]"]')?.value?.trim() || '',
+            numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value?.trim() || ''
         };
 
-        const bancarioOriginal = valoresOriginales['bancario'] || {};
-
-        if (JSON.stringify(bancarioOriginal) !== JSON.stringify(bancarioActual)) {
+        if (!iguales(valoresOriginales.bancario || {}, bancarioActual)) {
             cambios.push(`
-                <div class="resumen-item border-l-4 border-rose-500">
-                    <span class="r-label text-rose-600">Datos Bancarios</span>
-                    <span class="r-val">${safe(bancarioActual.banco_haberes)} / ${safe(bancarioActual.numero_cuenta)}</span>
-                </div>
-            `);
+            <div class="resumen-item border-l-4 border-rose-500">
+                <span class="r-label text-rose-600">Datos Bancarios</span>
+                <span class="r-val">Actualizados</span>
+            </div>
+        `);
         }
 
-        // ── Render final ─────────────────────────
-        if (cambios.length === 0) {
-            container.innerHTML = `<div class="text-center py-8 text-slate-400 text-sm">No realizaste ningún cambio.</div>`;
-        } else {
-            container.innerHTML = `
-            <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-3">${cambios.length} cambio(s) detectado(s)</p>
-            <div class="space-y-2">${cambios.join('')}</div>
-        `;
-        }
+        container.innerHTML = cambios.length ?
+            `<p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-3">${cambios.length} cambio(s) detectado(s)</p><div class="space-y-2">${cambios.join('')}</div>` :
+            `<div class="text-center py-8 text-slate-400 text-sm">No realizaste ningún cambio.</div>`;
     }
 
     // ── GUARDAR VÍA AJAX ──────────────────────────────
@@ -3043,7 +3004,6 @@ $perfil = $data;
 
         const campos = {};
 
-        // Campos simples
         document.querySelectorAll('.form-step [name]').forEach(el => {
             if (
                 !el.readOnly &&
@@ -3054,65 +3014,87 @@ $perfil = $data;
                 !el.name.startsWith('pension[') &&
                 !el.name.startsWith('bancario[')
             ) {
-                if (el.type === 'checkbox') {
-                    campos[el.name] = el.checked ? 1 : 0;
-                } else {
-                    campos[el.name] = el.value;
-                }
+                campos[el.name] = el.type === 'checkbox' ? (el.checked ? 1 : 0) : (el.value ?? '');
             }
         });
 
         campos['id'] = <?php echo (int)($perfil['id'] ?? 0); ?>;
 
-        // Hijos
         const hijos = [];
         document.querySelectorAll('.hijo-row').forEach(row => {
             const idx = row.dataset.index;
-            hijos.push({
+            const item = {
                 id: row.querySelector(`[name="hijos[${idx}][id]"]`)?.value || '',
-                nombre: row.querySelector(`[name="hijos[${idx}][nombre]"]`)?.value || '',
+                nombre: row.querySelector(`[name="hijos[${idx}][nombre]"]`)?.value?.trim() || '',
                 parentesco: row.querySelector(`[name="hijos[${idx}][parentesco]"]`)?.value || 'HIJO',
                 fecha_nacimiento: row.querySelector(`[name="hijos[${idx}][fecha_nacimiento]"]`)?.value || '',
-                dni: row.querySelector(`[name="hijos[${idx}][dni]"]`)?.value || ''
-            });
+                dni: row.querySelector(`[name="hijos[${idx}][dni]"]`)?.value?.trim() || ''
+            };
+
+            if (item.nombre || item.fecha_nacimiento || item.dni || item.id) {
+                hijos.push(item);
+            }
         });
         campos['hijos'] = hijos;
 
-        // Formación
         const formacion = [];
         document.querySelectorAll('.formacion-row').forEach(row => {
             const idx = row.dataset.index;
-            formacion.push({
+            const item = {
                 id: row.querySelector(`[name="formacion[${idx}][id]"]`)?.value || '',
                 tipo_grado: row.querySelector(`[name="formacion[${idx}][tipo_grado]"]`)?.value || '',
-                descripcion_carrera: row.querySelector(`[name="formacion[${idx}][descripcion_carrera]"]`)?.value || '',
-                institucion: row.querySelector(`[name="formacion[${idx}][institucion]"]`)?.value || '',
+                descripcion_carrera: row.querySelector(`[name="formacion[${idx}][descripcion_carrera]"]`)?.value?.trim() || '',
+                institucion: row.querySelector(`[name="formacion[${idx}][institucion]"]`)?.value?.trim() || '',
                 anio_realizacion: row.querySelector(`[name="formacion[${idx}][anio_realizacion]"]`)?.value || '',
                 horas_lectivas: row.querySelector(`[name="formacion[${idx}][horas_lectivas]"]`)?.value || '',
-                especialidad: row.querySelector(`[name="formacion[${idx}][especialidad]"]`)?.value || '',
-                grado_alcanzado: row.querySelector(`[name="formacion[${idx}][grado_alcanzado]"]`)?.value || ''
-            });
+                especialidad: row.querySelector(`[name="formacion[${idx}][especialidad]"]`)?.value?.trim() || '',
+                grado_alcanzado: row.querySelector(`[name="formacion[${idx}][grado_alcanzado]"]`)?.value?.trim() || ''
+            };
+
+            if (
+                item.id ||
+                item.tipo_grado ||
+                item.descripcion_carrera ||
+                item.institucion ||
+                item.anio_realizacion ||
+                item.horas_lectivas ||
+                item.especialidad ||
+                item.grado_alcanzado
+            ) {
+                formacion.push(item);
+            }
         });
         campos['formacion'] = formacion;
 
-        // Experiencia
         const experiencia = [];
         document.querySelectorAll('.experiencia-row').forEach(row => {
             const idx = row.dataset.index;
-            experiencia.push({
+            const item = {
                 id: row.querySelector(`[name="experiencia[${idx}][id]"]`)?.value || '',
-                empresa_entidad: row.querySelector(`[name="experiencia[${idx}][empresa_entidad]"]`)?.value || '',
-                unidad_organica_area: row.querySelector(`[name="experiencia[${idx}][unidad_organica_area]"]`)?.value || '',
-                cargo_puesto: row.querySelector(`[name="experiencia[${idx}][cargo_puesto]"]`)?.value || '',
+                empresa_entidad: row.querySelector(`[name="experiencia[${idx}][empresa_entidad]"]`)?.value?.trim() || '',
+                unidad_organica_area: row.querySelector(`[name="experiencia[${idx}][unidad_organica_area]"]`)?.value?.trim() || '',
+                cargo_puesto: row.querySelector(`[name="experiencia[${idx}][cargo_puesto]"]`)?.value?.trim() || '',
                 fecha_inicio: row.querySelector(`[name="experiencia[${idx}][fecha_inicio]"]`)?.value || '',
                 fecha_fin: row.querySelector(`[name="experiencia[${idx}][fecha_fin]"]`)?.value || '',
                 actualmente_trabaja: row.querySelector(`[name="experiencia[${idx}][actualmente_trabaja]"]`)?.checked ? 1 : 0,
-                funciones_principales: row.querySelector(`[name="experiencia[${idx}][funciones_principales]"]`)?.value || ''
-            });
+                funciones_principales: row.querySelector(`[name="experiencia[${idx}][funciones_principales]"]`)?.value?.trim() || ''
+            };
+
+            if (
+                item.id ||
+                item.empresa_entidad ||
+                item.unidad_organica_area ||
+                item.cargo_puesto ||
+                item.fecha_inicio ||
+                item.fecha_fin ||
+                item.actualmente_trabaja ||
+                item.funciones_principales
+            ) {
+                experiencia.push(item);
+            }
         });
         campos['experiencia'] = experiencia;
 
-        // Pensión
         campos['pension'] = {
             sistema_pension: document.querySelector('[name="pension[sistema_pension]"]')?.value || '',
             afp: document.querySelector('[name="pension[afp]"]')?.value || '',
@@ -3122,30 +3104,26 @@ $perfil = $data;
             sin_afp_afiliarme: document.querySelector('[name="pension[sin_afp_afiliarme]"]')?.checked ? 1 : 0
         };
 
-        // Bancario
         campos['bancario'] = {
-            banco_haberes: document.querySelector('[name="bancario[banco_haberes]"]')?.value || '',
-            numero_cuenta: document.querySelector('[name="bancario[numero_cuenta]"]')?.value || '',
-            numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value || ''
+            banco_haberes: document.querySelector('[name="bancario[banco_haberes]"]')?.value?.trim() || '',
+            numero_cuenta: document.querySelector('[name="bancario[numero_cuenta]"]')?.value?.trim() || '',
+            numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value?.trim() || ''
         };
 
-        // Idiomas
         const idiomas = [];
         document.querySelectorAll('.idioma-row').forEach(row => {
             const idx = row.dataset.index;
-            const idioma = row.querySelector(`[name="idiomas[${idx}][idioma]"]`)?.value || '';
+            const idioma = row.querySelector(`[name="idiomas[${idx}][idioma]"]`)?.value?.trim() || '';
             const nivel = row.querySelector(`[name="idiomas[${idx}][nivel]"]`)?.value || 'BASICO';
 
-            if (idioma.trim() !== '') {
+            if (idioma) {
                 idiomas.push({
-                    idioma: idioma,
-                    nivel: nivel
+                    idioma,
+                    nivel
                 });
             }
         });
         campos['idiomas'] = idiomas;
-
-        console.log('DATOS A ENVIAR:', campos);
 
         fetch('<?php echo BASE_URL; ?>/perfil/actualizar', {
                 method: 'POST',
@@ -3157,8 +3135,6 @@ $perfil = $data;
             })
             .then(response => response.text())
             .then(raw => {
-                console.log('RESPUESTA RAW DEL SERVIDOR:', raw);
-
                 const cleanJson = raw.trim();
                 const res = JSON.parse(cleanJson);
 
