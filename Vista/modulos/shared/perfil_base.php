@@ -534,7 +534,7 @@ $perfil = $data;
                         <!-- Pensión -->
                         <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                             <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-                                <span class="w-1.5 h-5 bg-slate-800 rounded-full"></span>
+                                <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
                                 Sistema de Pensiones
                             </h3>
 
@@ -592,7 +592,7 @@ $perfil = $data;
                         <!-- Contratos -->
                         <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200 xl:col-span-2">
                             <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-                                <span class="w-1.5 h-5 bg-slate-800 rounded-full"></span>
+                                <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
                                 Historial de Contratos
                                 <span class="ml-auto bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-lg">
                                     <?php echo count($contratos); ?> registro(s)
