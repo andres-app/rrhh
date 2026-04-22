@@ -466,15 +466,26 @@ class MdDirectorio
 
             $formacion = $datos['formacion'] ?? [];
             foreach ($formacion as $form) {
-                $carrera     = trim($form['descripcion_carrera'] ?? '');
-                $institucion = trim($form['institucion'] ?? '');
+                $carrera         = trim($form['descripcion_carrera'] ?? '');
+                $institucion     = trim($form['institucion'] ?? '');
+                $tipoGrado       = trim($form['tipo_grado'] ?? 'BACHILLER');
+                $anioRealizacion = !empty($form['anio_realizacion']) ? (int)$form['anio_realizacion'] : null;
+                $horasLectivas   = isset($form['horas_lectivas']) && $form['horas_lectivas'] !== '' ? (int)$form['horas_lectivas'] : null;
+                $especialidad    = trim($form['especialidad'] ?? '');
+                $gradoAlcanzado  = trim($form['grado_alcanzado'] ?? '');
 
-                if ($carrera === '' && $institucion === '') {
+                if (
+                    $carrera === '' &&
+                    $institucion === '' &&
+                    $especialidad === '' &&
+                    $gradoAlcanzado === '' &&
+                    $anioRealizacion === null &&
+                    $horasLectivas === null
+                ) {
                     continue;
                 }
 
                 $formId = (int)($form['id'] ?? 0);
-                $tipoGrado = $form['tipo_grado'] ?? 'BACHILLER';
 
                 if ($formId > 0 && in_array($formId, $idsFormEnBD)) {
                     $pdo->prepare("
@@ -482,25 +493,57 @@ class MdDirectorio
                         tipo_grado          = :tipo,
                         descripcion_carrera = :carrera,
                         institucion         = :institucion,
+                        anio_realizacion    = :anio_realizacion,
+                        horas_lectivas      = :horas_lectivas,
+                        especialidad        = :especialidad,
+                        grado_alcanzado     = :grado_alcanzado,
                         estado_validacion   = 'PENDIENTE'
                     WHERE id = :fid AND colab_id = :colab_id
                 ")->execute([
-                        ':tipo'        => $tipoGrado,
-                        ':carrera'     => $carrera,
-                        ':institucion' => $institucion,
-                        ':fid'         => $formId,
-                        ':colab_id'    => (int)$datos['id'],
+                        ':tipo'             => $tipoGrado,
+                        ':carrera'          => $carrera !== '' ? $carrera : null,
+                        ':institucion'      => $institucion !== '' ? $institucion : null,
+                        ':anio_realizacion' => $anioRealizacion,
+                        ':horas_lectivas'   => $horasLectivas,
+                        ':especialidad'     => $especialidad !== '' ? $especialidad : null,
+                        ':grado_alcanzado'  => $gradoAlcanzado !== '' ? $gradoAlcanzado : null,
+                        ':fid'              => $formId,
+                        ':colab_id'         => (int)$datos['id'],
                     ]);
                     $idsFormRecibidos[] = $formId;
                 } else {
                     $pdo->prepare("
-                    INSERT INTO colab_formacion (colab_id, tipo_grado, descripcion_carrera, institucion, estado_validacion)
-                    VALUES (:colab_id, :tipo, :carrera, :institucion, 'PENDIENTE')
+                    INSERT INTO colab_formacion (
+                        colab_id,
+                        tipo_grado,
+                        descripcion_carrera,
+                        institucion,
+                        anio_realizacion,
+                        horas_lectivas,
+                        especialidad,
+                        grado_alcanzado,
+                        estado_validacion
+                    )
+                    VALUES (
+                        :colab_id,
+                        :tipo,
+                        :carrera,
+                        :institucion,
+                        :anio_realizacion,
+                        :horas_lectivas,
+                        :especialidad,
+                        :grado_alcanzado,
+                        'PENDIENTE'
+                    )
                 ")->execute([
-                        ':colab_id'    => (int)$datos['id'],
-                        ':tipo'        => $tipoGrado,
-                        ':carrera'     => $carrera,
-                        ':institucion' => $institucion,
+                        ':colab_id'         => (int)$datos['id'],
+                        ':tipo'             => $tipoGrado,
+                        ':carrera'          => $carrera !== '' ? $carrera : null,
+                        ':institucion'      => $institucion !== '' ? $institucion : null,
+                        ':anio_realizacion' => $anioRealizacion,
+                        ':horas_lectivas'   => $horasLectivas,
+                        ':especialidad'     => $especialidad !== '' ? $especialidad : null,
+                        ':grado_alcanzado'  => $gradoAlcanzado !== '' ? $gradoAlcanzado : null,
                     ]);
                     $idsFormRecibidos[] = (int)$pdo->lastInsertId();
                 }

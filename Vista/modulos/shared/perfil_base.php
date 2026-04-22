@@ -688,12 +688,50 @@ $perfil = $data;
                                             <?php echo htmlspecialchars($item['descripcion_carrera'] ?? 'No registrado'); ?>
                                         </h4>
 
-                                        <p class="text-slate-500 italic text-sm">
+                                        <p class="text-slate-500 italic text-sm mb-3">
                                             <?php echo htmlspecialchars($item['institucion'] ?? 'Institución no registrada'); ?>
                                         </p>
 
+                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
+                                            <?php if (!empty($item['anio_realizacion'])): ?>
+                                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Año de Realización</p>
+                                                    <p class="text-sm font-bold text-slate-700">
+                                                        <?php echo htmlspecialchars($item['anio_realizacion']); ?>
+                                                    </p>
+                                                </div>
+                                            <?php endif; ?>
+
+                                            <?php if (!empty($item['horas_lectivas'])): ?>
+                                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
+                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Horas Lectivas</p>
+                                                    <p class="text-sm font-bold text-slate-700">
+                                                        <?php echo htmlspecialchars($item['horas_lectivas']); ?>
+                                                    </p>
+                                                </div>
+                                            <?php endif; ?>
+
+                                            <?php if (!empty($item['especialidad'])): ?>
+                                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 md:col-span-2">
+                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Especialidad</p>
+                                                    <p class="text-sm font-bold text-slate-700">
+                                                        <?php echo htmlspecialchars($item['especialidad']); ?>
+                                                    </p>
+                                                </div>
+                                            <?php endif; ?>
+
+                                            <?php if (!empty($item['grado_alcanzado'])): ?>
+                                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 md:col-span-2">
+                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Grado Alcanzado</p>
+                                                    <p class="text-sm font-bold text-slate-700">
+                                                        <?php echo htmlspecialchars($item['grado_alcanzado']); ?>
+                                                    </p>
+                                                </div>
+                                            <?php endif; ?>
+                                        </div>
+
                                         <?php if (!empty($item['estado_validacion']) && $item['estado_validacion'] !== 'PENDIENTE'): ?>
-                                            <span class="inline-block mt-2 text-[10px] font-bold uppercase px-2 py-0.5 rounded <?php echo $item['estado_validacion'] === 'APROBADO'
+                                            <span class="inline-block mt-3 text-[10px] font-bold uppercase px-2 py-0.5 rounded <?php echo $item['estado_validacion'] === 'APROBADO'
                                                                                                                                     ? 'bg-green-50 text-green-700'
                                                                                                                                     : 'bg-red-50 text-red-700'; ?>">
                                                 <?php echo htmlspecialchars($item['estado_validacion']); ?>
@@ -1365,14 +1403,58 @@ $perfil = $data;
 
                                                     <div class="field-group">
                                                         <label class="field-label">Carrera / Especialidad</label>
-                                                        <input type="text" name="formacion[<?php echo $fi; ?>][descripcion_carrera]" class="field-input input-carrera"
+                                                        <input type="text"
+                                                            name="formacion[<?php echo $fi; ?>][descripcion_carrera]"
+                                                            class="field-input input-carrera"
                                                             value="<?php echo htmlspecialchars($form['descripcion_carrera'] ?? ''); ?>">
                                                     </div>
 
                                                     <div class="field-group span-full">
                                                         <label class="field-label">Institución</label>
-                                                        <input type="text" name="formacion[<?php echo $fi; ?>][institucion]" class="field-input input-inst"
+                                                        <input type="text"
+                                                            name="formacion[<?php echo $fi; ?>][institucion]"
+                                                            class="field-input input-inst"
                                                             value="<?php echo htmlspecialchars($form['institucion'] ?? ''); ?>">
+                                                    </div>
+
+                                                    <div class="field-group">
+                                                        <label class="field-label">Año de Realización</label>
+                                                        <input type="number"
+                                                            name="formacion[<?php echo $fi; ?>][anio_realizacion]"
+                                                            class="field-input"
+                                                            min="1900"
+                                                            max="2100"
+                                                            step="1"
+                                                            value="<?php echo htmlspecialchars($form['anio_realizacion'] ?? ''); ?>"
+                                                            placeholder="Ej: 2020">
+                                                    </div>
+                                                    <div class="field-group">
+                                                        <label class="field-label">Horas Lectivas</label>
+                                                        <input type="number"
+                                                            name="formacion[<?php echo $fi; ?>][horas_lectivas]"
+                                                            class="field-input"
+                                                            min="0"
+                                                            step="1"
+                                                            value="<?php echo htmlspecialchars($form['horas_lectivas'] ?? ''); ?>"
+                                                            placeholder="Ej: 120">
+                                                    </div>
+
+                                                    <div class="field-group">
+                                                        <label class="field-label">Especialidad</label>
+                                                        <input type="text"
+                                                            name="formacion[<?php echo $fi; ?>][especialidad]"
+                                                            class="field-input"
+                                                            value="<?php echo htmlspecialchars($form['especialidad'] ?? ''); ?>"
+                                                            placeholder="Ej: Gestión Pública">
+                                                    </div>
+
+                                                    <div class="field-group">
+                                                        <label class="field-label">Grado Alcanzado</label>
+                                                        <input type="text"
+                                                            name="formacion[<?php echo $fi; ?>][grado_alcanzado]"
+                                                            class="field-input"
+                                                            value="<?php echo htmlspecialchars($form['grado_alcanzado'] ?? ''); ?>"
+                                                            placeholder="Ej: Egresado / Titulado / Concluido">
                                                     </div>
 
                                                     <input type="hidden" name="formacion[<?php echo $fi; ?>][id]" value="<?php echo $form['id'] ?? ''; ?>">
@@ -2183,50 +2265,76 @@ $perfil = $data;
 
         const idx = formIdx++;
         const html = `
-        <div class="formacion-row bg-white border border-slate-200 rounded-xl p-4 relative animate-in" data-index="${idx}">
-            <div class="item-resumen hidden items-center justify-between">
-                <div>
-                    <p class="text-sm font-bold text-slate-800 val-carrera">Nuevo Estudio</p>
-                    <p class="text-[11px] text-slate-500 mt-0.5">
-                        <span class="val-grado">BACHILLER</span> • <span class="val-inst">—</span>
-                    </p>
+    <div class="formacion-row bg-white border border-slate-200 rounded-xl p-4 relative animate-in" data-index="${idx}">
+        <div class="item-resumen hidden items-center justify-between">
+            <div>
+                <p class="text-sm font-bold text-slate-800 val-carrera">Nuevo Estudio</p>
+                <p class="text-[11px] text-slate-500 mt-0.5">
+                    <span class="val-grado">BACHILLER</span> • <span class="val-inst">—</span>
+                </p>
+            </div>
+            <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100">Editar</button>
+        </div>
+
+        <div class="item-form mt-1 pt-1 relative">
+            <button type="button" onclick="eliminarFila(this)" class="absolute -top-2 right-0 text-slate-300 hover:text-red-500 transition-colors p-1">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+
+            <div class="form-grid-2 pr-6">
+                <div class="field-group">
+                    <label class="field-label">Tipo de Grado</label>
+                    <select name="formacion[${idx}][tipo_grado]" class="field-input input-grado">
+                        <option value="SECUNDARIA">Secundaria</option>
+                        <option value="TÉCNICO">Técnico</option>
+                        <option value="BACHILLER">Bachiller</option>
+                        <option value="TÍTULO PROFESIONAL">Título Profesional</option>
+                        <option value="MAESTRÍA">Maestría</option>
+                        <option value="DOCTORADO">Doctorado</option>
+                        <option value="ESPECIALIZACIÓN">Especialización</option>
+                    </select>
                 </div>
-                <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100">Editar</button>
+
+                <div class="field-group">
+                    <label class="field-label">Carrera / Especialidad</label>
+                    <input type="text" name="formacion[${idx}][descripcion_carrera]" class="field-input input-carrera" placeholder="Ej: Ing. Sistemas">
+                </div>
+
+                <div class="field-group span-full">
+                    <label class="field-label">Institución</label>
+                    <input type="text" name="formacion[${idx}][institucion]" class="field-input input-inst" placeholder="Ej: Universidad Nacional...">
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Año de Realización</label>
+                    <input type="number" name="formacion[${idx}][anio_realizacion]" class="field-input" min="1900" max="2100" step="1" placeholder="Ej: 2020">
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Horas Lectivas</label>
+                    <input type="number" name="formacion[${idx}][horas_lectivas]" class="field-input" min="0" step="1" placeholder="Ej: 120">
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Especialidad</label>
+                    <input type="text" name="formacion[${idx}][especialidad]" class="field-input" placeholder="Ej: Gestión Pública">
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Grado Alcanzado</label>
+                    <input type="text" name="formacion[${idx}][grado_alcanzado]" class="field-input" placeholder="Ej: Egresado / Titulado / Concluido">
+                </div>
+
+                <input type="hidden" name="formacion[${idx}][id]" value="">
             </div>
 
-            <div class="item-form mt-1 pt-1 relative">
-                <button type="button" onclick="eliminarFila(this)" class="absolute -top-2 right-0 text-slate-300 hover:text-red-500 transition-colors p-1">
-                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                    </svg>
-                </button>
-                <div class="grid grid-cols-2 gap-3 pr-6">
-                    <div class="field-group">
-                        <label class="field-label">Tipo de Grado</label>
-                        <select name="formacion[${idx}][tipo_grado]" class="field-input input-grado">
-                            <option value="BACHILLER">Bachiller</option>
-                            <option value="TÍTULO PROFESIONAL">Título Profesional</option>
-                            <option value="TÉCNICO">Técnico</option>
-                            <option value="MAESTRÍA">Maestría</option>
-                            <option value="DOCTORADO">Doctorado</option>
-                            <option value="ESPECIALIZACIÓN">Especialización</option>
-                        </select>
-                    </div>
-                    <div class="field-group">
-                        <label class="field-label">Carrera / Especialidad</label>
-                        <input type="text" name="formacion[${idx}][descripcion_carrera]" class="field-input input-carrera" placeholder="Ej: Ing. Sistemas">
-                    </div>
-                    <div class="field-group col-span-2">
-                        <label class="field-label">Institución</label>
-                        <input type="text" name="formacion[${idx}][institucion]" class="field-input input-inst" placeholder="Ej: Universidad Nacional...">
-                    </div>
-                    <input type="hidden" name="formacion[${idx}][id]" value="">
-                </div>
-                <div class="mt-3 text-right">
-                    <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">✓ Listo</button>
-                </div>
+            <div class="mt-3 text-right">
+                <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">✓ Listo</button>
             </div>
-        </div>`;
+        </div>
+    </div>`;
         document.getElementById('lista-formacion').insertAdjacentHTML('beforeend', html);
     }
 
