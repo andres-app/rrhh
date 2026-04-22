@@ -1128,7 +1128,7 @@ $perfil = $data;
 
                                 <div class="field-group">
                                     <label class="field-label">Fecha de Nacimiento</label>
-                                    <input type="date" name="fecha_nac_conyuge" class="field-input"
+                                    <input type="date" name="onomastico_conyuge" class="field-input"
                                         value="<?php echo htmlspecialchars($perfil['onomastico_conyuge'] ?? ''); ?>">
                                 </div>
 
@@ -2659,7 +2659,7 @@ $perfil = $data;
         celular: 'Celular',
         correo_personal: 'Correo Personal',
         conyuge: 'Cónyuge',
-        fecha_nac_conyuge: 'Fecha Nac. Cónyuge',
+        onomastico_conyuge: 'Fecha Nac. Cónyuge',
     };
 
     function construirResumen() {

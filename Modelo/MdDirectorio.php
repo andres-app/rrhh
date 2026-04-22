@@ -354,41 +354,61 @@ class MdDirectorio
 
             // ── 2. Actualizar / insertar cónyuge ─────────────────────
             $nombreConyuge = trim($datos['conyuge'] ?? '');
-            $fechaConyuge  = !empty($datos['fecha_nac_conyuge']) ? $datos['fecha_nac_conyuge'] : null;
+            $fechaConyuge  = !empty($datos['onomastico_conyuge']) ? $datos['onomastico_conyuge'] : null;
+            $dniConyuge    = trim($datos['dni_conyuge'] ?? '');
 
             $chk = $pdo->prepare("
-            SELECT id
-            FROM colab_familia
-            WHERE colab_id = :id AND parentesco = 'CONYUGE'
-            LIMIT 1
-        ");
+                SELECT id
+                FROM colab_familia
+                WHERE colab_id = :id AND parentesco = 'CONYUGE'
+                LIMIT 1
+            ");
             $chk->execute([':id' => (int)$datos['id']]);
             $conyugeExistente = $chk->fetchColumn();
 
             if ($conyugeExistente) {
-                if ($nombreConyuge === '') {
-                    $pdo->prepare("DELETE FROM colab_familia WHERE id = :fid")
-                        ->execute([':fid' => $conyugeExistente]);
+                if ($nombreConyuge === '' && $fechaConyuge === null && $dniConyuge === '') {
+                    $pdo->prepare("
+                        DELETE FROM colab_familia
+                        WHERE id = :fid
+                    ")->execute([
+                        ':fid' => $conyugeExistente
+                    ]);
                 } else {
                     $pdo->prepare("
-                    UPDATE colab_familia SET
-                        nombre_completo  = :nombre,
-                        fecha_nacimiento = :fecha
-                    WHERE id = :fid
-                ")->execute([
-                        ':nombre' => $nombreConyuge,
+                        UPDATE colab_familia SET
+                            nombre_completo  = :nombre,
+                            fecha_nacimiento = :fecha,
+                            dni_familiar     = :dni
+                        WHERE id = :fid
+                    ")->execute([
+                        ':nombre' => $nombreConyuge !== '' ? $nombreConyuge : null,
                         ':fecha'  => $fechaConyuge,
+                        ':dni'    => $dniConyuge !== '' ? $dniConyuge : null,
                         ':fid'    => $conyugeExistente,
                     ]);
                 }
-            } elseif ($nombreConyuge !== '') {
+            } elseif ($nombreConyuge !== '' || $fechaConyuge !== null || $dniConyuge !== '') {
                 $pdo->prepare("
-                INSERT INTO colab_familia (colab_id, parentesco, nombre_completo, fecha_nacimiento)
-                VALUES (:colab_id, 'CONYUGE', :nombre, :fecha)
-            ")->execute([
+                    INSERT INTO colab_familia (
+                        colab_id,
+                        parentesco,
+                        nombre_completo,
+                        fecha_nacimiento,
+                        dni_familiar
+                    )
+                    VALUES (
+                        :colab_id,
+                        'CONYUGE',
+                        :nombre,
+                        :fecha,
+                        :dni
+                    )
+                ")->execute([
                     ':colab_id' => (int)$datos['id'],
-                    ':nombre'   => $nombreConyuge,
+                    ':nombre'   => $nombreConyuge !== '' ? $nombreConyuge : null,
                     ':fecha'    => $fechaConyuge,
+                    ':dni'      => $dniConyuge !== '' ? $dniConyuge : null,
                 ]);
             }
 
