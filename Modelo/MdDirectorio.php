@@ -336,6 +336,10 @@ RESUMEN DASHBOARD DINÁMICO
             unset($datos['sueldo']);
             unset($datos['mod_contrato']);
             unset($datos['puesto_cas']);
+            unset($datos['tipo_puesto']);
+            unset($datos['area']);
+            unset($datos['procedencia']);
+            unset($datos['nsa_cip']);
         }
 
         try {
@@ -389,17 +393,21 @@ RESUMEN DASHBOARD DINÁMICO
             if (in_array($rolSesion, ['rrhh', 'admin', 'superadmin'], true)) {
 
                 $stmtActualLaboral = $pdo->prepare("
-                SELECT
-                    correo_institucional,
-                    situacion,
-                    sueldo,
-                    modalidad_contrato,
-                    puesto_cas
-                FROM colab_laboral
-                WHERE colab_id = :id
-                ORDER BY fecha_ingreso DESC
-                LIMIT 1
-            ");
+                    SELECT
+                        correo_institucional,
+                        situacion,
+                        sueldo,
+                        modalidad_contrato,
+                        puesto_cas,
+                        tipo_puesto,
+                        area,
+                        procedencia,
+                        nsa_cip
+                    FROM colab_laboral
+                    WHERE colab_id = :id
+                    ORDER BY fecha_ingreso DESC, id DESC
+                    LIMIT 1
+                ");
                 $stmtActualLaboral->execute([
                     ':id' => (int)$datos['id'],
                 ]);
@@ -426,18 +434,38 @@ RESUMEN DASHBOARD DINÁMICO
                     ? trim((string)$datos['puesto_cas'])
                     : ($laboralActual['puesto_cas'] ?? null);
 
+                $tipoPuesto = array_key_exists('tipo_puesto', $datos) && trim((string)$datos['tipo_puesto']) !== ''
+                    ? trim((string)$datos['tipo_puesto'])
+                    : ($laboralActual['tipo_puesto'] ?? null);
+
+                $area = array_key_exists('area', $datos) && trim((string)$datos['area']) !== ''
+                    ? trim((string)$datos['area'])
+                    : ($laboralActual['area'] ?? null);
+
+                $procedencia = array_key_exists('procedencia', $datos) && trim((string)$datos['procedencia']) !== ''
+                    ? trim((string)$datos['procedencia'])
+                    : ($laboralActual['procedencia'] ?? null);
+
+                $nsaCip = array_key_exists('nsa_cip', $datos) && trim((string)$datos['nsa_cip']) !== ''
+                    ? trim((string)$datos['nsa_cip'])
+                    : ($laboralActual['nsa_cip'] ?? null);
+
                 $stmtLaboral = $pdo->prepare("
-                UPDATE colab_laboral
-                SET
-                    correo_institucional = :correo_institucional,
-                    situacion            = :situacion,
-                    sueldo               = :sueldo,
-                    modalidad_contrato   = :mod_contrato,
-                    puesto_cas           = :puesto_cas
-                WHERE colab_id = :id
-                ORDER BY fecha_ingreso DESC
-                LIMIT 1
-            ");
+                        UPDATE colab_laboral
+                        SET
+                            correo_institucional = :correo_institucional,
+                            situacion            = :situacion,
+                            sueldo               = :sueldo,
+                            modalidad_contrato   = :mod_contrato,
+                            puesto_cas           = :puesto_cas,
+                            tipo_puesto          = :tipo_puesto,
+                            area                 = :area,
+                            procedencia          = :procedencia,
+                            nsa_cip              = :nsa_cip
+                        WHERE colab_id = :id
+                        ORDER BY fecha_ingreso DESC, id DESC
+                        LIMIT 1
+                    ");
 
                 $stmtLaboral->execute([
                     ':correo_institucional' => $correoInstitucional,
@@ -445,10 +473,13 @@ RESUMEN DASHBOARD DINÁMICO
                     ':sueldo'               => $sueldo,
                     ':mod_contrato'         => $modContrato,
                     ':puesto_cas'           => $puestoCas,
+                    ':tipo_puesto'          => $tipoPuesto,
+                    ':area'                 => $area,
+                    ':procedencia'          => $procedencia,
+                    ':nsa_cip'              => $nsaCip,
                     ':id'                   => (int)$datos['id'],
                 ]);
             }
-
             // ── 2. Actualizar / insertar cónyuge ─────────────────────
             $nombreConyuge = trim($datos['conyuge'] ?? '');
             $fechaConyuge  = !empty($datos['onomastico_conyuge']) ? $datos['onomastico_conyuge'] : null;
