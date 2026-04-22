@@ -34,6 +34,103 @@ class MdDirectorio
     }
 
     /*=============================================
+RESUMEN DASHBOARD DINÁMICO
+=============================================*/
+    public static function mdlObtenerResumenDashboard()
+    {
+        try {
+            $pdo = Conexion::conectar();
+
+            $respuesta = [
+                'total_colaboradores'      => 0,
+                'validaciones_pendientes'  => 0,
+                'contratos_por_vencer'     => 0,
+                'modalidades'              => [],
+                'cumpleanos'               => [],
+            ];
+
+            // Total de colaboradores únicos
+            $stmt = $pdo->prepare("
+            SELECT COUNT(*) AS total
+            FROM colab_maestro
+        ");
+            $stmt->execute();
+            $respuesta['total_colaboradores'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+            // Validaciones pendientes
+            $stmt = $pdo->prepare("
+            SELECT
+                COALESCE((
+                    SELECT COUNT(*) FROM colab_formacion WHERE estado_validacion = 'PENDIENTE'
+                ), 0)
+                +
+                COALESCE((
+                    SELECT COUNT(*) FROM colab_experiencia WHERE estado_validacion = 'PENDIENTE'
+                ), 0)
+                +
+                COALESCE((
+                    SELECT COUNT(*) FROM colab_familia WHERE estado_validacion = 'PENDIENTE'
+                ), 0)
+                AS total
+        ");
+            $stmt->execute();
+            $respuesta['validaciones_pendientes'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+            // Contratos por vencer en próximos 30 días
+            $stmt = $pdo->prepare("
+            SELECT COUNT(*) AS total
+            FROM colab_laboral
+            WHERE fecha_cese IS NOT NULL
+              AND fecha_cese >= CURDATE()
+              AND fecha_cese <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+        ");
+            $stmt->execute();
+            $respuesta['contratos_por_vencer'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+
+            // Distribución por modalidad
+            $stmt = $pdo->prepare("
+            SELECT
+                COALESCE(NULLIF(TRIM(modalidad_contrato), ''), 'SIN MODALIDAD') AS modalidad,
+                COUNT(*) AS total
+            FROM colab_laboral
+            GROUP BY modalidad
+            ORDER BY total DESC, modalidad ASC
+        ");
+            $stmt->execute();
+            $respuesta['modalidades'] = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            // Próximos cumpleaños de colaboradores
+            $stmt = $pdo->prepare("
+            SELECT
+                m.id,
+                m.nombres_apellidos AS nombre,
+                m.fecha_nacimiento
+            FROM colab_maestro m
+            WHERE m.fecha_nacimiento IS NOT NULL
+            ORDER BY
+                CASE
+                    WHEN DATE_FORMAT(m.fecha_nacimiento, '%m-%d') >= DATE_FORMAT(CURDATE(), '%m-%d')
+                    THEN DATE_FORMAT(m.fecha_nacimiento, '%m-%d')
+                    ELSE DATE_FORMAT(DATE_ADD(m.fecha_nacimiento, INTERVAL 1 YEAR), '%m-%d')
+                END ASC
+            LIMIT 5
+        ");
+            $stmt->execute();
+            $respuesta['cumpleanos'] = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+            return $respuesta;
+        } catch (Exception $e) {
+            return [
+                'total_colaboradores'      => 0,
+                'validaciones_pendientes'  => 0,
+                'contratos_por_vencer'     => 0,
+                'modalidades'              => [],
+                'cumpleanos'               => [],
+            ];
+        }
+    }
+
+    /*=============================================
     DATOS MAESTRO + LABORAL PRINCIPAL
     (Se toma el registro laboral más reciente como principal)
     =============================================*/
