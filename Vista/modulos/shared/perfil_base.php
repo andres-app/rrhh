@@ -1099,14 +1099,14 @@ $perfil = $data;
 
                         <!-- HIJOS -->
                         <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
-                            <div class="flex items-center justify-between mb-4 gap-3">
-                                <div class="flex-1">
-                                    <p class="section-title">Hijos</p>
-                                    <div class="section-divider"></div>
-                                </div>
+                            <div class="mb-4">
+                                <p class="section-title">Hijos</p>
+                                <div class="section-divider"></div>
+                            </div>
 
+                            <div class="flex justify-end mb-4">
                                 <button type="button" onclick="agregarHijo()"
-                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all shrink-0">
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all">
                                     <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                         <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
                                     </svg>
@@ -1118,28 +1118,34 @@ $perfil = $data;
                                 <?php
                                 $hijos = array_filter($perfil['familia'] ?? [], fn($f) => in_array($f['parentesco'], ['HIJO', 'HIJA']));
                                 if (empty($hijos)): ?>
-                                    <div id="sin-hijos" class="text-center py-5 text-slate-400 text-xs">
+                                    <div id="sin-hijos" class="text-center py-5 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50/70">
                                         No hay hijos registrados. Haz clic en "Agregar hijo" para añadir.
                                     </div>
                                     <?php else:
                                     foreach (array_values($hijos) as $hi => $hijo): ?>
-                                        <div class="hijo-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $hi; ?>">
+                                        <div class="hijo-row bg-slate-50 border border-slate-200 rounded-2xl p-4 relative transition-all" data-index="<?php echo $hi; ?>">
 
-                                            <div class="item-resumen flex items-center justify-between">
-                                                <div>
-                                                    <p class="text-sm font-bold text-slate-800 val-nombre"><?php echo htmlspecialchars($hijo['nombre_completo'] ?? ''); ?></p>
+                                            <div class="item-resumen flex items-center justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <p class="text-sm font-bold text-slate-800 val-nombre truncate">
+                                                        <?php echo htmlspecialchars($hijo['nombre_completo'] ?? ''); ?>
+                                                    </p>
                                                     <p class="text-[11px] text-slate-500 mt-0.5">
                                                         <span class="val-parentesco"><?php echo htmlspecialchars($hijo['parentesco'] ?? 'HIJO'); ?></span>
                                                         • DNI: <span class="val-dni"><?php echo htmlspecialchars($hijo['dni_familiar'] ?: '—'); ?></span>
                                                     </p>
                                                 </div>
-                                                <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100">
+
+                                                <button type="button" onclick="toggleFila(this, true)"
+                                                    class="text-red-900 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
                                                     Editar
                                                 </button>
                                             </div>
 
-                                            <div class="item-form hidden mt-2 pt-3 border-t border-slate-100 relative animate-in">
-                                                <button type="button" onclick="eliminarFila(this)" class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1" title="Eliminar">
+                                            <div class="item-form hidden mt-3 pt-4 border-t border-slate-200 relative animate-in">
+                                                <button type="button" onclick="eliminarFila(this)"
+                                                    class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1"
+                                                    title="Eliminar">
                                                     <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                         <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
                                                     </svg>
@@ -1148,7 +1154,8 @@ $perfil = $data;
                                                 <div class="form-grid-2 pr-6">
                                                     <div class="field-group span-full">
                                                         <label class="field-label">Nombre Completo</label>
-                                                        <input type="text" name="hijos[<?php echo $hi; ?>][nombre]" class="field-input input-nombre" value="<?php echo htmlspecialchars($hijo['nombre_completo'] ?? ''); ?>">
+                                                        <input type="text" name="hijos[<?php echo $hi; ?>][nombre]" class="field-input input-nombre"
+                                                            value="<?php echo htmlspecialchars($hijo['nombre_completo'] ?? ''); ?>">
                                                     </div>
 
                                                     <div class="field-group">
@@ -1161,19 +1168,22 @@ $perfil = $data;
 
                                                     <div class="field-group">
                                                         <label class="field-label">Fecha Nacimiento</label>
-                                                        <input type="date" name="hijos[<?php echo $hi; ?>][fecha_nacimiento]" class="field-input input-fecha" value="<?php echo htmlspecialchars($hijo['fecha_nacimiento'] ?? ''); ?>">
+                                                        <input type="date" name="hijos[<?php echo $hi; ?>][fecha_nacimiento]" class="field-input input-fecha"
+                                                            value="<?php echo htmlspecialchars($hijo['fecha_nacimiento'] ?? ''); ?>">
                                                     </div>
 
                                                     <div class="field-group">
                                                         <label class="field-label">DNI</label>
-                                                        <input type="text" name="hijos[<?php echo $hi; ?>][dni]" class="field-input input-dni" maxlength="8" value="<?php echo htmlspecialchars($hijo['dni_familiar'] ?? ''); ?>">
+                                                        <input type="text" name="hijos[<?php echo $hi; ?>][dni]" class="field-input input-dni" maxlength="8"
+                                                            value="<?php echo htmlspecialchars($hijo['dni_familiar'] ?? ''); ?>">
                                                     </div>
 
                                                     <input type="hidden" name="hijos[<?php echo $hi; ?>][id]" value="<?php echo $hijo['id'] ?? ''; ?>">
                                                 </div>
 
                                                 <div class="mt-3 text-right">
-                                                    <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
+                                                    <button type="button" onclick="toggleFila(this, false)"
+                                                        class="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg">
                                                         ✓ Listo
                                                     </button>
                                                 </div>
@@ -1187,7 +1197,6 @@ $perfil = $data;
                     </div>
                 </div>
 
-                <!-- ── PASO 4: Pensiones ── -->
                 <!-- ── PASO 4: Pensiones ── -->
                 <div id="form-step-4" class="form-step hidden">
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
@@ -1989,10 +1998,11 @@ $perfil = $data;
 
     /* opcional: línea sutil debajo */
     .section-divider {
-        height: 1px;
-        background: linear-gradient(to right, #7f1d1d, transparent);
+        height: 2px;
+        background: linear-gradient(to right, #7f1d1d 0%, #b91c1c 35%, rgba(185, 28, 28, 0.18) 70%, transparent 100%);
         margin-top: 8px;
         margin-bottom: 18px;
+        border-radius: 999px;
     }
 </style>
 
