@@ -1,4 +1,7 @@
 <?php
+
+$rolSesion = strtolower($_SESSION['user_role'] ?? '');
+$esEditable = in_array($rolSesion, ['admin', 'rrhh', 'superadmin']);
 //Vista/modulos/shared/perfil_base.php
 $titulo_pagina = "Perfil: " . ($data['nombres_apellidos'] ?? 'Colaborador');
 require_once ROOT_PATH . 'Vista/includes/header.php';
@@ -1024,30 +1027,46 @@ $perfil = $data;
                             <p class="section-title">Información Personal</p>
                             <div class="section-divider"></div>
                         </div>
+
                         <div class="form-grid-2">
                             <div class="field-group span-full">
                                 <label class="field-label">Nombres y Apellidos</label>
-                                <input type="text" name="nombres_apellidos" class="field-input"
+                                <input
+                                    type="text"
+                                    name="nombres_apellidos"
+                                    class="field-input"
                                     value="<?php echo htmlspecialchars($perfil['nombres_apellidos'] ?? ''); ?>"
-                                    title="Este campo solo puede ser modificado por RRHH">
+                                    title="Este campo solo puede ser modificado por RRHH"
+                                    <?php echo !$esEditable ? 'readonly' : ''; ?>>
                                 <p class="text-[10px] text-slate-400 mt-1">Solo RRHH puede modificar el nombre.</p>
                             </div>
 
                             <div class="field-group">
                                 <label class="field-label">DNI</label>
-                                <input type="text" name="dni" class="field-input" maxlength="8"
-                                    value="<?php echo htmlspecialchars($perfil['dni'] ?? ''); ?>">
+                                <input
+                                    type="text"
+                                    name="dni"
+                                    class="field-input"
+                                    maxlength="8"
+                                    value="<?php echo htmlspecialchars($perfil['dni'] ?? ''); ?>"
+                                    <?php echo !$esEditable ? 'readonly' : ''; ?>>
                             </div>
 
                             <div class="field-group">
                                 <label class="field-label">Fecha de Nacimiento</label>
-                                <input type="date" name="fecha_nacimiento" class="field-input"
+                                <input
+                                    type="date"
+                                    name="fecha_nacimiento"
+                                    class="field-input"
                                     value="<?php echo htmlspecialchars($perfil['fecha_nacimiento'] ?? ''); ?>">
                             </div>
 
                             <div class="field-group">
                                 <label class="field-label">Lugar de Nacimiento</label>
-                                <input type="text" name="lugar_nacimiento" class="field-input"
+                                <input
+                                    type="text"
+                                    name="lugar_nacimiento"
+                                    class="field-input"
                                     value="<?php echo htmlspecialchars($perfil['lugar_nacimiento'] ?? ''); ?>">
                             </div>
 
@@ -1056,7 +1075,9 @@ $perfil = $data;
                                 <select name="estado_civil" class="field-input">
                                     <?php foreach (['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente'] as $opt):
                                         $sel = ($perfil['estado_civil'] ?? '') === $opt ? 'selected' : ''; ?>
-                                        <option value="<?php echo $opt; ?>" <?php echo $sel; ?>><?php echo $opt; ?></option>
+                                        <option value="<?php echo $opt; ?>" <?php echo $sel; ?>>
+                                            <?php echo $opt; ?>
+                                        </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
@@ -1066,14 +1087,20 @@ $perfil = $data;
                                 <select name="grupo_sanguineo" class="field-input">
                                     <?php foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $g):
                                         $sel = ($perfil['grupo_sanguineo'] ?? '') === $g ? 'selected' : ''; ?>
-                                        <option value="<?php echo $g; ?>" <?php echo $sel; ?>><?php echo $g; ?></option>
+                                        <option value="<?php echo $g; ?>" <?php echo $sel; ?>>
+                                            <?php echo $g; ?>
+                                        </option>
                                     <?php endforeach; ?>
                                 </select>
                             </div>
 
                             <div class="field-group">
                                 <label class="field-label">Talla</label>
-                                <input type="text" name="talla" class="field-input" placeholder="Ej: 1.70"
+                                <input
+                                    type="text"
+                                    name="talla"
+                                    class="field-input"
+                                    placeholder="Ej: 1.70"
                                     value="<?php echo htmlspecialchars($perfil['talla'] ?? ''); ?>">
                             </div>
                         </div>
@@ -1118,92 +1145,73 @@ $perfil = $data;
                         </div>
                     </div>
 
-                    <!-- BLOQUE 3: DATOS LABORALES -->
-                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm xl:col-span-2">
-                        <div class="mb-4">
-                            <p class="section-title">Datos Laborales</p>
-                            <div class="section-divider"></div>
-                        </div>
-
-                        <div class="form-grid-2">
-                            <div class="field-group">
-                                <label class="field-label">Sueldo</label>
-                                <input
-                                    type="number"
-                                    step="0.01"
-                                    min="0"
-                                    name="sueldo"
-                                    class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['sueldo'] ?? ''); ?>">
+                    <?php if ($esEditable): ?>
+                        <!-- BLOQUE 3: DATOS LABORALES -->
+                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm xl:col-span-2">
+                            <div class="mb-4">
+                                <p class="section-title">Datos Laborales</p>
+                                <div class="section-divider"></div>
                             </div>
 
-                            <div class="field-group">
-                                <label class="field-label">Contrato</label>
-                                <input
-                                    type="text"
-                                    name="mod_contrato"
-                                    class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['mod_contrato'] ?? ''); ?>">
-                            </div>
+                            <div class="form-grid-2">
 
-                            <div class="field-group">
-                                <label class="field-label">Puesto CAS</label>
-                                <input
-                                    type="text"
-                                    name="puesto_cas"
-                                    class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['puesto_cas'] ?? ''); ?>">
-                            </div>
+                                <div class="field-group">
+                                    <label class="field-label">Sueldo</label>
+                                    <input type="number" name="sueldo" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['sueldo'] ?? ''); ?>">
+                                </div>
 
-                            <div class="field-group">
-                                <label class="field-label">Tipo Puesto</label>
-                                <input
-                                    type="text"
-                                    name="tipo_puesto"
-                                    class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['tipo_puesto'] ?? ''); ?>">
-                            </div>
+                                <div class="field-group">
+                                    <label class="field-label">Contrato</label>
+                                    <input type="text" name="mod_contrato" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['mod_contrato'] ?? ''); ?>">
+                                </div>
 
-                            <div class="field-group">
-                                <label class="field-label">Área</label>
-                                <input
-                                    type="text"
-                                    name="area"
-                                    class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['area'] ?? ''); ?>">
-                            </div>
+                                <div class="field-group">
+                                    <label class="field-label">Puesto CAS</label>
+                                    <input type="text" name="puesto_cas" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['puesto_cas'] ?? ''); ?>">
+                                </div>
 
-                            <div class="field-group">
-                                <label class="field-label">Procedencia</label>
-                                <input
-                                    type="text"
-                                    name="procedencia"
-                                    class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['procedencia'] ?? ''); ?>">
-                            </div>
+                                <div class="field-group">
+                                    <label class="field-label">Tipo Puesto</label>
+                                    <input type="text" name="tipo_puesto" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['tipo_puesto'] ?? ''); ?>">
+                                </div>
 
-                            <div class="field-group">
-                                <label class="field-label">NSA / CIP</label>
-                                <input
-                                    type="text"
-                                    name="nsa_cip"
-                                    class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['nsa_cip'] ?? ''); ?>">
-                            </div>
+                                <div class="field-group">
+                                    <label class="field-label">Área</label>
+                                    <input type="text" name="area" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['area'] ?? ''); ?>">
+                                </div>
 
-                            <div class="field-group">
-                                <label class="field-label">Situación</label>
-                                <select name="situacion" class="field-input">
-                                    <option value="">Seleccionar</option>
-                                    <?php foreach (['ACTIVO', 'INACTIVO', 'SUSPENDIDO', 'CESADO'] as $opt): ?>
-                                        <option value="<?php echo $opt; ?>" <?php echo (($perfil['situacion'] ?? '') === $opt) ? 'selected' : ''; ?>>
-                                            <?php echo $opt; ?>
-                                        </option>
-                                    <?php endforeach; ?>
-                                </select>
+                                <div class="field-group">
+                                    <label class="field-label">Procedencia</label>
+                                    <input type="text" name="procedencia" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['procedencia'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">NSA / CIP</label>
+                                    <input type="text" name="nsa_cip" class="field-input"
+                                        value="<?php echo htmlspecialchars($perfil['nsa_cip'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Situación</label>
+                                    <select name="situacion" class="field-input">
+                                        <option value="">Seleccionar</option>
+                                        <?php foreach (['ACTIVO', 'INACTIVO', 'SUSPENDIDO', 'CESADO'] as $opt): ?>
+                                            <option value="<?php echo $opt; ?>"
+                                                <?php echo (($perfil['situacion'] ?? '') === $opt) ? 'selected' : ''; ?>>
+                                                <?php echo $opt; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
+                                </div>
                             </div>
                         </div>
-                    </div>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -2841,6 +2849,16 @@ $perfil = $data;
             celular: 'Celular',
             correo_personal: 'Correo Personal',
             correo_institucional: 'Correo Institucional',
+
+            sueldo: 'Sueldo',
+            mod_contrato: 'Contrato',
+            puesto_cas: 'Puesto CAS',
+            tipo_puesto: 'Tipo de Puesto',
+            area: 'Área',
+            procedencia: 'Procedencia',
+            nsa_cip: 'NSA / CIP',
+            situacion: 'Situación',
+
             conyuge: 'Cónyuge',
             onomastico_conyuge: 'Fecha Nac. Cónyuge',
             dni_conyuge: 'DNI Cónyuge'
