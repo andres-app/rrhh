@@ -2533,6 +2533,10 @@ $perfil = $data;
     };
 
     function abrirModal() {
+
+        // 🔥 LIMPIAR ESTADO ANTERIOR (CRÍTICO)
+        Object.keys(valoresOriginales).forEach(key => delete valoresOriginales[key]);
+
         const m = document.getElementById('modal-perfil');
         m.classList.remove('hidden');
         requestAnimationFrame(() => m.classList.add('modal-open'));
@@ -2548,7 +2552,7 @@ $perfil = $data;
                 if (el.type === 'checkbox') {
                     valoresOriginales[el.name] = el.checked ? 1 : 0;
                 } else {
-                    valoresOriginales[el.name] = el.value;
+                    valoresOriginales[el.name] = el.value ?? '';
                 }
             }
         });
@@ -2599,6 +2603,29 @@ $perfil = $data;
                 });
             }
         });
+
+        valoresOriginales['idiomas'] = [];
+        document.querySelectorAll('.idioma-row').forEach(row => {
+            valoresOriginales['idiomas'].push({
+                idioma: row.querySelector('[name*="[idioma]"]')?.value || '',
+                nivel: row.querySelector('[name*="[nivel]"]')?.value || 'BASICO'
+            });
+        });
+
+        valoresOriginales['pension'] = {
+            sistema_pension: document.querySelector('[name="pension[sistema_pension]"]')?.value || '',
+            afp: document.querySelector('[name="pension[afp]"]')?.value || '',
+            cuspp: document.querySelector('[name="pension[cuspp]"]')?.value || '',
+            tipo_comision: document.querySelector('[name="pension[tipo_comision]"]')?.value || '',
+            fecha_inscripcion: document.querySelector('[name="pension[fecha_inscripcion]"]')?.value || '',
+            sin_afp_afiliarme: document.querySelector('[name="pension[sin_afp_afiliarme]"]')?.checked ? 1 : 0
+        };
+
+        valoresOriginales['bancario'] = {
+            banco_haberes: document.querySelector('[name="bancario[banco_haberes]"]')?.value || '',
+            numero_cuenta: document.querySelector('[name="bancario[numero_cuenta]"]')?.value || '',
+            numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value || ''
+        };
 
         irPaso(1);
     }
@@ -2928,19 +2955,29 @@ $perfil = $data;
         });
 
         // ── IDIOMAS ─────────────────────────
+        const idiomasActuales = [];
         document.querySelectorAll('.idioma-row').forEach(row => {
             const idioma = row.querySelector('[name*="[idioma]"]')?.value ?? '';
             const nivel = row.querySelector('[name*="[nivel]"]')?.value ?? 'BASICO';
 
             if (!idioma) return;
 
-            cambios.push(`
-            <div class="resumen-item border-l-4 border-sky-500">
-                <span class="r-label text-sky-600">Idioma</span>
-                <span class="r-val">${safe(idioma)} - ${safe(nivel)}</span>
-            </div>
-        `);
+            idiomasActuales.push({
+                idioma: idioma,
+                nivel: nivel
+            });
         });
+
+        const idiomasOriginales = valoresOriginales['idiomas'] || [];
+
+        if (JSON.stringify(idiomasOriginales) !== JSON.stringify(idiomasActuales)) {
+            cambios.push(`
+                <div class="resumen-item border-l-4 border-sky-500">
+                    <span class="r-label text-sky-600">Idiomas</span>
+                    <span class="r-val">${idiomasActuales.length ? idiomasActuales.map(i => `${safe(i.idioma)} - ${safe(i.nivel)}`).join(', ') : 'Actualizados'}</span>
+                </div>
+            `);
+        }
 
         // ── PENSIÓN ─────────────────────────
         const pensionActual = {
@@ -2952,19 +2989,21 @@ $perfil = $data;
             sin_afp_afiliarme: document.querySelector('[name="pension[sin_afp_afiliarme]"]')?.checked ? 1 : 0
         };
 
-        const pensionTexto = [
-            pensionActual.sistema_pension,
-            pensionActual.afp,
-            pensionActual.cuspp
-        ].filter(Boolean).join(' / ');
+        const pensionOriginal = valoresOriginales['pension'] || {};
 
-        if (pensionTexto || pensionActual.sin_afp_afiliarme) {
+        if (JSON.stringify(pensionOriginal) !== JSON.stringify(pensionActual)) {
+            const pensionTexto = [
+                pensionActual.sistema_pension,
+                pensionActual.afp,
+                pensionActual.cuspp
+            ].filter(Boolean).join(' / ');
+
             cambios.push(`
-            <div class="resumen-item border-l-4 border-violet-500">
-                <span class="r-label text-violet-600">Pensión</span>
-                <span class="r-val">${safe(pensionTexto || 'Actualizada')} ${pensionActual.sin_afp_afiliarme ? '(Desea afiliarse)' : ''}</span>
-            </div>
-        `);
+                <div class="resumen-item border-l-4 border-violet-500">
+                    <span class="r-label text-violet-600">Pensión</span>
+                    <span class="r-val">${safe(pensionTexto || 'Actualizada')} ${pensionActual.sin_afp_afiliarme ? '(Desea afiliarse)' : ''}</span>
+                </div>
+            `);
         }
 
         // ── BANCARIO ─────────────────────────
@@ -2974,13 +3013,15 @@ $perfil = $data;
             numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value ?? ''
         };
 
-        if (bancarioActual.banco_haberes || bancarioActual.numero_cuenta || bancarioActual.numero_cuenta_cci) {
+        const bancarioOriginal = valoresOriginales['bancario'] || {};
+
+        if (JSON.stringify(bancarioOriginal) !== JSON.stringify(bancarioActual)) {
             cambios.push(`
-            <div class="resumen-item border-l-4 border-rose-500">
-                <span class="r-label text-rose-600">Datos Bancarios</span>
-                <span class="r-val">${safe(bancarioActual.banco_haberes)} / ${safe(bancarioActual.numero_cuenta)}</span>
-            </div>
-        `);
+                <div class="resumen-item border-l-4 border-rose-500">
+                    <span class="r-label text-rose-600">Datos Bancarios</span>
+                    <span class="r-val">${safe(bancarioActual.banco_haberes)} / ${safe(bancarioActual.numero_cuenta)}</span>
+                </div>
+            `);
         }
 
         // ── Render final ─────────────────────────
