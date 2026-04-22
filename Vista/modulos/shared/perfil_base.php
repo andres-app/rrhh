@@ -3125,8 +3125,7 @@ $perfil = $data;
 
                 if (res.success) {
                     cerrarModal();
-                    mostrarToast('✓', 'Perfil actualizado correctamente', 'bg-slate-800');
-                    setTimeout(() => location.reload(), 1500);
+                    location.reload();
                 } else {
                     mostrarToast('✗', res.mensaje || 'Error al guardar', 'bg-red-800');
                 }
