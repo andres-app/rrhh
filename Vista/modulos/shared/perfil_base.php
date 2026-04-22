@@ -58,14 +58,12 @@ $perfil = $data;
 
                     <!-- Botón Editar -->
                     <div class="flex gap-2">
-                        <?php if ($esAdmin): ?>
-                            <button onclick="abrirModal()" class="bg-red-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#310404] transition-all shadow-lg shadow-red-900/20 active:scale-95">
-                                <svg class="w-4 h-4 inline-block mr-1 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
-                                </svg>
-                                Editar Perfil
-                            </button>
-                        <?php endif; ?>
+                        <button onclick="abrirModal()" class="bg-red-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#310404] transition-all shadow-lg shadow-red-900/20 active:scale-95">
+                            <svg class="w-4 h-4 inline-block mr-1 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+                            </svg>
+                            Editar Perfil
+                        </button>
                     </div>
                 </div>
 
@@ -947,800 +945,800 @@ $perfil = $data;
         </div><!-- /.max-w-6xl -->
 </main>
 
-<?php if ($esAdmin): ?>
-    <div id="modal-perfil" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
 
-        <!-- Backdrop -->
-        <div class="modal-backdrop absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cerrarModal()"></div>
+<div id="modal-perfil" class="fixed inset-0 z-50 hidden" role="dialog" aria-modal="true">
 
-        <!-- Panel -->
-        <div class="modal-panel absolute inset-0 w-screen h-screen bg-white shadow-2xl flex flex-col">
+    <!-- Backdrop -->
+    <div class="modal-backdrop absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cerrarModal()"></div>
 
-            <!-- Header del modal -->
-            <div class="sticky top-0 z-20 flex items-center justify-between px-6 lg:px-8 py-5 border-b border-slate-100 bg-gradient-to-r from-[#310404] to-red-900">
-                <div>
-                    <h2 class="text-white font-black text-lg">Modificar Perfil del Colaborador</h2>
-                    <p class="text-red-200 text-xs mt-0.5">
-                        Sección <span id="paso-actual">1</span> de <span id="paso-total">4</span>
-                    </p>
-                </div>
-                <button onclick="cerrarModal()" class="text-red-200 hover:text-white transition-colors">
-                    <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                    </svg>
-                </button>
+    <!-- Panel -->
+    <div class="modal-panel absolute inset-0 w-screen h-screen bg-white shadow-2xl flex flex-col">
+
+        <!-- Header del modal -->
+        <div class="sticky top-0 z-20 flex items-center justify-between px-6 lg:px-8 py-5 border-b border-slate-100 bg-gradient-to-r from-[#310404] to-red-900">
+            <div>
+                <h2 class="text-white font-black text-lg">Modificar Perfil del Colaborador</h2>
+                <p class="text-red-200 text-xs mt-0.5">
+                    Sección <span id="paso-actual">1</span> de <span id="paso-total">4</span>
+                </p>
             </div>
-
-            <!-- Barra de progreso + steps compactos -->
-            <div class="sticky top-[82px] z-10 px-6 lg:px-8 pt-4 pb-4 border-b border-slate-100 bg-white">
-                <?php
-                $steps = [
-                    ['num' => 1, 'label' => 'Personal',   'desc' => 'Datos personales y contacto'],
-                    ['num' => 2, 'label' => 'Familia',    'desc' => 'Familia, pensión y banco'],
-                    ['num' => 3, 'label' => 'Trayectoria', 'desc' => 'Formación, idiomas y experiencia'],
-                    ['num' => 4, 'label' => 'Confirmar',  'desc' => 'Resumen final'],
-                ];
-                ?>
-
-                <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
-                    <?php foreach ($steps as $step): ?>
-                        <button
-                            type="button"
-                            onclick="irPaso(<?php echo $step['num']; ?>)"
-                            class="step-indicator flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-all duration-300 hover:border-red-200 hover:bg-red-50/40"
-                            data-step="<?php echo $step['num']; ?>">
-
-                            <div class="step-circle w-10 h-10 rounded-2xl border-2 flex items-center justify-center text-xs font-black shrink-0 transition-all duration-300
-                    <?php echo $step['num'] === 1 ? 'bg-red-900 border-red-900 text-white' : 'bg-white border-slate-200 text-slate-400'; ?>">
-                                <span class="step-num"><?php echo $step['num']; ?></span>
-                                <svg class="step-check w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                    <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                                </svg>
-                            </div>
-
-                            <div class="min-w-0">
-                                <p class="text-xs font-black uppercase tracking-widest transition-colors
-                        <?php echo $step['num'] === 1 ? 'text-red-900' : 'text-slate-400'; ?>"
-                                    id="step-label-<?php echo $step['num']; ?>">
-                                    <?php echo $step['label']; ?>
-                                </p>
-                                <p class="text-[11px] text-slate-500 mt-1 leading-tight">
-                                    <?php echo $step['desc']; ?>
-                                </p>
-                            </div>
-                        </button>
-                    <?php endforeach; ?>
-                </div>
-            </div>
-
-            <!-- Modal Cuerpo scrollable del formulario de Pasos -->
-            <div class="modal-body flex-1 overflow-y-auto px-6 lg:px-10 py-7 lg:py-10">
-
-                <!-- ── PASO 1: Datos Personales ── -->
-                <div id="form-step-1" class="form-step">
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-                        <!-- BLOQUE 1: INFORMACIÓN PERSONAL -->
-                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm space-y-4">
-                            <div class="mb-4">
-                                <p class="section-title">Información Personal</p>
-                                <div class="section-divider"></div>
-                            </div>
-                            <div class="form-grid-2">
-                                <div class="field-group span-full">
-                                    <label class="field-label">Nombres y Apellidos</label>
-                                    <input type="text" name="nombres_apellidos" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['nombres_apellidos'] ?? ''); ?>"
-                                        title="Este campo solo puede ser modificado por RRHH">
-                                    <p class="text-[10px] text-slate-400 mt-1">Solo RRHH puede modificar el nombre.</p>
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">DNI</label>
-                                    <input type="text" name="dni" class="field-input" maxlength="8"
-                                        value="<?php echo htmlspecialchars($perfil['dni'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Fecha de Nacimiento</label>
-                                    <input type="date" name="fecha_nacimiento" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['fecha_nacimiento'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Lugar de Nacimiento</label>
-                                    <input type="text" name="lugar_nacimiento" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['lugar_nacimiento'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Estado Civil</label>
-                                    <select name="estado_civil" class="field-input">
-                                        <?php foreach (['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente'] as $opt):
-                                            $sel = ($perfil['estado_civil'] ?? '') === $opt ? 'selected' : ''; ?>
-                                            <option value="<?php echo $opt; ?>" <?php echo $sel; ?>><?php echo $opt; ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Grupo Sanguíneo</label>
-                                    <select name="grupo_sanguineo" class="field-input">
-                                        <?php foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $g):
-                                            $sel = ($perfil['grupo_sanguineo'] ?? '') === $g ? 'selected' : ''; ?>
-                                            <option value="<?php echo $g; ?>" <?php echo $sel; ?>><?php echo $g; ?></option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Talla</label>
-                                    <input type="text" name="talla" class="field-input" placeholder="Ej: 1.70"
-                                        value="<?php echo htmlspecialchars($perfil['talla'] ?? ''); ?>">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- BLOQUE 2: CONTACTO Y DOMICILIO -->
-                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm space-y-4">
-                            <div class="mb-4">
-                                <p class="section-title">Contacto y Domicilio</p>
-                                <div class="section-divider"></div>
-                            </div>
-                            <div class="form-grid-2">
-                                <div class="field-group span-full">
-                                    <label class="field-label">Dirección de Residencia</label>
-                                    <input type="text" name="direccion_residencia" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['direccion_residencia'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Distrito</label>
-                                    <input type="text" name="distrito" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['distrito'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Celular</label>
-                                    <input type="tel" name="celular" class="field-input" maxlength="9"
-                                        value="<?php echo htmlspecialchars($perfil['celular'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Correo Personal</label>
-                                    <input type="email" name="correo_personal" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['correo_personal'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Correo Institucional</label>
-                                    <input type="email" name="correo_institucional" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['correo_institucional'] ?? ''); ?>">
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                </div>
-
-                <!-- ── PASO 3: Familia ── -->
-                <div id="form-step-3" class="form-step hidden">
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-                        <!-- CÓNYUGE -->
-                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
-                            <div class="mb-4">
-                                <p class="section-title">Cónyuge</p>
-                                <div class="section-divider"></div>
-                            </div>
-
-                            <div class="form-grid-2">
-                                <div class="field-group span-full">
-                                    <label class="field-label">Nombre Completo</label>
-                                    <input type="text" name="conyuge" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['conyuge'] ?? ''); ?>"
-                                        placeholder="Dejar vacío si no aplica">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Fecha de Nacimiento</label>
-                                    <input type="date" name="onomastico_conyuge" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['onomastico_conyuge'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">DNI Cónyuge</label>
-                                    <input type="text" name="dni_conyuge" class="field-input" maxlength="8"
-                                        value="<?php echo htmlspecialchars($perfil['dni_conyuge'] ?? ''); ?>"
-                                        placeholder="Opcional">
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- HIJOS -->
-                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
-                            <div class="mb-4">
-                                <p class="section-title">Hijos</p>
-                                <div class="section-divider"></div>
-                            </div>
-
-                            <div class="flex justify-end mb-4">
-                                <button type="button" onclick="agregarHijo()"
-                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Agregar hijo
-                                </button>
-                            </div>
-
-                            <div id="lista-hijos" class="space-y-3">
-                                <?php
-                                $hijos = array_filter($perfil['familia'] ?? [], fn($f) => in_array(($f['parentesco'] ?? ''), ['HIJO', 'HIJA'], true));
-                                if (empty($hijos)): ?>
-                                    <div id="sin-hijos" class="text-center py-5 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50/70">
-                                        No hay hijos registrados. Haz clic en "Agregar hijo" para añadir.
-                                    </div>
-                                    <?php else:
-                                    foreach (array_values($hijos) as $hi => $hijo): ?>
-                                        <div class="hijo-row bg-slate-50 border border-slate-200 rounded-2xl p-4 relative transition-all" data-index="<?php echo $hi; ?>">
-
-                                            <div class="item-resumen flex items-center justify-between gap-3">
-                                                <div class="min-w-0">
-                                                    <p class="text-sm font-bold text-slate-800 val-nombre truncate">
-                                                        <?php echo htmlspecialchars($hijo['nombre_completo'] ?? ''); ?>
-                                                    </p>
-                                                    <p class="text-[11px] text-slate-500 mt-0.5">
-                                                        <span class="val-parentesco"><?php echo htmlspecialchars($hijo['parentesco'] ?? 'HIJO'); ?></span>
-                                                        • DNI: <span class="val-dni"><?php echo htmlspecialchars($hijo['dni_familiar'] ?: '—'); ?></span>
-                                                    </p>
-                                                </div>
-
-                                                <button type="button" onclick="toggleFila(this, true)"
-                                                    class="text-red-900 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
-                                                    Editar
-                                                </button>
-                                            </div>
-
-                                            <div class="item-form hidden mt-3 pt-4 border-t border-slate-200 relative animate-in">
-                                                <button type="button" onclick="eliminarFila(this)"
-                                                    class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1"
-                                                    title="Eliminar">
-                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-
-                                                <div class="form-grid-2 pr-6">
-                                                    <div class="field-group span-full">
-                                                        <label class="field-label">Nombre Completo</label>
-                                                        <input type="text" name="hijos[<?php echo $hi; ?>][nombre]" class="field-input input-nombre"
-                                                            value="<?php echo htmlspecialchars($hijo['nombre_completo'] ?? ''); ?>">
-                                                    </div>
-
-                                                    <div class="field-group">
-                                                        <label class="field-label">Parentesco</label>
-                                                        <select name="hijos[<?php echo $hi; ?>][parentesco]" class="field-input input-parentesco">
-                                                            <option value="HIJO" <?php echo ($hijo['parentesco'] === 'HIJO') ? 'selected' : ''; ?>>Hijo</option>
-                                                            <option value="HIJA" <?php echo ($hijo['parentesco'] === 'HIJA') ? 'selected' : ''; ?>>Hija</option>
-                                                        </select>
-                                                    </div>
-
-                                                    <div class="field-group">
-                                                        <label class="field-label">Fecha Nacimiento</label>
-                                                        <input type="date" name="hijos[<?php echo $hi; ?>][fecha_nacimiento]" class="field-input input-fecha"
-                                                            value="<?php echo htmlspecialchars($hijo['fecha_nacimiento'] ?? ''); ?>">
-                                                    </div>
-
-                                                    <div class="field-group">
-                                                        <label class="field-label">DNI</label>
-                                                        <input type="text" name="hijos[<?php echo $hi; ?>][dni]" class="field-input input-dni" maxlength="8"
-                                                            value="<?php echo htmlspecialchars($hijo['dni_familiar'] ?? ''); ?>">
-                                                    </div>
-
-                                                    <input type="hidden" name="hijos[<?php echo $hi; ?>][id]" value="<?php echo $hijo['id'] ?? ''; ?>">
-                                                </div>
-
-                                                <div class="mt-3 text-right">
-                                                    <button type="button" onclick="toggleFila(this, false)"
-                                                        class="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg">
-                                                        ✓ Listo
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                <?php endforeach;
-                                endif; ?>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- ── PASO 4: Pensiones ── -->
-                <div id="form-step-4" class="form-step hidden">
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-                        <!-- SISTEMA DE PENSIONES -->
-                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
-                            <div class="mb-4">
-                                <p class="section-title">Sistema de Pensiones</p>
-                                <div class="section-divider"></div>
-                            </div>
-
-                            <div class="form-grid-2">
-                                <div class="field-group span-full">
-                                    <label class="field-label">Sistema de Pensiones</label>
-                                    <select name="pension[sistema_pension]" class="field-input">
-                                        <option value="">Seleccionar</option>
-                                        <?php foreach (['CNP', 'D.L 20520', 'CAJA MILITAR', 'OTROS'] as $opt): ?>
-                                            <option value="<?php echo $opt; ?>" <?php echo (($perfil['pension']['sistema_pension'] ?? '') === $opt) ? 'selected' : ''; ?>>
-                                                <?php echo $opt; ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">AFP</label>
-                                    <select name="pension[afp]" class="field-input">
-                                        <option value="">Seleccionar</option>
-                                        <?php foreach (['PRIMA', 'INTEGRA', 'PROFUTURO', 'HABITAT', 'OTRO'] as $opt): ?>
-                                            <option value="<?php echo $opt; ?>" <?php echo (($perfil['pension']['afp'] ?? '') === $opt) ? 'selected' : ''; ?>>
-                                                <?php echo $opt; ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Número de CUSPP</label>
-                                    <input type="text" name="pension[cuspp]" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['pension']['cuspp'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Tipo de Comisión</label>
-                                    <select name="pension[tipo_comision]" class="field-input">
-                                        <option value="">Seleccionar</option>
-                                        <?php foreach (['FLUJO', 'MIXTA', 'OTRO'] as $opt): ?>
-                                            <option value="<?php echo $opt; ?>" <?php echo (($perfil['pension']['tipo_comision'] ?? '') === $opt) ? 'selected' : ''; ?>>
-                                                <?php echo $opt; ?>
-                                            </option>
-                                        <?php endforeach; ?>
-                                    </select>
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Fecha de Inscripción</label>
-                                    <input type="date" name="pension[fecha_inscripcion]" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['pension']['fecha_inscripcion'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group span-full">
-                                    <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                        <input type="checkbox" name="pension[sin_afp_afiliarme]" value="1"
-                                            <?php echo !empty($perfil['pension']['sin_afp_afiliarme']) ? 'checked' : ''; ?>>
-                                        No tengo AFP (deseo afiliarme)
-                                    </label>
-                                </div>
-                            </div>
-                        </div>
-
-                        <!-- DATOS BANCARIOS -->
-                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
-                            <div class="mb-4">
-                                <p class="section-title">Datos Bancarios</p>
-                                <div class="section-divider"></div>
-                            </div>
-
-                            <div class="form-grid-2">
-                                <div class="field-group span-full">
-                                    <label class="field-label">Nombre Banco Haberes</label>
-                                    <input type="text" name="bancario[banco_haberes]" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['bancario']['banco_haberes'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Número de Cuenta</label>
-                                    <input type="text" name="bancario[numero_cuenta]" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['bancario']['numero_cuenta'] ?? ''); ?>">
-                                </div>
-
-                                <div class="field-group">
-                                    <label class="field-label">Número de Cuenta CCI</label>
-                                    <input type="text" name="bancario[numero_cuenta_cci]" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['bancario']['numero_cuenta_cci'] ?? ''); ?>">
-                                </div>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- ── PASO 6: Académico ── -->
-                <div id="form-step-6" class="form-step hidden">
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-                        <!-- BLOQUE 1: FORMACIÓN ACADÉMICA -->
-                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
-                            <div class="flex items-center justify-between mb-4 gap-3">
-                                <div class="flex-1">
-                                    <p class="section-title">Formación Académica</p>
-                                    <div class="section-divider"></div>
-                                </div>
-
-                                <button type="button" onclick="agregarFormacion()"
-                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all shrink-0">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Agregar Estudio
-                                </button>
-                            </div>
-
-                            <div id="lista-formacion" class="space-y-3">
-                                <?php if (empty($formacion)): ?>
-                                    <div id="sin-formacion" class="text-center py-5 text-slate-400 text-xs">
-                                        No hay estudios registrados. Haz clic en "Agregar Estudio".
-                                    </div>
-                                <?php else: ?>
-                                    <?php foreach (array_values($formacion) as $fi => $form): ?>
-                                        <div class="formacion-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $fi; ?>">
-
-                                            <div class="item-resumen flex items-center justify-between gap-3">
-                                                <div class="min-w-0">
-                                                    <p class="text-sm font-bold text-slate-800 val-carrera truncate">
-                                                        <?php echo htmlspecialchars($form['descripcion_carrera'] ?? 'Sin carrera'); ?>
-                                                    </p>
-                                                    <p class="text-[11px] text-slate-500 mt-0.5">
-                                                        <span class="val-grado"><?php echo htmlspecialchars($form['tipo_grado'] ?? 'BACHILLER'); ?></span>
-                                                        • <span class="val-inst"><?php echo htmlspecialchars($form['institucion'] ?: 'Sin institución'); ?></span>
-                                                    </p>
-                                                </div>
-
-                                                <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
-                                                    Editar
-                                                </button>
-                                            </div>
-
-                                            <div class="item-form hidden mt-2 pt-3 border-t border-slate-100 relative animate-in">
-                                                <button type="button" onclick="eliminarFila(this)" class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1" title="Eliminar">
-                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-
-                                                <div class="form-grid-2 pr-6">
-                                                    <div class="field-group">
-                                                        <label class="field-label">Tipo de Grado</label>
-                                                        <select name="formacion[<?php echo $fi; ?>][tipo_grado]" class="field-input input-grado">
-                                                            <?php foreach (['SECUNDARIA', 'TÉCNICO', 'BACHILLER', 'TÍTULO PROFESIONAL', 'MAESTRÍA', 'DOCTORADO', 'ESPECIALIZACIÓN'] as $t): ?>
-                                                                <option value="<?php echo $t; ?>" <?php echo (strtoupper($form['tipo_grado'] ?? '') === $t) ? 'selected' : ''; ?>>
-                                                                    <?php echo $t; ?>
-                                                                </option>
-                                                            <?php endforeach; ?>
-                                                        </select>
-                                                    </div>
-
-                                                    <div class="field-group">
-                                                        <label class="field-label">Carrera / Especialidad</label>
-                                                        <input type="text"
-                                                            name="formacion[<?php echo $fi; ?>][descripcion_carrera]"
-                                                            class="field-input input-carrera"
-                                                            value="<?php echo htmlspecialchars($form['descripcion_carrera'] ?? ''); ?>">
-                                                    </div>
-
-                                                    <div class="field-group span-full">
-                                                        <label class="field-label">Institución</label>
-                                                        <input type="text"
-                                                            name="formacion[<?php echo $fi; ?>][institucion]"
-                                                            class="field-input input-inst"
-                                                            value="<?php echo htmlspecialchars($form['institucion'] ?? ''); ?>">
-                                                    </div>
-
-                                                    <div class="field-group">
-                                                        <label class="field-label">Año de Realización</label>
-                                                        <input type="number"
-                                                            name="formacion[<?php echo $fi; ?>][anio_realizacion]"
-                                                            class="field-input"
-                                                            min="1900"
-                                                            max="2100"
-                                                            step="1"
-                                                            value="<?php echo htmlspecialchars($form['anio_realizacion'] ?? ''); ?>"
-                                                            placeholder="Ej: 2020">
-                                                    </div>
-                                                    <div class="field-group">
-                                                        <label class="field-label">Horas Lectivas</label>
-                                                        <input type="number"
-                                                            name="formacion[<?php echo $fi; ?>][horas_lectivas]"
-                                                            class="field-input"
-                                                            min="0"
-                                                            step="1"
-                                                            value="<?php echo htmlspecialchars($form['horas_lectivas'] ?? ''); ?>"
-                                                            placeholder="Ej: 120">
-                                                    </div>
-
-                                                    <div class="field-group">
-                                                        <label class="field-label">Especialidad</label>
-                                                        <input type="text"
-                                                            name="formacion[<?php echo $fi; ?>][especialidad]"
-                                                            class="field-input"
-                                                            value="<?php echo htmlspecialchars($form['especialidad'] ?? ''); ?>"
-                                                            placeholder="Ej: Gestión Pública">
-                                                    </div>
-
-                                                    <div class="field-group">
-                                                        <label class="field-label">Grado Alcanzado</label>
-                                                        <input type="text"
-                                                            name="formacion[<?php echo $fi; ?>][grado_alcanzado]"
-                                                            class="field-input"
-                                                            value="<?php echo htmlspecialchars($form['grado_alcanzado'] ?? ''); ?>"
-                                                            placeholder="Ej: Egresado / Titulado / Concluido">
-                                                    </div>
-
-                                                    <input type="hidden" name="formacion[<?php echo $fi; ?>][id]" value="<?php echo $form['id'] ?? ''; ?>">
-                                                </div>
-
-                                                <div class="mt-3 text-right">
-                                                    <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
-                                                        ✓ Listo
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                        <!-- BLOQUE 2: IDIOMAS -->
-                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
-                            <div class="flex items-center justify-between mb-4 gap-3">
-                                <div class="flex-1">
-                                    <p class="section-title">Idiomas</p>
-                                    <div class="section-divider"></div>
-                                </div>
-
-                                <button type="button" onclick="agregarIdioma()"
-                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all shrink-0">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Agregar Idioma
-                                </button>
-                            </div>
-
-                            <div id="lista-idiomas" class="space-y-3">
-                                <?php $idiomas = $perfil['idiomas'] ?? []; ?>
-                                <?php if (empty($idiomas)): ?>
-                                    <div id="sin-idiomas" class="text-center py-5 text-slate-400 text-xs">
-                                        No hay idiomas registrados. Haz clic en "Agregar Idioma".
-                                    </div>
-                                <?php else: ?>
-                                    <?php foreach (array_values($idiomas) as $ii => $idioma): ?>
-                                        <div class="idioma-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $ii; ?>">
-
-                                            <div class="item-resumen flex items-center justify-between gap-3">
-                                                <div class="min-w-0">
-                                                    <p class="text-sm font-bold text-slate-800 val-idioma truncate">
-                                                        <?php echo htmlspecialchars($idioma['idioma'] ?? 'Sin idioma'); ?>
-                                                    </p>
-                                                    <p class="text-[11px] text-slate-500 mt-0.5">
-                                                        Nivel: <span class="val-nivel"><?php echo htmlspecialchars($idioma['nivel'] ?? 'BASICO'); ?></span>
-                                                    </p>
-                                                </div>
-
-                                                <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
-                                                    Editar
-                                                </button>
-                                            </div>
-
-                                            <div class="item-form hidden mt-2 pt-3 border-t border-slate-100 relative animate-in">
-                                                <button type="button" onclick="eliminarFila(this)" class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1" title="Eliminar">
-                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-
-                                                <div class="form-grid-2 pr-6">
-                                                    <div class="field-group">
-                                                        <label class="field-label">Idioma</label>
-                                                        <input type="text" name="idiomas[<?php echo $ii; ?>][idioma]" class="field-input input-idioma"
-                                                            value="<?php echo htmlspecialchars($idioma['idioma'] ?? ''); ?>">
-                                                    </div>
-
-                                                    <div class="field-group">
-                                                        <label class="field-label">Nivel</label>
-                                                        <select name="idiomas[<?php echo $ii; ?>][nivel]" class="field-input input-nivel">
-                                                            <?php foreach (['BASICO', 'INTERMEDIO', 'AVANZADO'] as $nivel): ?>
-                                                                <option value="<?php echo $nivel; ?>" <?php echo (($idioma['nivel'] ?? 'BASICO') === $nivel) ? 'selected' : ''; ?>>
-                                                                    <?php echo $nivel; ?>
-                                                                </option>
-                                                            <?php endforeach; ?>
-                                                        </select>
-                                                    </div>
-                                                </div>
-
-                                                <div class="mt-3 text-right">
-                                                    <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
-                                                        ✓ Listo
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- ── PASO 7: Experiencia Laboral ── -->
-                <div id="form-step-7" class="form-step hidden">
-                    <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-
-                        <!-- BLOQUE 1: EXPERIENCIA LABORAL -->
-                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm xl:col-span-2">
-                            <div class="flex items-center justify-between mb-4 gap-3">
-                                <div class="flex-1">
-                                    <p class="section-title">Experiencia Laboral</p>
-                                    <div class="section-divider"></div>
-                                </div>
-
-                                <button type="button" onclick="agregarExperiencia()"
-                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all shrink-0">
-                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
-                                    </svg>
-                                    Agregar Experiencia
-                                </button>
-                            </div>
-
-                            <div id="lista-experiencia" class="space-y-3">
-                                <?php if (empty($perfil['experiencia'])): ?>
-                                    <div id="sin-experiencia" class="text-center py-5 text-slate-400 text-xs">
-                                        No hay experiencia registrada. Haz clic en "Agregar Experiencia".
-                                    </div>
-                                <?php else: ?>
-                                    <?php foreach (array_values($perfil['experiencia']) as $ei => $exp): ?>
-                                        <div class="experiencia-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $ei; ?>">
-
-                                            <div class="item-resumen flex items-center justify-between gap-3">
-                                                <div class="min-w-0">
-                                                    <p class="text-sm font-bold text-slate-800 val-cargo truncate">
-                                                        <?php echo htmlspecialchars($exp['cargo_puesto'] ?? 'Sin cargo'); ?>
-                                                    </p>
-                                                    <p class="text-[11px] text-slate-500 mt-0.5">
-                                                        <span class="val-empresa"><?php echo htmlspecialchars($exp['empresa_entidad'] ?? 'Sin empresa'); ?></span>
-                                                        •
-                                                        <span class="val-fechas">
-                                                            <?php echo !empty($exp['fecha_inicio']) ? formatFecha($exp['fecha_inicio']) : '—'; ?>
-                                                            -
-                                                            <?php echo !empty($exp['actualmente_trabaja']) ? 'Actualidad' : (!empty($exp['fecha_fin']) ? formatFecha($exp['fecha_fin']) : '—'); ?>
-                                                        </span>
-                                                    </p>
-                                                </div>
-
-                                                <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
-                                                    Editar
-                                                </button>
-                                            </div>
-
-                                            <div class="item-form hidden mt-2 pt-3 border-t border-slate-100 relative animate-in">
-                                                <button type="button" onclick="eliminarFila(this)" class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1" title="Eliminar">
-                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                                                    </svg>
-                                                </button>
-
-                                                <div class="form-grid-2 pr-6">
-                                                    <div class="field-group span-full">
-                                                        <label class="field-label">Empresa / Entidad</label>
-                                                        <input type="text" name="experiencia[<?php echo $ei; ?>][empresa_entidad]" class="field-input input-empresa"
-                                                            value="<?php echo htmlspecialchars($exp['empresa_entidad'] ?? ''); ?>">
-                                                    </div>
-
-                                                    <div class="field-group span-full">
-                                                        <label class="field-label">Unidad Orgánica / Área</label>
-                                                        <input type="text" name="experiencia[<?php echo $ei; ?>][unidad_organica_area]" class="field-input input-area"
-                                                            value="<?php echo htmlspecialchars($exp['unidad_organica_area'] ?? ''); ?>">
-                                                    </div>
-
-                                                    <div class="field-group span-full">
-                                                        <label class="field-label">Cargo / Puesto</label>
-                                                        <input type="text" name="experiencia[<?php echo $ei; ?>][cargo_puesto]" class="field-input input-cargo"
-                                                            value="<?php echo htmlspecialchars($exp['cargo_puesto'] ?? ''); ?>">
-                                                    </div>
-
-                                                    <div class="field-group">
-                                                        <label class="field-label">Fecha Inicio</label>
-                                                        <input type="date" name="experiencia[<?php echo $ei; ?>][fecha_inicio]" class="field-input input-inicio"
-                                                            value="<?php echo htmlspecialchars($exp['fecha_inicio'] ?? ''); ?>">
-                                                    </div>
-
-                                                    <div class="field-group">
-                                                        <label class="field-label">Fecha Fin</label>
-                                                        <input type="date" name="experiencia[<?php echo $ei; ?>][fecha_fin]" class="field-input input-fin"
-                                                            value="<?php echo htmlspecialchars($exp['fecha_fin'] ?? ''); ?>">
-                                                    </div>
-
-                                                    <div class="field-group span-full">
-                                                        <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
-                                                            <input type="checkbox" name="experiencia[<?php echo $ei; ?>][actualmente_trabaja]" class="input-actual" value="1"
-                                                                <?php echo !empty($exp['actualmente_trabaja']) ? 'checked' : ''; ?>>
-                                                            Actualmente trabaja aquí
-                                                        </label>
-                                                    </div>
-
-                                                    <div class="field-group span-full">
-                                                        <label class="field-label">Funciones Principales</label>
-                                                        <textarea name="experiencia[<?php echo $ei; ?>][funciones_principales]" class="field-input input-funciones" rows="4"><?php echo htmlspecialchars($exp['funciones_principales'] ?? ''); ?></textarea>
-                                                    </div>
-
-                                                    <input type="hidden" name="experiencia[<?php echo $ei; ?>][id]" value="<?php echo $exp['id'] ?? ''; ?>">
-                                                </div>
-
-                                                <div class="mt-3 text-right">
-                                                    <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
-                                                        ✓ Listo
-                                                    </button>
-                                                </div>
-                                            </div>
-                                        </div>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </div>
-                        </div>
-
-                    </div>
-                </div>
-
-                <!-- ── PASO 9: Resumen Cambios ── -->
-                <div id="form-step-9" class="form-step hidden">
-                    <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-6">Resumen de Cambios</p>
-
-                    <div class="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6 flex items-start gap-3">
-                        <div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center shrink-0 mt-0.5">
-                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
-                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
-                            </svg>
-                        </div>
-                        <div>
-                            <p class="text-sm font-black text-green-800">Todo listo para guardar</p>
-                            <p class="text-xs text-green-700 mt-0.5">
-                                Revisa el resumen a continuación. Al confirmar, los cambios se guardarán en el sistema.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div id="resumen-cambios" class="space-y-2 text-sm">
-                        <!-- Se rellena dinámicamente con JS -->
-                    </div>
-                </div>
-            </div>
-        </div><!-- /overflow-y-auto -->
-
-        <!-- Footer con navegación del wizard -->
-        <div class="modal-footer sticky bottom-0 z-20 px-6 lg:px-8 py-5 border-t border-slate-100 flex items-center justify-between">
-            <button id="btn-anterior" onclick="pasoAnterior()"
-                class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition-all hidden">
-                ← Anterior
-            </button>
-            <div class="flex-1"></div>
-            <button id="btn-siguiente" onclick="pasoSiguiente()"
-                class="px-6 py-2.5 rounded-xl bg-red-900 text-white text-sm font-bold hover:bg-[#310404] transition-all shadow-md shadow-red-900/20 active:scale-95">
-                Siguiente →
-            </button>
-            <button id="btn-guardar" onclick="guardarPerfil()"
-                class="px-6 py-2.5 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all shadow-md hidden active:scale-95">
-                ✓ Guardar Cambios
+            <button onclick="cerrarModal()" class="text-red-200 hover:text-white transition-colors">
+                <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                </svg>
             </button>
         </div>
 
-    </div><!-- /panel -->
-    </div><!-- /modal -->
-<?php endif; ?>
+        <!-- Barra de progreso + steps compactos -->
+        <div class="sticky top-[82px] z-10 px-6 lg:px-8 pt-4 pb-4 border-b border-slate-100 bg-white">
+            <?php
+            $steps = [
+                ['num' => 1, 'label' => 'Personal',   'desc' => 'Datos personales y contacto'],
+                ['num' => 2, 'label' => 'Familia',    'desc' => 'Familia, pensión y banco'],
+                ['num' => 3, 'label' => 'Trayectoria', 'desc' => 'Formación, idiomas y experiencia'],
+                ['num' => 4, 'label' => 'Confirmar',  'desc' => 'Resumen final'],
+            ];
+            ?>
+
+            <div class="grid grid-cols-2 xl:grid-cols-4 gap-3">
+                <?php foreach ($steps as $step): ?>
+                    <button
+                        type="button"
+                        onclick="irPaso(<?php echo $step['num']; ?>)"
+                        class="step-indicator flex items-start gap-3 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-4 text-left transition-all duration-300 hover:border-red-200 hover:bg-red-50/40"
+                        data-step="<?php echo $step['num']; ?>">
+
+                        <div class="step-circle w-10 h-10 rounded-2xl border-2 flex items-center justify-center text-xs font-black shrink-0 transition-all duration-300
+                    <?php echo $step['num'] === 1 ? 'bg-red-900 border-red-900 text-white' : 'bg-white border-slate-200 text-slate-400'; ?>">
+                            <span class="step-num"><?php echo $step['num']; ?></span>
+                            <svg class="step-check w-4 h-4 hidden" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                            </svg>
+                        </div>
+
+                        <div class="min-w-0">
+                            <p class="text-xs font-black uppercase tracking-widest transition-colors
+                        <?php echo $step['num'] === 1 ? 'text-red-900' : 'text-slate-400'; ?>"
+                                id="step-label-<?php echo $step['num']; ?>">
+                                <?php echo $step['label']; ?>
+                            </p>
+                            <p class="text-[11px] text-slate-500 mt-1 leading-tight">
+                                <?php echo $step['desc']; ?>
+                            </p>
+                        </div>
+                    </button>
+                <?php endforeach; ?>
+            </div>
+        </div>
+
+        <!-- Modal Cuerpo scrollable del formulario de Pasos -->
+        <div class="modal-body flex-1 overflow-y-auto px-6 lg:px-10 py-7 lg:py-10">
+
+            <!-- ── PASO 1: Datos Personales ── -->
+            <div id="form-step-1" class="form-step">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+                    <!-- BLOQUE 1: INFORMACIÓN PERSONAL -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm space-y-4">
+                        <div class="mb-4">
+                            <p class="section-title">Información Personal</p>
+                            <div class="section-divider"></div>
+                        </div>
+                        <div class="form-grid-2">
+                            <div class="field-group span-full">
+                                <label class="field-label">Nombres y Apellidos</label>
+                                <input type="text" name="nombres_apellidos" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['nombres_apellidos'] ?? ''); ?>"
+                                    title="Este campo solo puede ser modificado por RRHH">
+                                <p class="text-[10px] text-slate-400 mt-1">Solo RRHH puede modificar el nombre.</p>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">DNI</label>
+                                <input type="text" name="dni" class="field-input" maxlength="8"
+                                    value="<?php echo htmlspecialchars($perfil['dni'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Fecha de Nacimiento</label>
+                                <input type="date" name="fecha_nacimiento" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['fecha_nacimiento'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Lugar de Nacimiento</label>
+                                <input type="text" name="lugar_nacimiento" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['lugar_nacimiento'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Estado Civil</label>
+                                <select name="estado_civil" class="field-input">
+                                    <?php foreach (['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente'] as $opt):
+                                        $sel = ($perfil['estado_civil'] ?? '') === $opt ? 'selected' : ''; ?>
+                                        <option value="<?php echo $opt; ?>" <?php echo $sel; ?>><?php echo $opt; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Grupo Sanguíneo</label>
+                                <select name="grupo_sanguineo" class="field-input">
+                                    <?php foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $g):
+                                        $sel = ($perfil['grupo_sanguineo'] ?? '') === $g ? 'selected' : ''; ?>
+                                        <option value="<?php echo $g; ?>" <?php echo $sel; ?>><?php echo $g; ?></option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Talla</label>
+                                <input type="text" name="talla" class="field-input" placeholder="Ej: 1.70"
+                                    value="<?php echo htmlspecialchars($perfil['talla'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- BLOQUE 2: CONTACTO Y DOMICILIO -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm space-y-4">
+                        <div class="mb-4">
+                            <p class="section-title">Contacto y Domicilio</p>
+                            <div class="section-divider"></div>
+                        </div>
+                        <div class="form-grid-2">
+                            <div class="field-group span-full">
+                                <label class="field-label">Dirección de Residencia</label>
+                                <input type="text" name="direccion_residencia" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['direccion_residencia'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Distrito</label>
+                                <input type="text" name="distrito" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['distrito'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Celular</label>
+                                <input type="tel" name="celular" class="field-input" maxlength="9"
+                                    value="<?php echo htmlspecialchars($perfil['celular'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Correo Personal</label>
+                                <input type="email" name="correo_personal" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['correo_personal'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Correo Institucional</label>
+                                <input type="email" name="correo_institucional" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['correo_institucional'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- ── PASO 3: Familia ── -->
+            <div id="form-step-3" class="form-step hidden">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+                    <!-- CÓNYUGE -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
+                        <div class="mb-4">
+                            <p class="section-title">Cónyuge</p>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <div class="form-grid-2">
+                            <div class="field-group span-full">
+                                <label class="field-label">Nombre Completo</label>
+                                <input type="text" name="conyuge" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['conyuge'] ?? ''); ?>"
+                                    placeholder="Dejar vacío si no aplica">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Fecha de Nacimiento</label>
+                                <input type="date" name="onomastico_conyuge" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['onomastico_conyuge'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">DNI Cónyuge</label>
+                                <input type="text" name="dni_conyuge" class="field-input" maxlength="8"
+                                    value="<?php echo htmlspecialchars($perfil['dni_conyuge'] ?? ''); ?>"
+                                    placeholder="Opcional">
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- HIJOS -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
+                        <div class="mb-4">
+                            <p class="section-title">Hijos</p>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <div class="flex justify-end mb-4">
+                            <button type="button" onclick="agregarHijo()"
+                                class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Agregar hijo
+                            </button>
+                        </div>
+
+                        <div id="lista-hijos" class="space-y-3">
+                            <?php
+                            $hijos = array_filter($perfil['familia'] ?? [], fn($f) => in_array(($f['parentesco'] ?? ''), ['HIJO', 'HIJA'], true));
+                            if (empty($hijos)): ?>
+                                <div id="sin-hijos" class="text-center py-5 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50/70">
+                                    No hay hijos registrados. Haz clic en "Agregar hijo" para añadir.
+                                </div>
+                                <?php else:
+                                foreach (array_values($hijos) as $hi => $hijo): ?>
+                                    <div class="hijo-row bg-slate-50 border border-slate-200 rounded-2xl p-4 relative transition-all" data-index="<?php echo $hi; ?>">
+
+                                        <div class="item-resumen flex items-center justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-bold text-slate-800 val-nombre truncate">
+                                                    <?php echo htmlspecialchars($hijo['nombre_completo'] ?? ''); ?>
+                                                </p>
+                                                <p class="text-[11px] text-slate-500 mt-0.5">
+                                                    <span class="val-parentesco"><?php echo htmlspecialchars($hijo['parentesco'] ?? 'HIJO'); ?></span>
+                                                    • DNI: <span class="val-dni"><?php echo htmlspecialchars($hijo['dni_familiar'] ?: '—'); ?></span>
+                                                </p>
+                                            </div>
+
+                                            <button type="button" onclick="toggleFila(this, true)"
+                                                class="text-red-900 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
+                                                Editar
+                                            </button>
+                                        </div>
+
+                                        <div class="item-form hidden mt-3 pt-4 border-t border-slate-200 relative animate-in">
+                                            <button type="button" onclick="eliminarFila(this)"
+                                                class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1"
+                                                title="Eliminar">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+
+                                            <div class="form-grid-2 pr-6">
+                                                <div class="field-group span-full">
+                                                    <label class="field-label">Nombre Completo</label>
+                                                    <input type="text" name="hijos[<?php echo $hi; ?>][nombre]" class="field-input input-nombre"
+                                                        value="<?php echo htmlspecialchars($hijo['nombre_completo'] ?? ''); ?>">
+                                                </div>
+
+                                                <div class="field-group">
+                                                    <label class="field-label">Parentesco</label>
+                                                    <select name="hijos[<?php echo $hi; ?>][parentesco]" class="field-input input-parentesco">
+                                                        <option value="HIJO" <?php echo ($hijo['parentesco'] === 'HIJO') ? 'selected' : ''; ?>>Hijo</option>
+                                                        <option value="HIJA" <?php echo ($hijo['parentesco'] === 'HIJA') ? 'selected' : ''; ?>>Hija</option>
+                                                    </select>
+                                                </div>
+
+                                                <div class="field-group">
+                                                    <label class="field-label">Fecha Nacimiento</label>
+                                                    <input type="date" name="hijos[<?php echo $hi; ?>][fecha_nacimiento]" class="field-input input-fecha"
+                                                        value="<?php echo htmlspecialchars($hijo['fecha_nacimiento'] ?? ''); ?>">
+                                                </div>
+
+                                                <div class="field-group">
+                                                    <label class="field-label">DNI</label>
+                                                    <input type="text" name="hijos[<?php echo $hi; ?>][dni]" class="field-input input-dni" maxlength="8"
+                                                        value="<?php echo htmlspecialchars($hijo['dni_familiar'] ?? ''); ?>">
+                                                </div>
+
+                                                <input type="hidden" name="hijos[<?php echo $hi; ?>][id]" value="<?php echo $hijo['id'] ?? ''; ?>">
+                                            </div>
+
+                                            <div class="mt-3 text-right">
+                                                <button type="button" onclick="toggleFila(this, false)"
+                                                    class="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg">
+                                                    ✓ Listo
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                            <?php endforeach;
+                            endif; ?>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ── PASO 4: Pensiones ── -->
+            <div id="form-step-4" class="form-step hidden">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+                    <!-- SISTEMA DE PENSIONES -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
+                        <div class="mb-4">
+                            <p class="section-title">Sistema de Pensiones</p>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <div class="form-grid-2">
+                            <div class="field-group span-full">
+                                <label class="field-label">Sistema de Pensiones</label>
+                                <select name="pension[sistema_pension]" class="field-input">
+                                    <option value="">Seleccionar</option>
+                                    <?php foreach (['CNP', 'D.L 20520', 'CAJA MILITAR', 'OTROS'] as $opt): ?>
+                                        <option value="<?php echo $opt; ?>" <?php echo (($perfil['pension']['sistema_pension'] ?? '') === $opt) ? 'selected' : ''; ?>>
+                                            <?php echo $opt; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">AFP</label>
+                                <select name="pension[afp]" class="field-input">
+                                    <option value="">Seleccionar</option>
+                                    <?php foreach (['PRIMA', 'INTEGRA', 'PROFUTURO', 'HABITAT', 'OTRO'] as $opt): ?>
+                                        <option value="<?php echo $opt; ?>" <?php echo (($perfil['pension']['afp'] ?? '') === $opt) ? 'selected' : ''; ?>>
+                                            <?php echo $opt; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Número de CUSPP</label>
+                                <input type="text" name="pension[cuspp]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['pension']['cuspp'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Tipo de Comisión</label>
+                                <select name="pension[tipo_comision]" class="field-input">
+                                    <option value="">Seleccionar</option>
+                                    <?php foreach (['FLUJO', 'MIXTA', 'OTRO'] as $opt): ?>
+                                        <option value="<?php echo $opt; ?>" <?php echo (($perfil['pension']['tipo_comision'] ?? '') === $opt) ? 'selected' : ''; ?>>
+                                            <?php echo $opt; ?>
+                                        </option>
+                                    <?php endforeach; ?>
+                                </select>
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Fecha de Inscripción</label>
+                                <input type="date" name="pension[fecha_inscripcion]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['pension']['fecha_inscripcion'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group span-full">
+                                <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                    <input type="checkbox" name="pension[sin_afp_afiliarme]" value="1"
+                                        <?php echo !empty($perfil['pension']['sin_afp_afiliarme']) ? 'checked' : ''; ?>>
+                                    No tengo AFP (deseo afiliarme)
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- DATOS BANCARIOS -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
+                        <div class="mb-4">
+                            <p class="section-title">Datos Bancarios</p>
+                            <div class="section-divider"></div>
+                        </div>
+
+                        <div class="form-grid-2">
+                            <div class="field-group span-full">
+                                <label class="field-label">Nombre Banco Haberes</label>
+                                <input type="text" name="bancario[banco_haberes]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['bancario']['banco_haberes'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Número de Cuenta</label>
+                                <input type="text" name="bancario[numero_cuenta]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['bancario']['numero_cuenta'] ?? ''); ?>">
+                            </div>
+
+                            <div class="field-group">
+                                <label class="field-label">Número de Cuenta CCI</label>
+                                <input type="text" name="bancario[numero_cuenta_cci]" class="field-input"
+                                    value="<?php echo htmlspecialchars($perfil['bancario']['numero_cuenta_cci'] ?? ''); ?>">
+                            </div>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ── PASO 6: Académico ── -->
+            <div id="form-step-6" class="form-step hidden">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+                    <!-- BLOQUE 1: FORMACIÓN ACADÉMICA -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
+                        <div class="flex items-center justify-between mb-4 gap-3">
+                            <div class="flex-1">
+                                <p class="section-title">Formación Académica</p>
+                                <div class="section-divider"></div>
+                            </div>
+
+                            <button type="button" onclick="agregarFormacion()"
+                                class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all shrink-0">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Agregar Estudio
+                            </button>
+                        </div>
+
+                        <div id="lista-formacion" class="space-y-3">
+                            <?php if (empty($formacion)): ?>
+                                <div id="sin-formacion" class="text-center py-5 text-slate-400 text-xs">
+                                    No hay estudios registrados. Haz clic en "Agregar Estudio".
+                                </div>
+                            <?php else: ?>
+                                <?php foreach (array_values($formacion) as $fi => $form): ?>
+                                    <div class="formacion-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $fi; ?>">
+
+                                        <div class="item-resumen flex items-center justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-bold text-slate-800 val-carrera truncate">
+                                                    <?php echo htmlspecialchars($form['descripcion_carrera'] ?? 'Sin carrera'); ?>
+                                                </p>
+                                                <p class="text-[11px] text-slate-500 mt-0.5">
+                                                    <span class="val-grado"><?php echo htmlspecialchars($form['tipo_grado'] ?? 'BACHILLER'); ?></span>
+                                                    • <span class="val-inst"><?php echo htmlspecialchars($form['institucion'] ?: 'Sin institución'); ?></span>
+                                                </p>
+                                            </div>
+
+                                            <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
+                                                Editar
+                                            </button>
+                                        </div>
+
+                                        <div class="item-form hidden mt-2 pt-3 border-t border-slate-100 relative animate-in">
+                                            <button type="button" onclick="eliminarFila(this)" class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1" title="Eliminar">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+
+                                            <div class="form-grid-2 pr-6">
+                                                <div class="field-group">
+                                                    <label class="field-label">Tipo de Grado</label>
+                                                    <select name="formacion[<?php echo $fi; ?>][tipo_grado]" class="field-input input-grado">
+                                                        <?php foreach (['SECUNDARIA', 'TÉCNICO', 'BACHILLER', 'TÍTULO PROFESIONAL', 'MAESTRÍA', 'DOCTORADO', 'ESPECIALIZACIÓN'] as $t): ?>
+                                                            <option value="<?php echo $t; ?>" <?php echo (strtoupper($form['tipo_grado'] ?? '') === $t) ? 'selected' : ''; ?>>
+                                                                <?php echo $t; ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+
+                                                <div class="field-group">
+                                                    <label class="field-label">Carrera / Especialidad</label>
+                                                    <input type="text"
+                                                        name="formacion[<?php echo $fi; ?>][descripcion_carrera]"
+                                                        class="field-input input-carrera"
+                                                        value="<?php echo htmlspecialchars($form['descripcion_carrera'] ?? ''); ?>">
+                                                </div>
+
+                                                <div class="field-group span-full">
+                                                    <label class="field-label">Institución</label>
+                                                    <input type="text"
+                                                        name="formacion[<?php echo $fi; ?>][institucion]"
+                                                        class="field-input input-inst"
+                                                        value="<?php echo htmlspecialchars($form['institucion'] ?? ''); ?>">
+                                                </div>
+
+                                                <div class="field-group">
+                                                    <label class="field-label">Año de Realización</label>
+                                                    <input type="number"
+                                                        name="formacion[<?php echo $fi; ?>][anio_realizacion]"
+                                                        class="field-input"
+                                                        min="1900"
+                                                        max="2100"
+                                                        step="1"
+                                                        value="<?php echo htmlspecialchars($form['anio_realizacion'] ?? ''); ?>"
+                                                        placeholder="Ej: 2020">
+                                                </div>
+                                                <div class="field-group">
+                                                    <label class="field-label">Horas Lectivas</label>
+                                                    <input type="number"
+                                                        name="formacion[<?php echo $fi; ?>][horas_lectivas]"
+                                                        class="field-input"
+                                                        min="0"
+                                                        step="1"
+                                                        value="<?php echo htmlspecialchars($form['horas_lectivas'] ?? ''); ?>"
+                                                        placeholder="Ej: 120">
+                                                </div>
+
+                                                <div class="field-group">
+                                                    <label class="field-label">Especialidad</label>
+                                                    <input type="text"
+                                                        name="formacion[<?php echo $fi; ?>][especialidad]"
+                                                        class="field-input"
+                                                        value="<?php echo htmlspecialchars($form['especialidad'] ?? ''); ?>"
+                                                        placeholder="Ej: Gestión Pública">
+                                                </div>
+
+                                                <div class="field-group">
+                                                    <label class="field-label">Grado Alcanzado</label>
+                                                    <input type="text"
+                                                        name="formacion[<?php echo $fi; ?>][grado_alcanzado]"
+                                                        class="field-input"
+                                                        value="<?php echo htmlspecialchars($form['grado_alcanzado'] ?? ''); ?>"
+                                                        placeholder="Ej: Egresado / Titulado / Concluido">
+                                                </div>
+
+                                                <input type="hidden" name="formacion[<?php echo $fi; ?>][id]" value="<?php echo $form['id'] ?? ''; ?>">
+                                            </div>
+
+                                            <div class="mt-3 text-right">
+                                                <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
+                                                    ✓ Listo
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <!-- BLOQUE 2: IDIOMAS -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm">
+                        <div class="flex items-center justify-between mb-4 gap-3">
+                            <div class="flex-1">
+                                <p class="section-title">Idiomas</p>
+                                <div class="section-divider"></div>
+                            </div>
+
+                            <button type="button" onclick="agregarIdioma()"
+                                class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all shrink-0">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Agregar Idioma
+                            </button>
+                        </div>
+
+                        <div id="lista-idiomas" class="space-y-3">
+                            <?php $idiomas = $perfil['idiomas'] ?? []; ?>
+                            <?php if (empty($idiomas)): ?>
+                                <div id="sin-idiomas" class="text-center py-5 text-slate-400 text-xs">
+                                    No hay idiomas registrados. Haz clic en "Agregar Idioma".
+                                </div>
+                            <?php else: ?>
+                                <?php foreach (array_values($idiomas) as $ii => $idioma): ?>
+                                    <div class="idioma-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $ii; ?>">
+
+                                        <div class="item-resumen flex items-center justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-bold text-slate-800 val-idioma truncate">
+                                                    <?php echo htmlspecialchars($idioma['idioma'] ?? 'Sin idioma'); ?>
+                                                </p>
+                                                <p class="text-[11px] text-slate-500 mt-0.5">
+                                                    Nivel: <span class="val-nivel"><?php echo htmlspecialchars($idioma['nivel'] ?? 'BASICO'); ?></span>
+                                                </p>
+                                            </div>
+
+                                            <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
+                                                Editar
+                                            </button>
+                                        </div>
+
+                                        <div class="item-form hidden mt-2 pt-3 border-t border-slate-100 relative animate-in">
+                                            <button type="button" onclick="eliminarFila(this)" class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1" title="Eliminar">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+
+                                            <div class="form-grid-2 pr-6">
+                                                <div class="field-group">
+                                                    <label class="field-label">Idioma</label>
+                                                    <input type="text" name="idiomas[<?php echo $ii; ?>][idioma]" class="field-input input-idioma"
+                                                        value="<?php echo htmlspecialchars($idioma['idioma'] ?? ''); ?>">
+                                                </div>
+
+                                                <div class="field-group">
+                                                    <label class="field-label">Nivel</label>
+                                                    <select name="idiomas[<?php echo $ii; ?>][nivel]" class="field-input input-nivel">
+                                                        <?php foreach (['BASICO', 'INTERMEDIO', 'AVANZADO'] as $nivel): ?>
+                                                            <option value="<?php echo $nivel; ?>" <?php echo (($idioma['nivel'] ?? 'BASICO') === $nivel) ? 'selected' : ''; ?>>
+                                                                <?php echo $nivel; ?>
+                                                            </option>
+                                                        <?php endforeach; ?>
+                                                    </select>
+                                                </div>
+                                            </div>
+
+                                            <div class="mt-3 text-right">
+                                                <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
+                                                    ✓ Listo
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ── PASO 7: Experiencia Laboral ── -->
+            <div id="form-step-7" class="form-step hidden">
+                <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
+
+                    <!-- BLOQUE 1: EXPERIENCIA LABORAL -->
+                    <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm xl:col-span-2">
+                        <div class="flex items-center justify-between mb-4 gap-3">
+                            <div class="flex-1">
+                                <p class="section-title">Experiencia Laboral</p>
+                                <div class="section-divider"></div>
+                            </div>
+
+                            <button type="button" onclick="agregarExperiencia()"
+                                class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all shrink-0">
+                                <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                </svg>
+                                Agregar Experiencia
+                            </button>
+                        </div>
+
+                        <div id="lista-experiencia" class="space-y-3">
+                            <?php if (empty($perfil['experiencia'])): ?>
+                                <div id="sin-experiencia" class="text-center py-5 text-slate-400 text-xs">
+                                    No hay experiencia registrada. Haz clic en "Agregar Experiencia".
+                                </div>
+                            <?php else: ?>
+                                <?php foreach (array_values($perfil['experiencia']) as $ei => $exp): ?>
+                                    <div class="experiencia-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $ei; ?>">
+
+                                        <div class="item-resumen flex items-center justify-between gap-3">
+                                            <div class="min-w-0">
+                                                <p class="text-sm font-bold text-slate-800 val-cargo truncate">
+                                                    <?php echo htmlspecialchars($exp['cargo_puesto'] ?? 'Sin cargo'); ?>
+                                                </p>
+                                                <p class="text-[11px] text-slate-500 mt-0.5">
+                                                    <span class="val-empresa"><?php echo htmlspecialchars($exp['empresa_entidad'] ?? 'Sin empresa'); ?></span>
+                                                    •
+                                                    <span class="val-fechas">
+                                                        <?php echo !empty($exp['fecha_inicio']) ? formatFecha($exp['fecha_inicio']) : '—'; ?>
+                                                        -
+                                                        <?php echo !empty($exp['actualmente_trabaja']) ? 'Actualidad' : (!empty($exp['fecha_fin']) ? formatFecha($exp['fecha_fin']) : '—'); ?>
+                                                    </span>
+                                                </p>
+                                            </div>
+
+                                            <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
+                                                Editar
+                                            </button>
+                                        </div>
+
+                                        <div class="item-form hidden mt-2 pt-3 border-t border-slate-100 relative animate-in">
+                                            <button type="button" onclick="eliminarFila(this)" class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1" title="Eliminar">
+                                                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                </svg>
+                                            </button>
+
+                                            <div class="form-grid-2 pr-6">
+                                                <div class="field-group span-full">
+                                                    <label class="field-label">Empresa / Entidad</label>
+                                                    <input type="text" name="experiencia[<?php echo $ei; ?>][empresa_entidad]" class="field-input input-empresa"
+                                                        value="<?php echo htmlspecialchars($exp['empresa_entidad'] ?? ''); ?>">
+                                                </div>
+
+                                                <div class="field-group span-full">
+                                                    <label class="field-label">Unidad Orgánica / Área</label>
+                                                    <input type="text" name="experiencia[<?php echo $ei; ?>][unidad_organica_area]" class="field-input input-area"
+                                                        value="<?php echo htmlspecialchars($exp['unidad_organica_area'] ?? ''); ?>">
+                                                </div>
+
+                                                <div class="field-group span-full">
+                                                    <label class="field-label">Cargo / Puesto</label>
+                                                    <input type="text" name="experiencia[<?php echo $ei; ?>][cargo_puesto]" class="field-input input-cargo"
+                                                        value="<?php echo htmlspecialchars($exp['cargo_puesto'] ?? ''); ?>">
+                                                </div>
+
+                                                <div class="field-group">
+                                                    <label class="field-label">Fecha Inicio</label>
+                                                    <input type="date" name="experiencia[<?php echo $ei; ?>][fecha_inicio]" class="field-input input-inicio"
+                                                        value="<?php echo htmlspecialchars($exp['fecha_inicio'] ?? ''); ?>">
+                                                </div>
+
+                                                <div class="field-group">
+                                                    <label class="field-label">Fecha Fin</label>
+                                                    <input type="date" name="experiencia[<?php echo $ei; ?>][fecha_fin]" class="field-input input-fin"
+                                                        value="<?php echo htmlspecialchars($exp['fecha_fin'] ?? ''); ?>">
+                                                </div>
+
+                                                <div class="field-group span-full">
+                                                    <label class="inline-flex items-center gap-2 text-sm font-semibold text-slate-700">
+                                                        <input type="checkbox" name="experiencia[<?php echo $ei; ?>][actualmente_trabaja]" class="input-actual" value="1"
+                                                            <?php echo !empty($exp['actualmente_trabaja']) ? 'checked' : ''; ?>>
+                                                        Actualmente trabaja aquí
+                                                    </label>
+                                                </div>
+
+                                                <div class="field-group span-full">
+                                                    <label class="field-label">Funciones Principales</label>
+                                                    <textarea name="experiencia[<?php echo $ei; ?>][funciones_principales]" class="field-input input-funciones" rows="4"><?php echo htmlspecialchars($exp['funciones_principales'] ?? ''); ?></textarea>
+                                                </div>
+
+                                                <input type="hidden" name="experiencia[<?php echo $ei; ?>][id]" value="<?php echo $exp['id'] ?? ''; ?>">
+                                            </div>
+
+                                            <div class="mt-3 text-right">
+                                                <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
+                                                    ✓ Listo
+                                                </button>
+                                            </div>
+                                        </div>
+                                    </div>
+                                <?php endforeach; ?>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                </div>
+            </div>
+
+            <!-- ── PASO 9: Resumen Cambios ── -->
+            <div id="form-step-9" class="form-step hidden">
+                <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mb-6">Resumen de Cambios</p>
+
+                <div class="bg-green-50 border border-green-200 rounded-2xl p-5 mb-6 flex items-start gap-3">
+                    <div class="w-8 h-8 rounded-full bg-green-500 text-white flex items-center justify-center shrink-0 mt-0.5">
+                        <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />
+                        </svg>
+                    </div>
+                    <div>
+                        <p class="text-sm font-black text-green-800">Todo listo para guardar</p>
+                        <p class="text-xs text-green-700 mt-0.5">
+                            Revisa el resumen a continuación. Al confirmar, los cambios se guardarán en el sistema.
+                        </p>
+                    </div>
+                </div>
+
+                <div id="resumen-cambios" class="space-y-2 text-sm">
+                    <!-- Se rellena dinámicamente con JS -->
+                </div>
+            </div>
+        </div>
+    </div><!-- /overflow-y-auto -->
+
+    <!-- Footer con navegación del wizard -->
+    <div class="modal-footer sticky bottom-0 z-20 px-6 lg:px-8 py-5 border-t border-slate-100 flex items-center justify-between">
+        <button id="btn-anterior" onclick="pasoAnterior()"
+            class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition-all hidden">
+            ← Anterior
+        </button>
+        <div class="flex-1"></div>
+        <button id="btn-siguiente" onclick="pasoSiguiente()"
+            class="px-6 py-2.5 rounded-xl bg-red-900 text-white text-sm font-bold hover:bg-[#310404] transition-all shadow-md shadow-red-900/20 active:scale-95">
+            Siguiente →
+        </button>
+        <button id="btn-guardar" onclick="guardarPerfil()"
+            class="px-6 py-2.5 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all shadow-md hidden active:scale-95">
+            ✓ Guardar Cambios
+        </button>
+    </div>
+
+</div><!-- /panel -->
+</div><!-- /modal -->
+
 
 <!-- Toast de confirmación -->
 <div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] hidden">
