@@ -273,10 +273,25 @@ $perfil = $data;
                                     <div class="space-y-4 text-sm">
                                         <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
                                             <span class="text-slate-400 font-medium">Sueldo</span>
-                                            <span class="font-black text-red-900 text-base">
-                                                S/ <?php echo !empty($data['sueldo']) ? number_format($data['sueldo'], 2) : '0.00'; ?>
-                                            </span>
+
+                                            <div class="flex items-center gap-2">
+                                                <!-- Monto -->
+                                                <span id="sueldo-texto" class="font-black text-red-900 text-base tracking-widest">
+                                                    *****
+                                                </span>
+
+                                                <!-- Botón ojito -->
+                                                <button type="button" onclick="toggleSueldo()" class="text-slate-400 hover:text-red-900 transition">
+                                                    <svg id="icono-ojo" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path id="ojo-abierto" stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                        <path id="ojo-linea" stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.847-.66 1.647-1.143 2.379M15 12a3 3 0 00-6 0" />
+                                                    </svg>
+                                                </button>
+                                            </div>
                                         </div>
+
+                                        <!-- Guardamos el valor real -->
+                                        <input type="hidden" id="sueldo-real" value="<?php echo !empty($data['sueldo']) ? number_format($data['sueldo'], 2) : '0.00'; ?>">
                                         <div class="flex justify-between px-2">
                                             <span class="text-slate-400">Contrato</span>
                                             <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['mod_contrato'] ?? '—'); ?></span>
@@ -3189,6 +3204,21 @@ $perfil = $data;
         }
 
     });
+
+    let sueldoVisible = false;
+
+    function toggleSueldo() {
+        const texto = document.getElementById('sueldo-texto');
+        const real = document.getElementById('sueldo-real').value;
+
+        if (!sueldoVisible) {
+            texto.textContent = 'S/ ' + real;
+        } else {
+            texto.textContent = '*****';
+        }
+
+        sueldoVisible = !sueldoVisible;
+    }
 </script>
 
 <?php require_once ROOT_PATH . 'Vista/includes/footer.php'; ?>
