@@ -102,7 +102,7 @@ $perfil = $data;
                         <div class="lg:col-span-2 space-y-6">
 
                             <!-- Datos Personales -->
-                            <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                            <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                                 <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                                     <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
                                     Datos Personales
@@ -154,7 +154,7 @@ $perfil = $data;
                             </div>
 
                             <!-- Contacto y Domicilio -->
-                            <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                            <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                                 <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                                     <span class="w-1.5 h-5 bg-slate-800 rounded-full"></span>
                                     Contacto y Domicilio
@@ -187,7 +187,7 @@ $perfil = $data;
                             </div>
 
                             <!-- CORRECCIÓN 5: Historial de Contratos / Fechas de Ingreso (múltiples) -->
-                            <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                            <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                                 <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                                     <span class="w-1.5 h-5 bg-slate-800 rounded-full"></span>
                                     Historial de Contratos
@@ -319,7 +319,7 @@ $perfil = $data;
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
                         <!-- Datos personales -->
-                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                             <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                                 <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
                                 Datos Personales
@@ -367,7 +367,7 @@ $perfil = $data;
                         </div>
 
                         <!-- Contacto -->
-                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                             <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                                 <span class="w-1.5 h-5 bg-slate-800 rounded-full"></span>
                                 Contacto y Domicilio
@@ -398,7 +398,7 @@ $perfil = $data;
                         </div>
 
                         <!-- Cónyuge -->
-                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                             <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                                 <span class="w-1.5 h-5 bg-red-600 rounded-full"></span>
                                 Cónyuge
@@ -421,7 +421,7 @@ $perfil = $data;
                         </div>
 
                         <!-- Hijos -->
-                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                             <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                                 <span class="w-1.5 h-5 bg-slate-800 rounded-full"></span>
                                 Hijos
@@ -470,7 +470,7 @@ $perfil = $data;
                     <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
                         <!-- Resumen laboral -->
-                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                             <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                                 <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
                                 Datos Laborales
@@ -517,7 +517,7 @@ $perfil = $data;
                         </div>
 
                         <!-- Pensión -->
-                        <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                        <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                             <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                                 <span class="w-1.5 h-5 bg-slate-800 rounded-full"></span>
                                 Sistema de Pensiones
@@ -635,7 +635,7 @@ $perfil = $data;
                     (grado, especialización, otros) en timeline
                 ============================================================ -->
                 <div id="tab-formacion" class="tab-content hidden animate-fadeIn">
-                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                         <h3 class="text-xl font-black text-slate-800 mb-8 flex items-center gap-2">
                             <span class="w-1.5 h-6 bg-red-900 rounded-full"></span>
                             Historial Académico
@@ -655,7 +655,7 @@ $perfil = $data;
                                 </p>
                             </div>
                         <?php else: ?>
-                            <div class="relative pl-8 border-l-2 border-red-100 space-y-8">
+                            <div class="relative pl-8 border-l border-red-100/70 space-y-6">
                                 <?php foreach ($formacion as $idx => $item):
                                     $tipo = strtoupper($item['tipo_grado'] ?? '');
                                     $dotColor = match (true) {
@@ -676,67 +676,73 @@ $perfil = $data;
                                     };
                                 ?>
                                     <div class="relative">
-                                        <div class="absolute -left-[41px] top-1 w-5 h-5 rounded-full <?php echo $dotColor; ?> border-4 border-white shadow-sm"></div>
+                                        <div class="absolute -left-[41px] top-7 w-5 h-5 rounded-full <?php echo $dotColor; ?> border-4 border-white shadow-md"></div>
 
-                                        <?php if (!empty($item['tipo_grado'])): ?>
-                                            <span class="inline-block text-[10px] font-black uppercase tracking-widest px-2 py-0.5 rounded-md border mb-2 <?php echo $badgeColor; ?>">
-                                                <?php echo htmlspecialchars($item['tipo_grado']); ?>
-                                            </span>
-                                        <?php endif; ?>
+                                        <div class="bg-white border border-slate-200/80 rounded-3xl p-5 md:p-6 shadow-sm hover:shadow-md transition-all">
+                                            <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+                                                <div class="min-w-0">
+                                                    <?php if (!empty($item['tipo_grado'])): ?>
+                                                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.18em] border mb-3 <?php echo $badgeColor; ?>">
+                                                            <?php echo htmlspecialchars($item['tipo_grado']); ?>
+                                                        </span>
+                                                    <?php endif; ?>
 
-                                        <h4 class="text-lg font-bold text-slate-800 mb-1">
-                                            <?php echo htmlspecialchars($item['descripcion_carrera'] ?? 'No registrado'); ?>
-                                        </h4>
+                                                    <h4 class="text-lg md:text-xl font-black text-slate-800 leading-tight">
+                                                        <?php echo htmlspecialchars($item['descripcion_carrera'] ?? 'No registrado'); ?>
+                                                    </h4>
 
-                                        <p class="text-slate-500 italic text-sm mb-3">
-                                            <?php echo htmlspecialchars($item['institucion'] ?? 'Institución no registrada'); ?>
-                                        </p>
-
-                                        <div class="grid grid-cols-1 md:grid-cols-2 gap-3">
-                                            <?php if (!empty($item['anio_realizacion'])): ?>
-                                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Año de Realización</p>
-                                                    <p class="text-sm font-bold text-slate-700">
-                                                        <?php echo htmlspecialchars($item['anio_realizacion']); ?>
+                                                    <p class="text-sm text-slate-500 mt-2">
+                                                        <?php echo htmlspecialchars($item['institucion'] ?? 'Institución no registrada'); ?>
                                                     </p>
                                                 </div>
-                                            <?php endif; ?>
 
-                                            <?php if (!empty($item['horas_lectivas'])): ?>
-                                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3">
-                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Horas Lectivas</p>
-                                                    <p class="text-sm font-bold text-slate-700">
-                                                        <?php echo htmlspecialchars($item['horas_lectivas']); ?>
-                                                    </p>
-                                                </div>
-                                            <?php endif; ?>
+                                                <?php if (!empty($item['estado_validacion']) && $item['estado_validacion'] !== 'PENDIENTE'): ?>
+                                                    <span class="inline-flex items-center self-start px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest <?php echo $item['estado_validacion'] === 'APROBADO'
+                                                                                                                                                                                ? 'bg-green-50 text-green-700 border border-green-100'
+                                                                                                                                                                                : 'bg-red-50 text-red-700 border border-red-100'; ?>">
+                                                        <?php echo htmlspecialchars($item['estado_validacion']); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
 
-                                            <?php if (!empty($item['especialidad'])): ?>
-                                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 md:col-span-2">
-                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Especialidad</p>
-                                                    <p class="text-sm font-bold text-slate-700">
-                                                        <?php echo htmlspecialchars($item['especialidad']); ?>
-                                                    </p>
-                                                </div>
-                                            <?php endif; ?>
+                                            <div class="mt-5 flex flex-wrap gap-2.5">
+                                                <?php if (!empty($item['anio_realizacion'])): ?>
+                                                    <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
+                                                        <span class="text-slate-400 font-bold">Año</span>
+                                                        <span class="text-slate-800"><?php echo htmlspecialchars($item['anio_realizacion']); ?></span>
+                                                    </span>
+                                                <?php endif; ?>
 
-                                            <?php if (!empty($item['grado_alcanzado'])): ?>
-                                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-3 md:col-span-2">
-                                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">Grado Alcanzado</p>
-                                                    <p class="text-sm font-bold text-slate-700">
-                                                        <?php echo htmlspecialchars($item['grado_alcanzado']); ?>
-                                                    </p>
+                                                <?php if (!empty($item['horas_lectivas'])): ?>
+                                                    <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
+                                                        <span class="text-slate-400 font-bold">Horas</span>
+                                                        <span class="text-slate-800"><?php echo htmlspecialchars($item['horas_lectivas']); ?></span>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </div>
+
+                                            <?php if (!empty($item['especialidad']) || !empty($item['grado_alcanzado'])): ?>
+                                                <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                    <?php if (!empty($item['especialidad'])): ?>
+                                                        <div class="rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3">
+                                                            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">Especialidad</p>
+                                                            <p class="text-sm font-semibold text-slate-800 leading-relaxed">
+                                                                <?php echo htmlspecialchars($item['especialidad']); ?>
+                                                            </p>
+                                                        </div>
+                                                    <?php endif; ?>
+
+                                                    <?php if (!empty($item['grado_alcanzado'])): ?>
+                                                        <div class="rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3">
+                                                            <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">Grado alcanzado</p>
+                                                            <p class="text-sm font-semibold text-slate-800 leading-relaxed">
+                                                                <?php echo htmlspecialchars($item['grado_alcanzado']); ?>
+                                                            </p>
+                                                        </div>
+                                                    <?php endif; ?>
                                                 </div>
                                             <?php endif; ?>
                                         </div>
-
-                                        <?php if (!empty($item['estado_validacion']) && $item['estado_validacion'] !== 'PENDIENTE'): ?>
-                                            <span class="inline-block mt-3 text-[10px] font-bold uppercase px-2 py-0.5 rounded <?php echo $item['estado_validacion'] === 'APROBADO'
-                                                                                                                                    ? 'bg-green-50 text-green-700'
-                                                                                                                                    : 'bg-red-50 text-red-700'; ?>">
-                                                <?php echo htmlspecialchars($item['estado_validacion']); ?>
-                                            </span>
-                                        <?php endif; ?>
                                     </div>
                                 <?php endforeach; ?>
                             </div>
@@ -775,7 +781,7 @@ $perfil = $data;
                     TAB 3: EXPERIENCIA LABORAL
                 ============================================================ -->
                 <div id="tab-experiencia" class="tab-content hidden animate-fadeIn">
-                    <div class="bg-white p-8 rounded-3xl shadow-sm border border-slate-200">
+                    <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                         <h3 class="text-xl font-black text-slate-800 mb-8 flex items-center gap-2">
                             <span class="w-1.5 h-6 bg-red-900 rounded-full"></span>
                             Experiencia Laboral
