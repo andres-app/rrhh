@@ -203,23 +203,30 @@ $perfil = $data;
                                     <div class="space-y-3">
                                         <?php foreach ($contratos as $i => $contrato): ?>
                                             <div class="flex flex-col sm:flex-row sm:items-center gap-3 p-4 rounded-2xl border border-slate-100 bg-slate-50">
-                                                <!-- Número de contrato -->
                                                 <div class="w-8 h-8 rounded-xl bg-red-900 text-white flex items-center justify-center text-xs font-black shrink-0">
                                                     <?php echo $i + 1; ?>
                                                 </div>
-                                                <!-- Fechas -->
-                                                <div class="flex-1 grid grid-cols-2 sm:grid-cols-3 gap-3 text-xs">
+
+                                                <div class="flex-1 grid grid-cols-1 sm:grid-cols-3 gap-3 text-xs">
                                                     <div>
                                                         <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Ingreso</p>
-                                                        <p class="font-black text-slate-700"><?php echo formatFecha($contrato['fecha_ingreso']); ?></p>
+                                                        <p class="font-black text-slate-700">
+                                                            <?php echo !empty($contrato['fecha_ingreso']) ? formatFecha($contrato['fecha_ingreso']) : '—'; ?>
+                                                        </p>
                                                     </div>
+
                                                     <div>
                                                         <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Cese</p>
-                                                        <p class="font-black text-slate-700"><?php echo formatFecha($contrato['fecha_cese']); ?></p>
+                                                        <p class="font-black text-slate-700">
+                                                            <?php echo !empty($contrato['fecha_cese']) ? formatFecha($contrato['fecha_cese']) : 'Vigente'; ?>
+                                                        </p>
                                                     </div>
+
                                                     <div>
                                                         <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Modalidad</p>
-                                                        <p class="font-black text-slate-700"><?php echo htmlspecialchars($contrato['modalidad_contrato'] ?? '—'); ?></p>
+                                                        <p class="font-black text-slate-700">
+                                                            <?php echo htmlspecialchars($contrato['modalidad'] ?? '—'); ?>
+                                                        </p>
                                                     </div>
                                                 </div>
                                             </div>
@@ -265,7 +272,7 @@ $perfil = $data;
                             </div>
 
                             <!-- Datos Laborales (resumen del contrato más reciente) -->
-                            <?php if ($esAdmin): ?>
+                            <?php if ($esEditable): ?>
                                 <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
                                     <h3 class="text-md font-black text-slate-800 mb-4 flex items-center gap-2">
                                         <span class="w-1.5 h-4 bg-slate-800 rounded-full"></span>
@@ -610,30 +617,26 @@ $perfil = $data;
                                                 <?php echo $i + 1; ?>
                                             </div>
 
-                                            <div class="flex-1 grid grid-cols-2 lg:grid-cols-6 gap-3 text-xs">
+                                            <div class="flex-1 grid grid-cols-1 lg:grid-cols-3 gap-3 text-xs">
                                                 <div>
                                                     <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Ingreso</p>
-                                                    <p class="font-black text-slate-700"><?php echo formatFecha($contrato['fecha_ingreso'] ?? null); ?></p>
+                                                    <p class="font-black text-slate-700">
+                                                        <?php echo !empty($contrato['fecha_ingreso']) ? formatFecha($contrato['fecha_ingreso']) : '—'; ?>
+                                                    </p>
                                                 </div>
+
                                                 <div>
                                                     <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Cese</p>
-                                                    <p class="font-black text-slate-700"><?php echo formatFecha($contrato['fecha_cese'] ?? null); ?></p>
+                                                    <p class="font-black text-slate-700">
+                                                        <?php echo !empty($contrato['fecha_cese']) ? formatFecha($contrato['fecha_cese']) : 'Vigente'; ?>
+                                                    </p>
                                                 </div>
+
                                                 <div>
                                                     <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Modalidad</p>
-                                                    <p class="font-black text-slate-700"><?php echo htmlspecialchars($contrato['modalidad_contrato'] ?? '—'); ?></p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Puesto</p>
-                                                    <p class="font-black text-slate-700"><?php echo htmlspecialchars($contrato['puesto_cas'] ?? '—'); ?></p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Área</p>
-                                                    <p class="font-black text-slate-700"><?php echo htmlspecialchars($contrato['area'] ?? '—'); ?></p>
-                                                </div>
-                                                <div>
-                                                    <p class="text-slate-400 font-bold uppercase tracking-wider mb-0.5">Situación</p>
-                                                    <p class="font-black text-slate-700"><?php echo htmlspecialchars($contrato['situacion'] ?? '—'); ?></p>
+                                                    <p class="font-black text-slate-700">
+                                                        <?php echo htmlspecialchars($contrato['modalidad'] ?? '—'); ?>
+                                                    </p>
                                                 </div>
                                             </div>
                                         </div>
@@ -1209,6 +1212,108 @@ $perfil = $data;
                                         <?php endforeach; ?>
                                     </select>
                                 </div>
+                            </div>
+                        </div>
+                    <?php endif; ?>
+
+                    <?php if ($esEditable): ?>
+                        <!-- BLOQUE 4: CONTRATOS -->
+                        <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm xl:col-span-2">
+                            <div class="flex items-center justify-between mb-4 gap-3">
+                                <div class="flex-1">
+                                    <p class="section-title">Contratos</p>
+                                    <div class="section-divider"></div>
+                                </div>
+
+                                <button type="button" onclick="agregarContrato()"
+                                    class="inline-flex items-center gap-1.5 text-xs font-bold text-red-900 bg-red-50 hover:bg-red-100 border border-red-200 px-3 py-1.5 rounded-xl transition-all shrink-0">
+                                    <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4" />
+                                    </svg>
+                                    Agregar Contrato
+                                </button>
+                            </div>
+
+                            <div id="lista-contratos" class="space-y-3">
+                                <?php if (empty($contratos)): ?>
+                                    <div id="sin-contratos" class="text-center py-5 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50/70">
+                                        No hay contratos registrados. Haz clic en "Agregar Contrato".
+                                    </div>
+                                <?php else: ?>
+                                    <?php foreach (array_values($contratos) as $ci => $contrato): ?>
+                                        <div class="contrato-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $ci; ?>">
+
+                                            <div class="item-resumen flex items-center justify-between gap-3">
+                                                <div class="min-w-0">
+                                                    <p class="text-sm font-bold text-slate-800 val-fecha-ingreso">
+                                                        <?php echo !empty($contrato['fecha_ingreso']) ? formatFecha($contrato['fecha_ingreso']) : 'Sin fecha de ingreso'; ?>
+                                                    </p>
+                                                    <p class="text-[11px] text-slate-500 mt-0.5">
+                                                        Cese:
+                                                        <span class="val-fecha-cese">
+                                                            <?php echo !empty($contrato['fecha_cese']) ? formatFecha($contrato['fecha_cese']) : 'Vigente'; ?>
+                                                        </span>
+                                                        • Modalidad:
+                                                        <span class="val-modalidad">
+                                                            <?php echo htmlspecialchars($contrato['modalidad'] ?? '—'); ?>
+                                                        </span>
+                                                    </p>
+                                                </div>
+
+                                                <button type="button" onclick="toggleFila(this, true)"
+                                                    class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
+                                                    Editar
+                                                </button>
+                                            </div>
+
+                                            <div class="item-form hidden mt-3 pt-4 border-t border-slate-200 relative animate-in">
+                                                <button type="button" onclick="eliminarFila(this)"
+                                                    class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1"
+                                                    title="Eliminar">
+                                                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                    </svg>
+                                                </button>
+
+                                                <div class="form-grid-2 pr-6">
+                                                    <div class="field-group">
+                                                        <label class="field-label">Fecha de Ingreso</label>
+                                                        <input type="date"
+                                                            name="contratos[<?php echo $ci; ?>][fecha_ingreso]"
+                                                            class="field-input input-fecha-ingreso"
+                                                            value="<?php echo htmlspecialchars($contrato['fecha_ingreso'] ?? ''); ?>">
+                                                    </div>
+
+                                                    <div class="field-group">
+                                                        <label class="field-label">Fecha de Cese</label>
+                                                        <input type="date"
+                                                            name="contratos[<?php echo $ci; ?>][fecha_cese]"
+                                                            class="field-input input-fecha-cese"
+                                                            value="<?php echo htmlspecialchars($contrato['fecha_cese'] ?? ''); ?>">
+                                                    </div>
+
+                                                    <div class="field-group span-full">
+                                                        <label class="field-label">Modalidad</label>
+                                                        <input type="text"
+                                                            name="contratos[<?php echo $ci; ?>][modalidad]"
+                                                            class="field-input input-modalidad"
+                                                            value="<?php echo htmlspecialchars($contrato['modalidad'] ?? ''); ?>"
+                                                            placeholder="Ej: CAS">
+                                                    </div>
+
+                                                    <input type="hidden" name="contratos[<?php echo $ci; ?>][id]" value="<?php echo $contrato['id'] ?? ''; ?>">
+                                                </div>
+
+                                                <div class="mt-3 text-right">
+                                                    <button type="button" onclick="toggleFila(this, false)"
+                                                        class="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg">
+                                                        ✓ Listo
+                                                    </button>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    <?php endforeach; ?>
+                                <?php endif; ?>
                             </div>
                         </div>
                     <?php endif; ?>
@@ -2208,7 +2313,7 @@ $perfil = $data;
 <script>
     // ── MAGIA DE ABRIR/CERRAR FILAS ────────────────────────
     function toggleFila(btn, editar) {
-        const row = btn.closest('.hijo-row, .formacion-row, .experiencia-row, .idioma-row');
+        const row = btn.closest('.hijo-row, .formacion-row, .experiencia-row, .idioma-row, .contrato-row');
         if (!row) return;
 
         const resumen = row.querySelector('.item-resumen');
@@ -2284,6 +2389,18 @@ $perfil = $data;
 
                 if (elIdioma) elIdioma.textContent = idioma;
                 if (elNivel) elNivel.textContent = nivel;
+            } else if (row.classList.contains('contrato-row')) {
+                const fechaIngreso = row.querySelector('.input-fecha-ingreso')?.value || '';
+                const fechaCese = row.querySelector('.input-fecha-cese')?.value || '';
+                const modalidad = row.querySelector('.input-modalidad')?.value?.trim() || '—';
+
+                const elIngreso = row.querySelector('.val-fecha-ingreso');
+                const elCese = row.querySelector('.val-fecha-cese');
+                const elModalidad = row.querySelector('.val-modalidad');
+
+                if (elIngreso) elIngreso.textContent = fechaIngreso ? formatearFecha(fechaIngreso) : 'Sin fecha de ingreso';
+                if (elCese) elCese.textContent = fechaCese ? formatearFecha(fechaCese) : 'Vigente';
+                if (elModalidad) elModalidad.textContent = modalidad;
             }
         }
     }
@@ -2296,13 +2413,14 @@ $perfil = $data;
 
 
     function eliminarFila(btn) {
-        const row = btn.closest('.hijo-row') || btn.closest('.formacion-row') || btn.closest('.idioma-row') || btn.closest('.experiencia-row');
+        const row = btn.closest('.hijo-row') || btn.closest('.formacion-row') || btn.closest('.idioma-row') || btn.closest('.experiencia-row') || btn.closest('.contrato-row');
         if (!row) return;
 
         const isIdioma = row.classList.contains('idioma-row');
         const isHijo = row.classList.contains('hijo-row');
         const isFormacion = row.classList.contains('formacion-row');
         const isExperiencia = row.classList.contains('experiencia-row');
+        const isContrato = row.classList.contains('contrato-row');
 
         row.style.opacity = '0';
         row.style.transform = 'translateY(-6px)';
@@ -2338,11 +2456,72 @@ $perfil = $data;
                     lista.innerHTML = '<div id="sin-experiencia" class="text-center py-5 text-slate-400 text-xs">No hay experiencia registrada. Haz clic en "Agregar Experiencia".</div>';
                 }
             }
+
+            if (isContrato) {
+                const lista = document.getElementById('lista-contratos');
+                if (lista && !lista.querySelector('.contrato-row')) {
+                    lista.innerHTML = '<div id="sin-contratos" class="text-center py-5 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50/70">No hay contratos registrados. Haz clic en "Agregar Contrato".</div>';
+                }
+            }
         }, 200);
     }
 
     // ── HIJOS DINÁMICOS ───────────────────────────────
     let hijoIdx = <?php echo max(count(array_filter($perfil['familia'] ?? [], fn($f) => in_array($f['parentesco'], ['HIJO', 'HIJA']))), 0); ?>;
+    let contratoIdx = document.querySelectorAll('.contrato-row').length;
+
+    function agregarContrato() {
+        const sin = document.getElementById('sin-contratos');
+        if (sin) sin.remove();
+
+        const idx = contratoIdx++;
+
+        const html = `
+        <div class="contrato-row bg-white border border-slate-200 rounded-xl p-4 relative animate-in" data-index="${idx}">
+            <div class="item-resumen hidden flex items-center justify-between gap-3">
+                <div>
+                    <p class="val-fecha-ingreso text-sm font-bold text-slate-800">Sin fecha de ingreso</p>
+                    <p class="text-xs text-slate-500">
+                        Cese: <span class="val-fecha-cese">Vigente</span> •
+                        Modalidad: <span class="val-modalidad">—</span>
+                    </p>
+                </div>
+                <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100">Editar</button>
+            </div>
+
+            <div class="item-form mt-1 pt-1 relative">
+                <button type="button" onclick="eliminarFila(this)" class="absolute -top-2 right-0 text-slate-300 hover:text-red-500 transition-colors p-1">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+
+                <div class="form-grid-2 pr-6">
+                    <div class="field-group">
+                        <label class="field-label">Fecha de Ingreso</label>
+                        <input type="date" name="contratos[${idx}][fecha_ingreso]" class="field-input input-fecha-ingreso">
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Fecha de Cese</label>
+                        <input type="date" name="contratos[${idx}][fecha_cese]" class="field-input input-fecha-cese">
+                    </div>
+
+                    <div class="field-group span-full">
+                        <label class="field-label">Modalidad</label>
+                        <input type="text" name="contratos[${idx}][modalidad]" class="field-input input-modalidad" placeholder="Ej: CAS">
+                    </div>
+
+                    <input type="hidden" name="contratos[${idx}][id]" value="">
+                </div>
+
+                <div class="mt-3 text-right">
+                    <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">✓ Listo</button>
+                </div>
+            </div>
+        </div>`;
+        document.getElementById('lista-contratos').insertAdjacentHTML('beforeend', html);
+    }
 
     function agregarHijo() {
         const sinHijos = document.getElementById('sin-hijos');
@@ -2655,6 +2834,7 @@ $perfil = $data;
                 !el.name.includes('formacion') &&
                 !el.name.includes('experiencia') &&
                 !el.name.includes('idiomas[') &&
+                !el.name.includes('contratos[') &&
                 !el.name.startsWith('pension[') &&
                 !el.name.startsWith('bancario[')
             ) {
@@ -2871,6 +3051,7 @@ $perfil = $data;
                 el.name.includes('formacion') ||
                 el.name.includes('experiencia') ||
                 el.name.includes('idiomas[') ||
+                el.name.includes('contratos[') ||
                 el.name.startsWith('pension[') ||
                 el.name.startsWith('bancario[')
             ) return;
@@ -3114,6 +3295,7 @@ $perfil = $data;
                 !el.name.includes('formacion') &&
                 !el.name.includes('experiencia') &&
                 !el.name.includes('idiomas[') &&
+                !el.name.includes('contratos[') &&
                 !el.name.startsWith('pension[') &&
                 !el.name.startsWith('bancario[')
             ) {
@@ -3138,7 +3320,24 @@ $perfil = $data;
                 hijos.push(item);
             }
         });
+
         campos['hijos'] = hijos;
+
+        const contratos = [];
+        document.querySelectorAll('.contrato-row').forEach(row => {
+            const idx = row.dataset.index;
+            const item = {
+                id: row.querySelector(`[name="contratos[${idx}][id]"]`)?.value || '',
+                fecha_ingreso: row.querySelector(`[name="contratos[${idx}][fecha_ingreso]"]`)?.value || '',
+                fecha_cese: row.querySelector(`[name="contratos[${idx}][fecha_cese]"]`)?.value || '',
+                modalidad: row.querySelector(`[name="contratos[${idx}][modalidad]"]`)?.value?.trim() || ''
+            };
+
+            if (item.id || item.fecha_ingreso || item.fecha_cese || item.modalidad) {
+                contratos.push(item);
+            }
+        });
+        campos['contratos'] = contratos;
 
         const formacion = [];
         document.querySelectorAll('.formacion-row').forEach(row => {

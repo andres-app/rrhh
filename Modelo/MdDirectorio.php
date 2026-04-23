@@ -179,15 +179,14 @@ RESUMEN DASHBOARD DINÁMICO
         // 2. Historial de contratos
         $stmt2 = $pdo->prepare("
             SELECT 
+                id,
+                colab_id,
                 fecha_ingreso,
                 fecha_cese,
-                modalidad_contrato,
-                puesto_cas,
-                area,
-                situacion
-            FROM colab_laboral
+                modalidad
+            FROM colab_contratos
             WHERE colab_id = :id
-            ORDER BY fecha_ingreso ASC
+            ORDER BY fecha_ingreso ASC, id ASC
         ");
         $stmt2->bindParam(':id', $id, PDO::PARAM_INT);
         $stmt2->execute();
@@ -602,6 +601,87 @@ RESUMEN DASHBOARD DINÁMICO
                     ->execute(array_values($aEliminar));
             }
 
+            // ── 3.1. Sincronizar contratos ─────────────────────────────
+            $stmtContratoIds = $pdo->prepare("
+                SELECT id
+                FROM colab_contratos
+                WHERE colab_id = :id
+            ");
+            $stmtContratoIds->execute([
+                ':id' => (int)$datos['id']
+            ]);
+            $idsContratosEnBD = array_map('intval', $stmtContratoIds->fetchAll(PDO::FETCH_COLUMN));
+            $idsContratosRecibidos = [];
+
+            $contratos = $datos['contratos'] ?? [];
+
+            foreach ($contratos as $contrato) {
+                $contratoId   = (int)($contrato['id'] ?? 0);
+                $fechaIngreso = !empty($contrato['fecha_ingreso']) ? $contrato['fecha_ingreso'] : null;
+                $fechaCese    = !empty($contrato['fecha_cese']) ? $contrato['fecha_cese'] : null;
+                $modalidad    = trim((string)($contrato['modalidad'] ?? ''));
+
+                // Si la fila viene vacía, no se procesa
+                if ($fechaIngreso === null && $fechaCese === null && $modalidad === '') {
+                    continue;
+                }
+
+                if ($contratoId > 0 && in_array($contratoId, $idsContratosEnBD, true)) {
+                    $stmtUpdateContrato = $pdo->prepare("
+                        UPDATE colab_contratos SET
+                            fecha_ingreso = :fecha_ingreso,
+                            fecha_cese    = :fecha_cese,
+                            modalidad     = :modalidad
+                        WHERE id = :id
+                          AND colab_id = :colab_id
+                    ");
+
+                    $stmtUpdateContrato->execute([
+                        ':fecha_ingreso' => $fechaIngreso,
+                        ':fecha_cese'    => $fechaCese,
+                        ':modalidad'     => $modalidad !== '' ? $modalidad : null,
+                        ':id'            => $contratoId,
+                        ':colab_id'      => (int)$datos['id'],
+                    ]);
+
+                    $idsContratosRecibidos[] = $contratoId;
+                } else {
+                    $stmtInsertContrato = $pdo->prepare("
+                        INSERT INTO colab_contratos (
+                            colab_id,
+                            fecha_ingreso,
+                            fecha_cese,
+                            modalidad
+                        ) VALUES (
+                            :colab_id,
+                            :fecha_ingreso,
+                            :fecha_cese,
+                            :modalidad
+                        )
+                    ");
+
+                    $stmtInsertContrato->execute([
+                        ':colab_id'      => (int)$datos['id'],
+                        ':fecha_ingreso' => $fechaIngreso,
+                        ':fecha_cese'    => $fechaCese,
+                        ':modalidad'     => $modalidad !== '' ? $modalidad : null,
+                    ]);
+
+                    $idsContratosRecibidos[] = (int)$pdo->lastInsertId();
+                }
+            }
+
+            $aEliminarContratos = array_diff($idsContratosEnBD, $idsContratosRecibidos);
+
+            if (!empty($aEliminarContratos)) {
+                $placeholders = implode(',', array_fill(0, count($aEliminarContratos), '?'));
+                $stmtDeleteContratos = $pdo->prepare("
+                    DELETE FROM colab_contratos
+                    WHERE id IN ($placeholders)
+                ");
+                $stmtDeleteContratos->execute(array_values($aEliminarContratos));
+            }
+
             // ── 4. Sincronizar formación académica ───────────────────
             $stmtFormIds = $pdo->prepare("
                 SELECT id
@@ -828,7 +908,7 @@ RESUMEN DASHBOARD DINÁMICO
         FROM colab_pension
         WHERE colab_id = :id
         LIMIT 1
-    ");
+        ");
                 $stmtPen->execute([
                     ':id' => (int)$datos['id'],
                 ]);
