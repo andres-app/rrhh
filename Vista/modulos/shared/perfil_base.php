@@ -2851,7 +2851,7 @@ $perfil = $data;
                 id: row.querySelector('[name*="[id]"]')?.value || '',
                 nombre: row.querySelector('[name*="[nombre]"]')?.value?.trim() || '',
                 parentesco: row.querySelector('[name*="[parentesco]"]')?.value || 'HIJO',
-                fecha: row.querySelector('[name*="[fecha_nacimiento]"]')?.value || '',
+                fecha_nacimiento: row.querySelector('[name*="[fecha_nacimiento]"]')?.value || '',
                 dni: row.querySelector('[name*="[dni]"]')?.value?.trim() || ''
             });
         });
@@ -2895,7 +2895,19 @@ $perfil = $data;
             });
         });
 
+        valoresOriginales.contratos = [];
+        document.querySelectorAll('.contrato-row').forEach((row, index) => {
+            valoresOriginales.contratos.push({
+                idx: String(row.dataset.index ?? index),
+                id: row.querySelector('[name*="[id]"]')?.value || '',
+                fecha_ingreso: row.querySelector('[name*="[fecha_ingreso]"]')?.value || '',
+                fecha_cese: row.querySelector('[name*="[fecha_cese]"]')?.value || '',
+                modalidad: row.querySelector('[name*="[modalidad]"]')?.value?.trim() || ''
+            });
+        });
+
         valoresOriginales.pension = {
+
             sistema_pension: document.querySelector('[name="pension[sistema_pension]"]')?.value || '',
             afp: document.querySelector('[name="pension[afp]"]')?.value || '',
             cuspp: document.querySelector('[name="pension[cuspp]"]')?.value?.trim() || '',
@@ -3082,25 +3094,45 @@ $perfil = $data;
                 id: row.querySelector('[name*="[id]"]')?.value || '',
                 nombre: row.querySelector('[name*="[nombre]"]')?.value?.trim() || '',
                 parentesco: row.querySelector('[name*="[parentesco]"]')?.value || 'HIJO',
-                fecha: row.querySelector('[name*="[fecha_nacimiento]"]')?.value || '',
+                fecha_nacimiento: row.querySelector('[name*="[fecha_nacimiento]"]')?.value || '',
                 dni: row.querySelector('[name*="[dni]"]')?.value?.trim() || ''
             });
         });
 
+        const hijosOriginales = valoresOriginales.hijos || [];
+
         hijosActuales.forEach(actual => {
-            const original = (valoresOriginales.hijos || []).find(x => x.idx === actual.idx);
-            if (!original) return;
+            const original = hijosOriginales.find(x => x.idx === actual.idx);
+
+            const actualVacio = !actual.id &&
+                !actual.nombre &&
+                !actual.parentesco &&
+                !actual.fecha_nacimiento &&
+                !actual.dni;
+
+            if (actualVacio) return;
+
+            if (!original) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-emerald-500">
+                    <span class="r-label text-emerald-600">Nuevo Hijo</span>
+                    <span class="r-val">${safe(actual.nombre)} (${safe(actual.parentesco)})</span>
+                </div>
+            `);
+                return;
+            }
 
             const originalCmp = {
                 nombre: original.nombre,
                 parentesco: original.parentesco,
-                fecha: original.fecha,
+                fecha_nacimiento: original.fecha_nacimiento,
                 dni: original.dni
             };
+
             const actualCmp = {
                 nombre: actual.nombre,
                 parentesco: actual.parentesco,
-                fecha: actual.fecha,
+                fecha_nacimiento: actual.fecha_nacimiento,
                 dni: actual.dni
             };
 
@@ -3109,6 +3141,18 @@ $perfil = $data;
                 <div class="resumen-item border-l-4 border-amber-500">
                     <span class="r-label text-amber-600">Hijo Editado</span>
                     <span class="r-val">${safe(actual.nombre)} (${safe(actual.parentesco)})</span>
+                </div>
+            `);
+            }
+        });
+
+        hijosOriginales.forEach(original => {
+            const existe = hijosActuales.find(x => x.idx === original.idx);
+            if (!existe) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-red-500">
+                    <span class="r-label text-red-600">Hijo Eliminado</span>
+                    <span class="r-val">${safe(original.nombre)} (${safe(original.parentesco)})</span>
                 </div>
             `);
             }
@@ -3130,9 +3174,31 @@ $perfil = $data;
             });
         });
 
+        const formacionOriginal = valoresOriginales.formacion || [];
+
         formacionActual.forEach(actual => {
-            const original = (valoresOriginales.formacion || []).find(x => x.idx === actual.idx);
-            if (!original) return;
+            const original = formacionOriginal.find(x => x.idx === actual.idx);
+
+            const actualVacio = !actual.id &&
+                !actual.tipo_grado &&
+                !actual.descripcion_carrera &&
+                !actual.institucion &&
+                !actual.anio_realizacion &&
+                !actual.horas_lectivas &&
+                !actual.especialidad &&
+                !actual.grado_alcanzado;
+
+            if (actualVacio) return;
+
+            if (!original) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-emerald-500">
+                    <span class="r-label text-emerald-600">Nuevo Estudio</span>
+                    <span class="r-val">${safe(actual.descripcion_carrera)} - ${safe(actual.institucion)}</span>
+                </div>
+            `);
+                return;
+            }
 
             const originalCmp = {
                 tipo_grado: original.tipo_grado,
@@ -3143,6 +3209,7 @@ $perfil = $data;
                 especialidad: original.especialidad,
                 grado_alcanzado: original.grado_alcanzado
             };
+
             const actualCmp = {
                 tipo_grado: actual.tipo_grado,
                 descripcion_carrera: actual.descripcion_carrera,
@@ -3158,6 +3225,18 @@ $perfil = $data;
                 <div class="resumen-item border-l-4 border-amber-500">
                     <span class="r-label text-amber-600">Estudio Editado</span>
                     <span class="r-val">${safe(actual.descripcion_carrera)} - ${safe(actual.institucion)}</span>
+                </div>
+            `);
+            }
+        });
+
+        formacionOriginal.forEach(original => {
+            const existe = formacionActual.find(x => x.idx === original.idx);
+            if (!existe) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-red-500">
+                    <span class="r-label text-red-600">Estudio Eliminado</span>
+                    <span class="r-val">${safe(original.descripcion_carrera)} - ${safe(original.institucion)}</span>
                 </div>
             `);
             }
@@ -3179,9 +3258,31 @@ $perfil = $data;
             });
         });
 
+        const experienciaOriginal = valoresOriginales.experiencia || [];
+
         experienciaActual.forEach(actual => {
-            const original = (valoresOriginales.experiencia || []).find(x => x.idx === actual.idx);
-            if (!original) return;
+            const original = experienciaOriginal.find(x => x.idx === actual.idx);
+
+            const actualVacio = !actual.id &&
+                !actual.empresa_entidad &&
+                !actual.unidad_organica_area &&
+                !actual.cargo_puesto &&
+                !actual.fecha_inicio &&
+                !actual.fecha_fin &&
+                !actual.actualmente_trabaja &&
+                !actual.funciones_principales;
+
+            if (actualVacio) return;
+
+            if (!original) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-emerald-500">
+                    <span class="r-label text-emerald-600">Nueva Experiencia</span>
+                    <span class="r-val">${safe(actual.cargo_puesto)} - ${safe(actual.empresa_entidad)}</span>
+                </div>
+            `);
+                return;
+            }
 
             const originalCmp = {
                 empresa_entidad: original.empresa_entidad,
@@ -3192,6 +3293,7 @@ $perfil = $data;
                 actualmente_trabaja: original.actualmente_trabaja,
                 funciones_principales: original.funciones_principales
             };
+
             const actualCmp = {
                 empresa_entidad: actual.empresa_entidad,
                 unidad_organica_area: actual.unidad_organica_area,
@@ -3212,6 +3314,18 @@ $perfil = $data;
             }
         });
 
+        experienciaOriginal.forEach(original => {
+            const existe = experienciaActual.find(x => x.idx === original.idx);
+            if (!existe) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-red-500">
+                    <span class="r-label text-red-600">Experiencia Eliminada</span>
+                    <span class="r-val">${safe(original.cargo_puesto)} - ${safe(original.empresa_entidad)}</span>
+                </div>
+            `);
+            }
+        });
+
         // IDIOMAS
         const idiomasActuales = [];
         document.querySelectorAll('.idioma-row').forEach((row, index) => {
@@ -3222,24 +3336,123 @@ $perfil = $data;
             });
         });
 
-        const idiomasOriginalesCmp = (valoresOriginales.idiomas || []).map(x => ({
-            idioma: x.idioma,
-            nivel: x.nivel
-        }));
-        const idiomasActualesCmp = idiomasActuales.map(x => ({
-            idioma: x.idioma,
-            nivel: x.nivel
-        }));
+        const idiomasOriginales = valoresOriginales.idiomas || [];
 
-        if (!iguales(idiomasOriginalesCmp, idiomasActualesCmp)) {
-            cambios.push(`
-            <div class="resumen-item border-l-4 border-sky-500">
-                <span class="r-label text-sky-600">Idiomas</span>
-                <span class="r-val">${idiomasActualesCmp.length ? idiomasActualesCmp.map(i => `${safe(i.idioma)} - ${safe(i.nivel)}`).join(', ') : 'Actualizados'}</span>
-            </div>
-        `);
-        }
+        idiomasActuales.forEach(actual => {
+            const original = idiomasOriginales.find(x => x.idx === actual.idx);
 
+            const actualVacio = !actual.idioma && !actual.nivel;
+            if (actualVacio) return;
+
+            if (!original) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-emerald-500">
+                    <span class="r-label text-emerald-600">Nuevo Idioma</span>
+                    <span class="r-val">${safe(actual.idioma)} - ${safe(actual.nivel)}</span>
+                </div>
+            `);
+                return;
+            }
+
+            const originalCmp = {
+                idioma: original.idioma,
+                nivel: original.nivel
+            };
+
+            const actualCmp = {
+                idioma: actual.idioma,
+                nivel: actual.nivel
+            };
+
+            if (!iguales(originalCmp, actualCmp)) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-amber-500">
+                    <span class="r-label text-amber-600">Idioma Editado</span>
+                    <span class="r-val">${safe(actual.idioma)} - ${safe(actual.nivel)}</span>
+                </div>
+            `);
+            }
+        });
+
+        idiomasOriginales.forEach(original => {
+            const existe = idiomasActuales.find(x => x.idx === original.idx);
+            if (!existe) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-red-500">
+                    <span class="r-label text-red-600">Idioma Eliminado</span>
+                    <span class="r-val">${safe(original.idioma)} - ${safe(original.nivel)}</span>
+                </div>
+            `);
+            }
+        });
+
+        // CONTRATOS
+        const contratosActuales = [];
+        document.querySelectorAll('.contrato-row').forEach((row, index) => {
+            contratosActuales.push({
+                idx: String(row.dataset.index ?? index),
+                id: row.querySelector('[name*="[id]"]')?.value || '',
+                fecha_ingreso: row.querySelector('[name*="[fecha_ingreso]"]')?.value || '',
+                fecha_cese: row.querySelector('[name*="[fecha_cese]"]')?.value || '',
+                modalidad: row.querySelector('[name*="[modalidad]"]')?.value?.trim() || ''
+            });
+        });
+
+        const contratosOriginales = valoresOriginales.contratos || [];
+
+        contratosActuales.forEach(actual => {
+            const original = contratosOriginales.find(x => x.idx === actual.idx);
+
+            const actualVacio = !actual.id &&
+                !actual.fecha_ingreso &&
+                !actual.fecha_cese &&
+                !actual.modalidad;
+
+            if (actualVacio) return;
+
+            if (!original) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-emerald-500">
+                    <span class="r-label text-emerald-600">Nuevo Contrato</span>
+                    <span class="r-val">${safe(actual.modalidad)} • ${safe(actual.fecha_ingreso || 'Sin ingreso')}</span>
+                </div>
+            `);
+                return;
+            }
+
+            const originalCmp = {
+                fecha_ingreso: original.fecha_ingreso,
+                fecha_cese: original.fecha_cese,
+                modalidad: original.modalidad
+            };
+
+            const actualCmp = {
+                fecha_ingreso: actual.fecha_ingreso,
+                fecha_cese: actual.fecha_cese,
+                modalidad: actual.modalidad
+            };
+
+            if (!iguales(originalCmp, actualCmp)) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-amber-500">
+                    <span class="r-label text-amber-600">Contrato Editado</span>
+                    <span class="r-val">${safe(actual.modalidad)} • ${safe(actual.fecha_ingreso || 'Sin ingreso')}</span>
+                </div>
+            `);
+            }
+        });
+
+        contratosOriginales.forEach(original => {
+            const existe = contratosActuales.find(x => x.idx === original.idx);
+            if (!existe) {
+                cambios.push(`
+                <div class="resumen-item border-l-4 border-red-500">
+                    <span class="r-label text-red-600">Contrato Eliminado</span>
+                    <span class="r-val">${safe(original.modalidad)} • ${safe(original.fecha_ingreso || 'Sin ingreso')}</span>
+                </div>
+            `);
+            }
+        });
         // PENSIÓN
         const pensionActual = {
             sistema_pension: document.querySelector('[name="pension[sistema_pension]"]')?.value || '',
