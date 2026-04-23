@@ -127,7 +127,18 @@ switch ($module) {
 
     case 'rrhh':
         $sub = $parts[1] ?? 'dashboard';
+
+        // Restricción específica para submódulo contratos
+        if ($sub === 'contratos') {
+            $rolActual = strtolower(trim($_SESSION['user_role'] ?? ''));
+
+            if (!in_array($rolActual, ['superadmin', 'admin', 'rrhh'], true)) {
+                die("No tienes permiso para acceder a este módulo.");
+            }
+        }
+
         $file = __DIR__ . "/../Vista/modulos/rrhh/{$sub}.php";
+
         if ($sub === 'perfil') {
             $id_colaborador = $parts[2] ?? null;
             $file = __DIR__ . "/../Vista/modulos/rrhh/perfil_detalle.php";

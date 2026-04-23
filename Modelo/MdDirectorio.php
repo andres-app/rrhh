@@ -77,13 +77,36 @@ RESUMEN DASHBOARD DINÁMICO
             $respuesta['validaciones_pendientes'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
 
             // Contratos por vencer en próximos 30 días
+            // Se toma SOLO el último contrato vigente por colaborador desde colab_contratos
             $stmt = $pdo->prepare("
-            SELECT COUNT(*) AS total
-            FROM colab_laboral
-            WHERE fecha_cese IS NOT NULL
-              AND fecha_cese >= CURDATE()
-              AND fecha_cese <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
-        ");
+                SELECT COUNT(*) AS total
+                FROM colab_contratos c
+                WHERE c.fecha_ingreso IS NOT NULL
+                AND c.fecha_ingreso <= CURDATE()
+                AND c.fecha_cese IS NOT NULL
+                AND c.fecha_cese >= CURDATE()
+                AND c.fecha_cese <= DATE_ADD(CURDATE(), INTERVAL 30 DAY)
+                AND NOT EXISTS (
+                    SELECT 1
+                    FROM colab_contratos c2
+                    WHERE c2.colab_id = c.colab_id
+                        AND c2.fecha_ingreso IS NOT NULL
+                        AND c2.fecha_ingreso <= CURDATE()
+                        AND (c2.fecha_cese IS NULL OR c2.fecha_cese >= CURDATE())
+                        AND (
+                            COALESCE(c2.fecha_cese, '9999-12-31') > COALESCE(c.fecha_cese, '9999-12-31')
+                            OR (
+                                COALESCE(c2.fecha_cese, '9999-12-31') = COALESCE(c.fecha_cese, '9999-12-31')
+                                AND c2.fecha_ingreso > c.fecha_ingreso
+                            )
+                            OR (
+                                COALESCE(c2.fecha_cese, '9999-12-31') = COALESCE(c.fecha_cese, '9999-12-31')
+                                AND c2.fecha_ingreso = c.fecha_ingreso
+                                AND c2.id > c.id
+                            )
+                        )
+                )
+            ");
             $stmt->execute();
             $respuesta['contratos_por_vencer'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
 

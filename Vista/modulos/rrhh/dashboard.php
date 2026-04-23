@@ -69,7 +69,7 @@ if (!function_exists('formatearMesCortoDashboard')) {
 
         <div class="flex items-center space-x-4">
             <div class="hidden md:flex relative">
-            
+
             </div>
             <button class="relative p-2 text-slate-400 hover:text-red-800 transition">
                 <span class="absolute top-1 right-1 w-2.5 h-2.5 bg-red-600 rounded-full border-2 border-white"></span>
@@ -110,17 +110,27 @@ if (!function_exists('formatearMesCortoDashboard')) {
                 <p class="text-3xl font-black text-slate-800 mt-1"><?= number_format($validacionesPendientes) ?></p>
             </div>
 
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-red-200 transition-all group">
+            <div
+                class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-red-200 transition-all group cursor-pointer"
+                onclick="window.location.href='<?= BASE_URL ?>/rrhh/contratos'">
                 <div class="flex justify-between items-start mb-4">
                     <div class="p-3 bg-red-700 rounded-2xl shadow-lg shadow-red-900/20 group-hover:bg-red-600 transition-colors">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                     </div>
-                    <span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Próximos 30 días</span>
+                    <span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+                        Próximos 30 días
+                    </span>
                 </div>
-                <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">Contratos por Vencer</h3>
-                <p class="text-3xl font-black text-slate-800 mt-1"><?= number_format($contratosPorVencer) ?></p>
+
+                <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">
+                    Contratos por Vencer
+                </h3>
+
+                <p class="text-3xl font-black text-slate-800 mt-1">
+                    <?= number_format($contratosPorVencer) ?>
+                </p>
             </div>
 
         </div>
@@ -138,22 +148,22 @@ if (!function_exists('formatearMesCortoDashboard')) {
                         <?php if (!empty($modalidades)): ?>
                             <?php foreach ($modalidades as $index => $modalidad): ?>
                                 <?php
-                                    $nombre = trim((string)($modalidad['modalidad'] ?? ''));
-                                    $nombre = $nombre !== '' ? $nombre : 'SIN MODALIDAD';
+                                $nombre = trim((string)($modalidad['modalidad'] ?? ''));
+                                $nombre = $nombre !== '' ? $nombre : 'SIN MODALIDAD';
 
-                                    $total = (int)($modalidad['total'] ?? 0);
-                                    $porcentaje = $totalModalidades > 0 ? round(($total / $totalModalidades) * 100, 2) : 0;
+                                $total = (int)($modalidad['total'] ?? 0);
+                                $porcentaje = $totalModalidades > 0 ? round(($total / $totalModalidades) * 100, 2) : 0;
 
-                                    if ($index === 0) {
-                                        $textoColor = 'text-red-800';
-                                        $barraColor = 'bg-[#600505]';
-                                    } elseif ($index === 1) {
-                                        $textoColor = 'text-red-500';
-                                        $barraColor = 'bg-red-400';
-                                    } else {
-                                        $textoColor = 'text-slate-600';
-                                        $barraColor = 'bg-slate-400';
-                                    }
+                                if ($index === 0) {
+                                    $textoColor = 'text-red-800';
+                                    $barraColor = 'bg-[#600505]';
+                                } elseif ($index === 1) {
+                                    $textoColor = 'text-red-500';
+                                    $barraColor = 'bg-red-400';
+                                } else {
+                                    $textoColor = 'text-slate-600';
+                                    $barraColor = 'bg-slate-400';
+                                }
                                 ?>
                                 <div>
                                     <div class="flex justify-between text-sm font-medium mb-2">
@@ -182,11 +192,11 @@ if (!function_exists('formatearMesCortoDashboard')) {
                         <?php if (!empty($cumpleanos)): ?>
                             <?php foreach ($cumpleanos as $cumple): ?>
                                 <?php
-                                    $fecha  = $cumple['fecha_nacimiento'] ?? null;
-                                    $mes    = formatearMesCortoDashboard($fecha);
-                                    $dia    = (!empty($fecha) && strtotime($fecha)) ? date('d', strtotime($fecha)) : '--';
-                                    $nombre = trim((string)($cumple['nombre'] ?? 'Sin nombre'));
-                                    $detalle = trim((string)($cumple['detalle'] ?? 'Cumpleaños registrado'));
+                                $fecha  = $cumple['fecha_nacimiento'] ?? null;
+                                $mes    = formatearMesCortoDashboard($fecha);
+                                $dia    = (!empty($fecha) && strtotime($fecha)) ? date('d', strtotime($fecha)) : '--';
+                                $nombre = trim((string)($cumple['nombre'] ?? 'Sin nombre'));
+                                $detalle = trim((string)($cumple['detalle'] ?? 'Cumpleaños registrado'));
                                 ?>
                                 <div class="flex items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
                                     <div class="w-12 h-12 bg-slate-200 text-slate-600 rounded-xl flex flex-col items-center justify-center font-bold">
