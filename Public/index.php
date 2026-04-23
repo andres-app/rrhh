@@ -84,19 +84,80 @@ if ($module === 'perfil' && ($parts[1] ?? '') === 'actualizar') {
     header('Content-Type: application/json; charset=utf-8');
 
     try {
-        $raw  = file_get_contents('php://input');
-        $body = json_decode($raw, true);
+        $ctrl = new CtrDirectorio();
+
+        $body = [];
+        if (!empty($_POST['payload'])) {
+            $body = json_decode((string)$_POST['payload'], true);
+        }
 
         if (!is_array($body)) {
             echo json_encode([
                 'success' => false,
-                'mensaje' => 'JSON inválido o vacío'
+                'mensaje' => 'Payload inválido o vacío'
             ], JSON_UNESCAPED_UNICODE);
             exit;
         }
 
+        $archivo = $_FILES['archivo_sustento'] ?? null;
+
+        $respuesta = $ctrl->ctrActualizarPerfil($body, $archivo);
+
+        echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
+        exit;
+    } catch (Throwable $e) {
+        echo json_encode([
+            'success' => false,
+            'mensaje' => 'Error interno: ' . $e->getMessage()
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+
+if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? '') === 'aprobar') {
+    require_once __DIR__ . '/../Modelo/MdDirectorio.php';
+    require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
+
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+
+    header('Content-Type: application/json; charset=utf-8');
+
+    try {
+        $idSolicitud = (int)($parts[3] ?? 0);
         $ctrl = new CtrDirectorio();
-        $respuesta = $ctrl->ctrActualizarPerfil($body);
+        $respuesta = $ctrl->ctrAprobarSolicitudCambio($idSolicitud);
+
+        echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
+        exit;
+    } catch (Throwable $e) {
+        echo json_encode([
+            'success' => false,
+            'mensaje' => 'Error interno: ' . $e->getMessage()
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+
+if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? '') === 'rechazar') {
+    require_once __DIR__ . '/../Modelo/MdDirectorio.php';
+    require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
+
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+
+    header('Content-Type: application/json; charset=utf-8');
+
+    try {
+        $idSolicitud = (int)($parts[3] ?? 0);
+        $raw = file_get_contents('php://input');
+        $body = json_decode($raw, true);
+        $motivo = trim((string)($body['motivo'] ?? ''));
+
+        $ctrl = new CtrDirectorio();
+        $respuesta = $ctrl->ctrRechazarSolicitudCambio($idSolicitud, $motivo);
 
         echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
         exit;

@@ -1089,4 +1089,340 @@ RESUMEN DASHBOARD DINÁMICO
             ];
         }
     }
+
+    private static function mdlGuardarArchivoSustentoTemporal(?array $archivo): ?array
+    {
+        if (empty($archivo) || empty($archivo['name'])) {
+            return null;
+        }
+
+        if (($archivo['error'] ?? UPLOAD_ERR_NO_FILE) !== UPLOAD_ERR_OK) {
+            throw new Exception('No se pudo subir el archivo de sustento');
+        }
+
+        $maxBytes = 5 * 1024 * 1024; // 5 MB
+        if (($archivo['size'] ?? 0) > $maxBytes) {
+            throw new Exception('El archivo supera el tamaño máximo permitido de 5 MB');
+        }
+
+        $permitidos = [
+            'image/jpeg' => 'jpg',
+            'image/png'  => 'png',
+            'image/webp' => 'webp',
+            'application/pdf' => 'pdf',
+        ];
+
+        $finfo = finfo_open(FILEINFO_MIME_TYPE);
+        $mime  = finfo_file($finfo, $archivo['tmp_name']);
+        finfo_close($finfo);
+
+        if (!isset($permitidos[$mime])) {
+            throw new Exception('Tipo de archivo no permitido');
+        }
+
+        $ext = $permitidos[$mime];
+
+        $baseDir = __DIR__ . '/../Public/uploads/sustentos_cambios/';
+        if (!is_dir($baseDir)) {
+            mkdir($baseDir, 0775, true);
+        }
+
+        $nombreSeguro = 'sustento_' . date('Ymd_His') . '_' . bin2hex(random_bytes(6)) . '.' . $ext;
+        $rutaFisica   = $baseDir . $nombreSeguro;
+        $rutaGuardar  = 'uploads/sustentos_cambios/' . $nombreSeguro;
+
+        if (!move_uploaded_file($archivo['tmp_name'], $rutaFisica)) {
+            throw new Exception('No se pudo mover el archivo de sustento');
+        }
+
+        return [
+            'ruta' => $rutaGuardar,
+            'nombre_original' => $archivo['name'],
+            'mime' => $mime,
+            'tamano' => (int)$archivo['size'],
+        ];
+    }
+
+    public static function mdlCrearSolicitudCambio(int $colabId, int $usuarioSolicitaId, array $datosNuevos, ?array $archivo = null): array
+    {
+        $db = Conexion::conectar();
+
+        try {
+            $db->beginTransaction();
+
+            // Validar si ya tiene una pendiente
+            $sqlExiste = "SELECT id 
+                      FROM solicitudes_cambio 
+                      WHERE colab_id = :colab_id 
+                        AND tipo_seccion = 'perfil_completo'
+                        AND estado = 'PENDIENTE'
+                      LIMIT 1";
+            $stmtExiste = $db->prepare($sqlExiste);
+            $stmtExiste->execute(['colab_id' => $colabId]);
+
+            if ($stmtExiste->fetch(PDO::FETCH_ASSOC)) {
+                $db->rollBack();
+                return [
+                    'success' => false,
+                    'mensaje' => 'Ya tienes una solicitud pendiente de validación'
+                ];
+            }
+
+            $perfilActual = self::mdlObtenerPerfilCompleto($colabId);
+            if (!$perfilActual) {
+                $db->rollBack();
+                return ['success' => false, 'mensaje' => 'No se encontró el perfil del colaborador'];
+            }
+
+            $archivoGuardado = self::mdlGuardarArchivoSustentoTemporal($archivo);
+
+            $sql = "INSERT INTO solicitudes_cambio (
+                    colab_id,
+                    usuario_solicita_id,
+                    tipo_seccion,
+                    datos_json,
+                    datos_anteriores_json,
+                    archivo_sustento,
+                    nombre_archivo_original,
+                    mime_archivo,
+                    tamano_archivo,
+                    estado,
+                    created_at
+                ) VALUES (
+                    :colab_id,
+                    :usuario_solicita_id,
+                    :tipo_seccion,
+                    :datos_json,
+                    :datos_anteriores_json,
+                    :archivo_sustento,
+                    :nombre_archivo_original,
+                    :mime_archivo,
+                    :tamano_archivo,
+                    'PENDIENTE',
+                    NOW()
+                )";
+
+            $stmt = $db->prepare($sql);
+            $stmt->execute([
+                'colab_id' => $colabId,
+                'usuario_solicita_id' => $usuarioSolicitaId,
+                'tipo_seccion' => 'perfil_completo',
+                'datos_json' => json_encode($datosNuevos, JSON_UNESCAPED_UNICODE),
+                'datos_anteriores_json' => json_encode($perfilActual, JSON_UNESCAPED_UNICODE),
+                'archivo_sustento' => $archivoGuardado['ruta'] ?? null,
+                'nombre_archivo_original' => $archivoGuardado['nombre_original'] ?? null,
+                'mime_archivo' => $archivoGuardado['mime'] ?? null,
+                'tamano_archivo' => $archivoGuardado['tamano'] ?? null,
+            ]);
+
+            $db->commit();
+
+            return [
+                'success' => true,
+                'modo' => 'solicitud',
+                'mensaje' => 'Tu solicitud fue enviada y quedó pendiente de validación'
+            ];
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+            return [
+                'success' => false,
+                'mensaje' => 'No se pudo registrar la solicitud: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    public static function mdlListarSolicitudesCambio(?string $estado = null): array
+    {
+        $db = Conexion::conectar();
+
+        $sql = "SELECT 
+                s.*,
+                cm.nombres_apellidos,
+                cm.dni
+            FROM solicitudes_cambio s
+            INNER JOIN colab_maestro cm ON cm.id = s.colab_id
+            WHERE 1=1";
+
+        $params = [];
+
+        if (!empty($estado)) {
+            $sql .= " AND s.estado = :estado";
+            $params['estado'] = strtoupper($estado);
+        }
+
+        $sql .= " ORDER BY 
+                CASE s.estado
+                    WHEN 'PENDIENTE' THEN 1
+                    WHEN 'RECHAZADO' THEN 2
+                    WHEN 'APROBADO' THEN 3
+                    ELSE 4
+                END,
+                s.created_at DESC";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute($params);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public static function mdlObtenerSolicitudCambio(int $id): ?array
+    {
+        $db = Conexion::conectar();
+
+        $sql = "SELECT s.*, cm.nombres_apellidos, cm.dni
+            FROM solicitudes_cambio s
+            INNER JOIN colab_maestro cm ON cm.id = s.colab_id
+            WHERE s.id = :id
+            LIMIT 1";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['id' => $id]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+        return $row ?: null;
+    }
+
+    public static function mdlAprobarSolicitudCambio(int $solicitudId, int $validadorId): array
+    {
+        $db = Conexion::conectar();
+
+        try {
+            $db->beginTransaction();
+
+            $solicitud = self::mdlObtenerSolicitudCambio($solicitudId);
+            if (!$solicitud) {
+                $db->rollBack();
+                return ['success' => false, 'mensaje' => 'La solicitud no existe'];
+            }
+
+            if (($solicitud['estado'] ?? '') !== 'PENDIENTE') {
+                $db->rollBack();
+                return ['success' => false, 'mensaje' => 'La solicitud ya fue procesada'];
+            }
+
+            $datos = json_decode((string)$solicitud['datos_json'], true);
+            if (!is_array($datos)) {
+                $db->rollBack();
+                return ['success' => false, 'mensaje' => 'La solicitud no contiene datos válidos'];
+            }
+
+            $resultado = self::mdlActualizarPerfil($datos);
+            if (empty($resultado['success'])) {
+                $db->rollBack();
+                return [
+                    'success' => false,
+                    'mensaje' => $resultado['mensaje'] ?? 'No se pudo aplicar el cambio'
+                ];
+            }
+
+            $sql = "UPDATE solicitudes_cambio
+                SET estado = 'APROBADO',
+                    validado_por = :validado_por,
+                    revisado_por = :revisado_por,
+                    fecha_validacion = NOW(),
+                    observacion_rrhh = 'Solicitud aprobada'
+                WHERE id = :id";
+            $stmt = $db->prepare($sql);
+            $stmt->execute([
+                'validado_por' => $validadorId,
+                'revisado_por' => $validadorId,
+                'id' => $solicitudId
+            ]);
+
+            if (!empty($solicitud['archivo_sustento'])) {
+                $rutaFisica = __DIR__ . '/../Public/' . ltrim($solicitud['archivo_sustento'], '/');
+                if (is_file($rutaFisica)) {
+                    @unlink($rutaFisica);
+                }
+
+                $stmtLimpia = $db->prepare("UPDATE solicitudes_cambio
+                                        SET archivo_sustento = NULL,
+                                            nombre_archivo_original = NULL,
+                                            mime_archivo = NULL,
+                                            tamano_archivo = NULL
+                                        WHERE id = :id");
+                $stmtLimpia->execute(['id' => $solicitudId]);
+            }
+
+            $db->commit();
+
+            return [
+                'success' => true,
+                'mensaje' => 'Solicitud aprobada y cambios aplicados correctamente'
+            ];
+        } catch (Throwable $e) {
+            if ($db->inTransaction()) {
+                $db->rollBack();
+            }
+
+            return [
+                'success' => false,
+                'mensaje' => 'Error al aprobar la solicitud: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    public static function mdlRechazarSolicitudCambio(int $solicitudId, int $validadorId, string $motivo): array
+    {
+        try {
+            $pdo = Conexion::conectar();
+
+            $sql = "UPDATE solicitudes_cambio
+                SET estado = 'RECHAZADO',
+                    validado_por = :validado_por,
+                    fecha_validacion = NOW(),
+                    observacion_rrhh = :observacion_rrhh
+                WHERE id = :id
+                  AND estado = 'PENDIENTE'";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':validado_por'    => $validadorId,
+                ':observacion_rrhh' => $motivo,
+                ':id'              => $solicitudId
+            ]);
+
+            if ($stmt->rowCount() <= 0) {
+                return [
+                    'success' => false,
+                    'mensaje' => 'La solicitud no existe o ya fue procesada'
+                ];
+            }
+
+            return [
+                'success' => true,
+                'mensaje' => 'Solicitud rechazada correctamente'
+            ];
+        } catch (Throwable $e) {
+            return [
+                'success' => false,
+                'mensaje' => 'Error al rechazar la solicitud: ' . $e->getMessage()
+            ];
+        }
+    }
+
+    public static function mdlResumenSolicitudesPorColaborador(int $colabId): array
+    {
+        $db = Conexion::conectar();
+
+        $sql = "SELECT 
+                SUM(CASE WHEN estado = 'PENDIENTE' THEN 1 ELSE 0 END) AS pendientes,
+                SUM(CASE WHEN estado = 'APROBADO' THEN 1 ELSE 0 END) AS aprobadas,
+                SUM(CASE WHEN estado = 'RECHAZADO' THEN 1 ELSE 0 END) AS rechazadas
+            FROM solicitudes_cambio
+            WHERE colab_id = :colab_id";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute(['colab_id' => $colabId]);
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC) ?: [];
+
+        return [
+            'pendientes' => (int)($row['pendientes'] ?? 0),
+            'aprobadas' => (int)($row['aprobadas'] ?? 0),
+            'rechazadas' => (int)($row['rechazadas'] ?? 0),
+        ];
+    }
 }

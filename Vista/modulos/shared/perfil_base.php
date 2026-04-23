@@ -20,6 +20,7 @@ $hijos = array_values(array_filter($familia, fn($f) => in_array(($f['parentesco'
 
 // Compatibilidad con el modal copiado desde colaborador
 $perfil = $data;
+$resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($perfil['id'] ?? 0));
 ?>
 
 <main class="flex-1 bg-slate-50 overflow-y-auto pb-20">
@@ -48,12 +49,32 @@ $perfil = $data;
                             <span class="bg-red-50 text-red-900 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-red-100">
                                 <?php echo htmlspecialchars($data['puesto_cas'] ?? 'Sin puesto'); ?>
                             </span>
+
                             <span class="bg-slate-50 text-slate-500 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-slate-200">
                                 <?php echo htmlspecialchars($data['area'] ?? 'Sin área'); ?>
                             </span>
+
                             <?php if (!empty($data['situacion'])): ?>
                                 <span class="bg-green-50 text-green-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-green-100">
                                     <?php echo htmlspecialchars($data['situacion']); ?>
+                                </span>
+                            <?php endif; ?>
+
+                            <?php if (($resumenSolicitudes['pendientes'] ?? 0) > 0): ?>
+                                <span class="bg-amber-50 text-amber-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-amber-200">
+                                    <?php echo (int)$resumenSolicitudes['pendientes']; ?> pendiente(s) de validación
+                                </span>
+                            <?php endif; ?>
+
+                            <?php if (($resumenSolicitudes['rechazadas'] ?? 0) > 0): ?>
+                                <span class="bg-red-50 text-red-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-red-200">
+                                    <?php echo (int)$resumenSolicitudes['rechazadas']; ?> rechazada(s)
+                                </span>
+                            <?php endif; ?>
+
+                            <?php if (($resumenSolicitudes['aprobadas'] ?? 0) > 0): ?>
+                                <span class="bg-green-50 text-green-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-green-200">
+                                    <?php echo (int)$resumenSolicitudes['aprobadas']; ?> aprobada(s)
                                 </span>
                             <?php endif; ?>
                         </div>
@@ -1143,7 +1164,8 @@ $perfil = $data;
                             <div class="field-group">
                                 <label class="field-label">Correo Institucional</label>
                                 <input type="email" name="correo_institucional" class="field-input"
-                                    value="<?php echo htmlspecialchars($perfil['correo_institucional'] ?? ''); ?>">
+                                    value="<?php echo htmlspecialchars($perfil['correo_institucional'] ?? ''); ?>"
+                                    <?php echo !$esEditable ? 'readonly' : ''; ?>>
                             </div>
                         </div>
                     </div>
@@ -1905,15 +1927,67 @@ $perfil = $data;
                         </svg>
                     </div>
                     <div>
-                        <p class="text-sm font-black text-green-800">Todo listo para guardar</p>
+                        <p class="text-sm font-black text-green-800">
+                            <?php echo $rolSesion === 'colaborador' ? 'Solicitud lista para enviar' : 'Todo listo para guardar'; ?>
+                        </p>
                         <p class="text-xs text-green-700 mt-0.5">
-                            Revisa el resumen a continuación. Al confirmar, los cambios se guardarán en el sistema.
+                            <?php if ($rolSesion === 'colaborador'): ?>
+                                Al confirmar, tus cambios quedarán pendientes de validación por RRHH.
+                            <?php else: ?>
+                                Al confirmar, los cambios se guardarán directamente en el sistema.
+                            <?php endif; ?>
                         </p>
                     </div>
                 </div>
 
                 <div id="resumen-cambios" class="space-y-2 text-sm">
                     <!-- Se rellena dinámicamente con JS -->
+                </div>
+
+                <?php if ($rolSesion === 'colaborador'): ?>
+                    <div class="mt-6 bg-white border border-slate-200 rounded-2xl p-5">
+                        <p class="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">
+                            Sustento de solicitud
+                        </p>
+
+                        <div class="space-y-3">
+                            <p class="text-sm text-slate-600">
+                                Adjunta una foto o archivo como sustento del cambio. Este archivo se eliminará automáticamente cuando la solicitud sea aprobada.
+                            </p>
+
+                            <input
+                                type="file"
+                                id="archivo_sustento"
+                                accept=".jpg,.jpeg,.png,.pdf,.webp"
+                                class="block w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-red-50 file:text-red-900 hover:file:bg-red-100">
+
+                            <p class="text-[11px] text-slate-400">
+                                Permitido: JPG, PNG, WEBP o PDF. Máximo 5 MB.
+                            </p>
+                        </div>
+                    </div>
+                <?php endif; ?>
+            </div>
+
+            <div class="mt-6 bg-white border border-slate-200 rounded-2xl p-5">
+                <p class="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">
+                    Sustento de solicitud
+                </p>
+
+                <div class="space-y-3">
+                    <p class="text-sm text-slate-600">
+                        Adjunta una foto o archivo como sustento del cambio. Este archivo se eliminará automáticamente cuando la solicitud sea aprobada.
+                    </p>
+
+                    <input
+                        type="file"
+                        id="archivo_sustento"
+                        accept=".jpg,.jpeg,.png,.pdf,.webp"
+                        class="block w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-red-50 file:text-red-900 hover:file:bg-red-100">
+
+                    <p class="text-[11px] text-slate-400">
+                        Permitido: JPG, PNG, WEBP o PDF. Máximo 5 MB.
+                    </p>
                 </div>
             </div>
         </div>
@@ -1932,7 +2006,7 @@ $perfil = $data;
         </button>
         <button id="btn-guardar" onclick="guardarPerfil()"
             class="px-6 py-2.5 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all shadow-md hidden active:scale-95">
-            ✓ Guardar Cambios
+            <?php echo $rolSesion === 'colaborador' ? '✓ Enviar Solicitud' : '✓ Guardar Cambios'; ?>
         </button>
     </div>
 
@@ -3510,7 +3584,8 @@ $perfil = $data;
                 !el.name.includes('idiomas[') &&
                 !el.name.includes('contratos[') &&
                 !el.name.startsWith('pension[') &&
-                !el.name.startsWith('bancario[')
+                !el.name.startsWith('bancario[') &&
+                el.type !== 'file'
             ) {
                 campos[el.name] = el.type === 'checkbox' ? (el.checked ? 1 : 0) : (el.value ?? '');
             }
@@ -3533,7 +3608,6 @@ $perfil = $data;
                 hijos.push(item);
             }
         });
-
         campos['hijos'] = hijos;
 
         const contratos = [];
@@ -3640,28 +3714,35 @@ $perfil = $data;
         });
         campos['idiomas'] = idiomas;
 
+        const formData = new FormData();
+        formData.append('payload', JSON.stringify(campos));
+
+        const sustentoInput = document.getElementById('archivo_sustento');
+        if (sustentoInput && sustentoInput.files && sustentoInput.files[0]) {
+            formData.append('archivo_sustento', sustentoInput.files[0]);
+        }
+
         fetch('<?php echo BASE_URL; ?>/perfil/actualizar', {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/json',
                     'X-Requested-With': 'XMLHttpRequest'
                 },
-                body: JSON.stringify(campos)
+                body: formData
             })
-            .then(response => response.text())
+            .then(r => r.text())
             .then(raw => {
-                const cleanJson = raw.trim();
-                const res = JSON.parse(cleanJson);
+                const res = JSON.parse(raw.trim());
 
                 if (res.success) {
                     cerrarModal();
-                    location.reload();
+                    mostrarToast('✓', res.mensaje || 'Operación realizada correctamente', 'bg-green-700');
+                    setTimeout(() => location.reload(), 900);
                 } else {
                     mostrarToast('✗', res.mensaje || 'Error al guardar', 'bg-red-800');
                 }
             })
             .catch(err => {
-                console.error('Error real:', err);
+                console.error(err);
                 mostrarToast('✗', 'La respuesta del servidor no fue válida', 'bg-red-800');
             })
             .finally(() => {

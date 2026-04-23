@@ -3,25 +3,16 @@
 
 class CtrDirectorio
 {
-    /*=============================================
-    MOSTRAR DIRECTORIO
-    =============================================*/
     public function ctrMostrarDirectorio()
     {
         return MdDirectorio::mdlMostrarDirectorio();
     }
 
-    /*=============================================
-    DASHBOARD DINÁMICO
-    =============================================*/
     public function ctrMostrarDashboard()
     {
         return MdDirectorio::mdlObtenerResumenDashboard();
     }
 
-    /*=============================================
-    VER PERFIL INDIVIDUAL
-    =============================================*/
     public function ctrVerPerfil($id)
     {
         if (!$id || !is_numeric($id)) {
@@ -31,32 +22,80 @@ class CtrDirectorio
         return MdDirectorio::mdlObtenerPerfilCompleto((int)$id);
     }
 
-    public function ctrActualizarPerfil($body)
+    public function ctrActualizarPerfil(array $body, ?array $archivo = null): array
     {
         if (!$body || empty($body['id'])) {
             return ['success' => false, 'mensaje' => 'Datos inválidos o incompletos'];
         }
 
         $idObjetivo = (int)$body['id'];
-        $idSesion   = (int)($_SESSION['user_id'] ?? 0);
         $rolSesion  = strtolower(trim($_SESSION['user_role'] ?? ''));
+        $userId     = (int)($_SESSION['user_id'] ?? 0);
 
-        $rolesConAccesoTotal = ['rrhh', 'admin', 'superadmin'];
-
-        $puedeEditar = false;
-
-        if ($idObjetivo === $idSesion) {
-            $puedeEditar = true;
+        if ($idObjetivo <= 0 || $userId <= 0) {
+            return ['success' => false, 'mensaje' => 'Sesión o colaborador inválido'];
         }
 
-        if (in_array($rolSesion, $rolesConAccesoTotal, true)) {
-            $puedeEditar = true;
+        if ($rolSesion === 'colaborador') {
+            return MdDirectorio::mdlCrearSolicitudCambio($idObjetivo, $userId, $body, $archivo);
         }
 
-        if (!$puedeEditar) {
-            return ['success' => false, 'mensaje' => 'No tienes permiso para editar este perfil'];
+        if (in_array($rolSesion, ['superadmin', 'admin', 'rrhh'], true)) {
+            return MdDirectorio::mdlActualizarPerfil($body);
         }
 
-        return MdDirectorio::mdlActualizarPerfil($body);
+        return ['success' => false, 'mensaje' => 'No tienes permisos para realizar esta acción'];
+    }
+
+    public function ctrAprobarSolicitudCambio(int $solicitudId): array
+    {
+        $rolSesion = strtolower(trim($_SESSION['user_role'] ?? ''));
+        $userId    = (int)($_SESSION['user_id'] ?? 0);
+
+        if (!in_array($rolSesion, ['superadmin', 'admin', 'rrhh'], true)) {
+            return [
+                'success' => false,
+                'mensaje' => 'No tienes permiso para aprobar solicitudes'
+            ];
+        }
+
+        if ($solicitudId <= 0) {
+            return [
+                'success' => false,
+                'mensaje' => 'Solicitud inválida'
+            ];
+        }
+
+        return MdDirectorio::mdlAprobarSolicitudCambio($solicitudId, $userId);
+    }
+
+    public function ctrRechazarSolicitudCambio(int $solicitudId, string $motivo): array
+    {
+        $rolSesion = strtolower(trim($_SESSION['user_role'] ?? ''));
+        $userId    = (int)($_SESSION['user_id'] ?? 0);
+
+        if (!in_array($rolSesion, ['superadmin', 'admin', 'rrhh'], true)) {
+            return [
+                'success' => false,
+                'mensaje' => 'No tienes permiso para rechazar solicitudes'
+            ];
+        }
+
+        if ($solicitudId <= 0) {
+            return [
+                'success' => false,
+                'mensaje' => 'Solicitud inválida'
+            ];
+        }
+
+        $motivo = trim($motivo);
+        if ($motivo === '') {
+            return [
+                'success' => false,
+                'mensaje' => 'Debes ingresar el motivo del rechazo'
+            ];
+        }
+
+        return MdDirectorio::mdlRechazarSolicitudCambio($solicitudId, $userId, $motivo);
     }
 }
