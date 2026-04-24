@@ -1968,28 +1968,6 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
                     </div>
                 <?php endif; ?>
             </div>
-
-            <div class="mt-6 bg-white border border-slate-200 rounded-2xl p-5">
-                <p class="text-xs font-black uppercase tracking-widest text-slate-500 mb-3">
-                    Sustento de solicitud
-                </p>
-
-                <div class="space-y-3">
-                    <p class="text-sm text-slate-600">
-                        Adjunta una foto o archivo como sustento del cambio. Este archivo se eliminará automáticamente cuando la solicitud sea aprobada.
-                    </p>
-
-                    <input
-                        type="file"
-                        id="archivo_sustento"
-                        accept=".jpg,.jpeg,.png,.pdf,.webp"
-                        class="block w-full text-sm text-slate-700 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-bold file:bg-red-50 file:text-red-900 hover:file:bg-red-100">
-
-                    <p class="text-[11px] text-slate-400">
-                        Permitido: JPG, PNG, WEBP o PDF. Máximo 5 MB.
-                    </p>
-                </div>
-            </div>
         </div>
     </div><!-- /overflow-y-auto -->
 

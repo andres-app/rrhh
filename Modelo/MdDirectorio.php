@@ -397,16 +397,36 @@ RESUMEN DASHBOARD DINÁMICO
 
             // ── 1.1 Actualizar campos sensibles en maestro (solo RRHH/Admin) ──
             if (in_array($rolSesion, ['rrhh', 'admin', 'superadmin'], true)) {
+                $stmtActualMaestro = $pdo->prepare("
+    SELECT nombres_apellidos, dni
+    FROM colab_maestro
+    WHERE id = :id
+    LIMIT 1
+");
+                $stmtActualMaestro->execute([
+                    ':id' => (int)$datos['id'],
+                ]);
+
+                $maestroActual = $stmtActualMaestro->fetch(PDO::FETCH_ASSOC) ?: [];
+
+                $nombresFinal = array_key_exists('nombres_apellidos', $datos) && trim((string)$datos['nombres_apellidos']) !== ''
+                    ? trim((string)$datos['nombres_apellidos'])
+                    : ($maestroActual['nombres_apellidos'] ?? null);
+
+                $dniFinal = array_key_exists('dni', $datos) && trim((string)$datos['dni']) !== ''
+                    ? trim((string)$datos['dni'])
+                    : ($maestroActual['dni'] ?? null);
+
                 $stmtExtraMaestro = $pdo->prepare("
-                UPDATE colab_maestro SET
-                    nombres_apellidos = :nombres_apellidos,
-                    dni               = :dni
-                WHERE id = :id
-            ");
+                        UPDATE colab_maestro SET
+                            nombres_apellidos = :nombres_apellidos,
+                            dni               = :dni
+                        WHERE id = :id
+                    ");
 
                 $stmtExtraMaestro->execute([
-                    ':nombres_apellidos' => $datos['nombres_apellidos'] ?? null,
-                    ':dni'               => $datos['dni'] ?? null,
+                    ':nombres_apellidos' => $nombresFinal,
+                    ':dni'               => $dniFinal,
                     ':id'                => (int)$datos['id'],
                 ]);
             }
