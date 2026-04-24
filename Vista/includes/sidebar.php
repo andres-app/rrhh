@@ -4,12 +4,21 @@ function tieneAcceso($modulo)
 {
     if (!isset($_SESSION['user_role'])) return false;
 
-    // El Superadmin suele tener acceso a todo por defecto
-    if ($_SESSION['user_role'] === 'superadmin') return true;
+    $rol = strtolower(trim($_SESSION['user_role']));
+    $modulo = strtolower(trim($modulo));
 
-    // Consultamos la función que ya creaste en tu Router (index.php)
+    // Regla especial:
+    // "Mis validaciones" SOLO debe verlo colaborador
+    if ($modulo === 'misvalidaciones' && $rol !== 'colaborador') {
+        return false;
+    }
+
+    // Superadmin tiene acceso general, excepto reglas especiales arriba
+    if ($rol === 'superadmin') return true;
+
+    // Consultamos permisos reales
     $permisos = check_access($modulo, $_SESSION['user_role']);
-    return (bool)$permisos['can_view'];
+    return !empty($permisos['can_view']);
 }
 
 // Pre-calculamos accesos para no repetir llamadas
