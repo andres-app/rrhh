@@ -31,19 +31,66 @@ function textoTipoSolicitud($tipo)
     };
 }
 
-function normalizarValor($valor)
+function valorLimpio($valor)
 {
-    if (is_array($valor)) {
-        ksort($valor);
+    if ($valor === null) return '';
 
-        foreach ($valor as $k => $v) {
-            $valor[$k] = normalizarValor($v);
-        }
-
-        return $valor;
+    if (is_bool($valor)) {
+        return $valor ? '1' : '0';
     }
 
     return trim((string)$valor);
+}
+
+function normalizarFila(array $fila, array $campos): array
+{
+    $limpio = [];
+
+    foreach ($campos as $campo) {
+        $limpio[$campo] = valorLimpio($fila[$campo] ?? '');
+    }
+
+    return $limpio;
+}
+
+function normalizarLista(array $lista, array $campos): array
+{
+    $resultado = [];
+
+    foreach ($lista as $fila) {
+        if (!is_array($fila)) continue;
+
+        $item = normalizarFila($fila, $campos);
+
+        $vacio = true;
+        foreach ($item as $valor) {
+            if ($valor !== '') {
+                $vacio = false;
+                break;
+            }
+        }
+
+        if (!$vacio) {
+            $resultado[] = $item;
+        }
+    }
+
+    usort($resultado, function ($a, $b) {
+        return json_encode($a, JSON_UNESCAPED_UNICODE) <=> json_encode($b, JSON_UNESCAPED_UNICODE);
+    });
+
+    return $resultado;
+}
+
+function bloqueCambio(array $antes, array $despues, string $campo, array $camposComparar): bool
+{
+    $listaAntes = $antes[$campo] ?? [];
+    $listaDespues = $despues[$campo] ?? [];
+
+    if (!is_array($listaAntes)) $listaAntes = [];
+    if (!is_array($listaDespues)) $listaDespues = [];
+
+    return normalizarLista($listaAntes, $camposComparar) !== normalizarLista($listaDespues, $camposComparar);
 }
 
 function resumenSolicitud($sol)
@@ -51,7 +98,9 @@ function resumenSolicitud($sol)
     $datosNuevos = json_decode((string)($sol['datos_json'] ?? ''), true) ?: [];
     $datosAntes  = json_decode((string)($sol['datos_anteriores_json'] ?? ''), true) ?: [];
 
-    $campos = [
+    $resumen = [];
+
+    $camposSimples = [
         'fecha_nacimiento'      => 'Fecha nacimiento',
         'lugar_nacimiento'     => 'Lugar nacimiento',
         'estado_civil'         => 'Estado civil',
@@ -66,34 +115,124 @@ function resumenSolicitud($sol)
         'dni_conyuge'          => 'DNI cónyuge',
     ];
 
-    $resumen = [];
-
-    foreach ($campos as $campo => $label) {
-        $antes  = normalizarValor($datosAntes[$campo] ?? '');
-        $despues = normalizarValor($datosNuevos[$campo] ?? '');
+    foreach ($camposSimples as $campo => $label) {
+        $antes = valorLimpio($datosAntes[$campo] ?? '');
+        $despues = valorLimpio($datosNuevos[$campo] ?? '');
 
         if ($antes !== $despues) {
             $resumen[] = $label;
         }
     }
 
-    $bloques = [
-        'hijos'       => 'Familia',
-        'contratos'   => 'Contratos',
-        'formacion'   => 'Formación',
-        'experiencia' => 'Experiencia',
-        'pension'     => 'Pensión',
-        'bancario'    => 'Bancario',
-        'idiomas'     => 'Idiomas',
-    ];
+    if (bloqueCambio($datosAntes, $datosNuevos, 'contratos', [
+        'fecha_ingreso',
+        'fecha_cese',
+        'modalidad'
+    ])) {
+        $resumen[] = 'Contratos';
+    }
 
-    foreach ($bloques as $campo => $label) {
-        $antes  = normalizarValor($datosAntes[$campo] ?? []);
-        $despues = normalizarValor($datosNuevos[$campo] ?? []);
+    if (bloqueCambio($datosAntes, $datosNuevos, 'formacion', [
+        'tipo_grado',
+        'descripcion_carrera',
+        'institucion',
+        'anio_realizacion',
+        'horas_lectivas',
+        'especialidad',
+        'grado_alcanzado'
+    ])) {
+        $resumen[] = 'Formación';
+    }
 
-        if ($antes !== $despues) {
-            $resumen[] = $label;
+    if (bloqueCambio($datosAntes, $datosNuevos, 'experiencia', [
+        'empresa_entidad',
+        'unidad_organica_area',
+        'cargo_puesto',
+        'fecha_inicio',
+        'fecha_fin',
+        'actualmente_trabaja',
+        'funciones_principales'
+    ])) {
+        $resumen[] = 'Experiencia';
+    }
+
+    /*
+    IMPORTANTE:
+    En BD viene como familia, pero desde el formulario viene como hijos.
+    Por eso se comparan los hijos de familia contra hijos del JSON nuevo.
+    */
+    $familiaAntes = $datosAntes['familia'] ?? [];
+    $hijosAntes = [];
+
+    if (is_array($familiaAntes)) {
+        foreach ($familiaAntes as $familiar) {
+            if (!is_array($familiar)) continue;
+
+            $parentesco = strtoupper(valorLimpio($familiar['parentesco'] ?? ''));
+
+            if (in_array($parentesco, ['HIJO', 'HIJA'], true)) {
+                $hijosAntes[] = [
+                    'nombre' => $familiar['nombre_completo'] ?? '',
+                    'parentesco' => $familiar['parentesco'] ?? '',
+                    'fecha_nacimiento' => $familiar['fecha_nacimiento'] ?? '',
+                    'dni' => $familiar['dni_familiar'] ?? '',
+                ];
+            }
         }
+    }
+
+    $datosAntesHijos = ['hijos' => $hijosAntes];
+
+    if (bloqueCambio($datosAntesHijos, $datosNuevos, 'hijos', [
+        'nombre',
+        'parentesco',
+        'fecha_nacimiento',
+        'dni'
+    ])) {
+        $resumen[] = 'Familia';
+    }
+
+    $pensionAntes = is_array($datosAntes['pension'] ?? null) ? $datosAntes['pension'] : [];
+    $pensionNueva = is_array($datosNuevos['pension'] ?? null) ? $datosNuevos['pension'] : [];
+
+    if (normalizarFila($pensionAntes, [
+        'sistema_pension',
+        'afp',
+        'cuspp',
+        'tipo_comision',
+        'fecha_inscripcion',
+        'sin_afp_afiliarme'
+    ]) !== normalizarFila($pensionNueva, [
+        'sistema_pension',
+        'afp',
+        'cuspp',
+        'tipo_comision',
+        'fecha_inscripcion',
+        'sin_afp_afiliarme'
+    ])) {
+        $resumen[] = 'Pensión';
+    }
+
+    $bancarioAntes = is_array($datosAntes['bancario'] ?? null) ? $datosAntes['bancario'] : [];
+    $bancarioNuevo = is_array($datosNuevos['bancario'] ?? null) ? $datosNuevos['bancario'] : [];
+
+    if (normalizarFila($bancarioAntes, [
+        'banco_haberes',
+        'numero_cuenta',
+        'numero_cuenta_cci'
+    ]) !== normalizarFila($bancarioNuevo, [
+        'banco_haberes',
+        'numero_cuenta',
+        'numero_cuenta_cci'
+    ])) {
+        $resumen[] = 'Bancario';
+    }
+
+    if (bloqueCambio($datosAntes, $datosNuevos, 'idiomas', [
+        'idioma',
+        'nivel'
+    ])) {
+        $resumen[] = 'Idiomas';
     }
 
     return !empty($resumen)
@@ -217,10 +356,10 @@ function resumenSolicitud($sol)
                                 $resumen = resumenSolicitud($sol);
                                 $busqueda = strtolower(
                                     ($sol['nombres_apellidos'] ?? '') . ' ' .
-                                    ($sol['dni'] ?? '') . ' ' .
-                                    textoTipoSolicitud($sol['tipo_seccion'] ?? '') . ' ' .
-                                    $resumen . ' ' .
-                                    $estado
+                                        ($sol['dni'] ?? '') . ' ' .
+                                        textoTipoSolicitud($sol['tipo_seccion'] ?? '') . ' ' .
+                                        $resumen . ' ' .
+                                        $estado
                                 );
                                 ?>
 
