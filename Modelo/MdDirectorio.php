@@ -1384,32 +1384,32 @@ RESUMEN DASHBOARD DINÁMICO
         }
     }
 
-public static function mdlRechazarSolicitudCambio(int $solicitudId, int $validadorId, string $motivo): array
-{
-    $pdo = Conexion::conectar();
+    public static function mdlRechazarSolicitudCambio(int $solicitudId, int $validadorId, string $motivo): array
+    {
+        $pdo = Conexion::conectar();
 
-    try {
-        $pdo->beginTransaction();
+        try {
+            $pdo->beginTransaction();
 
-        $stmtSol = $pdo->prepare("
+            $stmtSol = $pdo->prepare("
             SELECT archivo_sustento
             FROM solicitudes_cambio
             WHERE id = :id
               AND estado = 'PENDIENTE'
             LIMIT 1
         ");
-        $stmtSol->execute([':id' => $solicitudId]);
-        $solicitud = $stmtSol->fetch(PDO::FETCH_ASSOC);
+            $stmtSol->execute([':id' => $solicitudId]);
+            $solicitud = $stmtSol->fetch(PDO::FETCH_ASSOC);
 
-        if (!$solicitud) {
-            $pdo->rollBack();
-            return [
-                'success' => false,
-                'mensaje' => 'La solicitud no existe o ya fue procesada'
-            ];
-        }
+            if (!$solicitud) {
+                $pdo->rollBack();
+                return [
+                    'success' => false,
+                    'mensaje' => 'La solicitud no existe o ya fue procesada'
+                ];
+            }
 
-        $sql = "UPDATE solicitudes_cambio
+            $sql = "UPDATE solicitudes_cambio
                 SET estado = 'RECHAZADO',
                     validado_por = :validado_por,
                     revisado_por = :revisado_por,
@@ -1423,40 +1423,40 @@ public static function mdlRechazarSolicitudCambio(int $solicitudId, int $validad
                 WHERE id = :id
                   AND estado = 'PENDIENTE'";
 
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':validado_por'     => $validadorId,
-            ':revisado_por'     => $validadorId,
-            ':observacion_rrhh' => $motivo,
-            ':motivo_rechazo'   => $motivo,
-            ':id'               => $solicitudId
-        ]);
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute([
+                ':validado_por'     => $validadorId,
+                ':revisado_por'     => $validadorId,
+                ':observacion_rrhh' => $motivo,
+                ':motivo_rechazo'   => $motivo,
+                ':id'               => $solicitudId
+            ]);
 
-        if (!empty($solicitud['archivo_sustento'])) {
-            $rutaFisica = __DIR__ . '/../Public/' . ltrim($solicitud['archivo_sustento'], '/');
+            if (!empty($solicitud['archivo_sustento'])) {
+                $rutaFisica = __DIR__ . '/../Public/' . ltrim($solicitud['archivo_sustento'], '/');
 
-            if (is_file($rutaFisica)) {
-                @unlink($rutaFisica);
+                if (is_file($rutaFisica)) {
+                    @unlink($rutaFisica);
+                }
             }
+
+            $pdo->commit();
+
+            return [
+                'success' => true,
+                'mensaje' => 'Solicitud rechazada correctamente'
+            ];
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            return [
+                'success' => false,
+                'mensaje' => 'Error al rechazar la solicitud: ' . $e->getMessage()
+            ];
         }
-
-        $pdo->commit();
-
-        return [
-            'success' => true,
-            'mensaje' => 'Solicitud rechazada correctamente'
-        ];
-    } catch (Throwable $e) {
-        if ($pdo->inTransaction()) {
-            $pdo->rollBack();
-        }
-
-        return [
-            'success' => false,
-            'mensaje' => 'Error al rechazar la solicitud: ' . $e->getMessage()
-        ];
     }
-}
 
     public static function mdlResumenSolicitudesPorColaborador(int $colabId): array
     {
@@ -1479,5 +1479,22 @@ public static function mdlRechazarSolicitudCambio(int $solicitudId, int $validad
             'aprobadas' => (int)($row['aprobadas'] ?? 0),
             'rechazadas' => (int)($row['rechazadas'] ?? 0),
         ];
+    }
+
+    public static function mdlListarSolicitudesPorColaborador(int $colabId): array
+    {
+        $db = Conexion::conectar();
+
+        $sql = "SELECT *
+            FROM solicitudes_cambio
+            WHERE colab_id = :colab_id
+            ORDER BY created_at DESC";
+
+        $stmt = $db->prepare($sql);
+        $stmt->execute([
+            ':colab_id' => $colabId
+        ]);
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
     }
 }

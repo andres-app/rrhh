@@ -186,6 +186,10 @@ switch ($module) {
         $file = __DIR__ . "/../Vista/modulos/colaborador/documentos.php";
         break;
 
+    case 'misvalidaciones':
+        $file = __DIR__ . "/../Vista/modulos/colaborador/misvalidaciones.php";
+        break;
+
     case 'rrhh':
         $sub = $parts[1] ?? 'dashboard';
 

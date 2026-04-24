@@ -1,10 +1,5 @@
 <?php
 // /Vista/includes/sidebar.php
-
-/**
- * Función auxiliar para verificar permisos en la vista.
- * Nota: 'check_access' debe estar disponible (ya la definiste en index.php)
- */
 function tieneAcceso($modulo)
 {
     if (!isset($_SESSION['user_role'])) return false;
@@ -22,6 +17,7 @@ $accesoRRHH = tieneAcceso('rrhh');
 $accesoConfig = tieneAcceso('configuracion');
 $accesoPerfil = tieneAcceso('perfil');
 $accesoDocs = tieneAcceso('documentos');
+$accesoMisValidaciones = tieneAcceso('misvalidaciones');
 ?>
 
 <div class="md:hidden flex items-center justify-between bg-[#1a0505] p-4 shrink-0 z-20 border-b border-red-950/50">
@@ -58,7 +54,7 @@ $accesoDocs = tieneAcceso('documentos');
 
     <nav class="flex-1 overflow-y-auto py-6 custom-scrollbar">
 
-        <?php if ($accesoPerfil || $accesoDocs): ?>
+        <?php if ($accesoPerfil || $accesoDocs || $accesoMisValidaciones): ?>
             <div class="px-6 mb-2 text-[10px] font-bold text-red-400/50 uppercase tracking-widest">Mi Espacio</div>
 
             <?php if ($accesoPerfil): ?>
@@ -67,6 +63,15 @@ $accesoDocs = tieneAcceso('documentos');
                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
                     </svg>
                     <span class="font-medium text-sm">Mi Perfil</span>
+                </a>
+            <?php endif; ?>
+
+            <?php if ($accesoMisValidaciones): ?>
+                <a href="<?= BASE_URL ?>/misvalidaciones" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'misvalidaciones') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
+                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5 2a8 8 0 11-16 0 8 8 0 0116 0z"></path>
+                    </svg>
+                    <span class="font-medium text-sm">Mis Validaciones</span>
                 </a>
             <?php endif; ?>
 
@@ -145,10 +150,13 @@ $accesoDocs = tieneAcceso('documentos');
     .custom-scrollbar::-webkit-scrollbar {
         display: none;
     }
+
     /* Ocultar scrollbar para IE, Edge y Firefox */
     .custom-scrollbar {
-        -ms-overflow-style: none; /* IE and Edge */
-        scrollbar-width: none; /* Firefox */
+        -ms-overflow-style: none;
+        /* IE and Edge */
+        scrollbar-width: none;
+        /* Firefox */
     }
 </style>
 
@@ -162,7 +170,7 @@ $accesoDocs = tieneAcceso('documentos');
             const overlay = document.getElementById("sidebar-overlay");
 
             // Si por alguna razón el sidebar no existe en esta vista, no hacemos nada para evitar errores
-            if (!sidebar) return; 
+            if (!sidebar) return;
 
             // 1. Abrir Menú
             if (btnMenu) {

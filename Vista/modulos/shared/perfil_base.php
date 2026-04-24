@@ -62,9 +62,14 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
 
                             <?php if (($resumenSolicitudes['pendientes'] ?? 0) > 0): ?>
                                 <span class="bg-amber-50 text-amber-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-amber-200">
-                                    <?php echo (int)$resumenSolicitudes['pendientes']; ?> pendiente(s) de validación
+                                    <?php echo (int)$resumenSolicitudes['pendientes']; ?> pendiente(s)
                                 </span>
                             <?php endif; ?>
+
+                            <a href="<?php echo BASE_URL; ?>/misvalidaciones"
+                                class="bg-slate-50 text-slate-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-slate-200 hover:bg-slate-100">
+                                Ver mis validaciones
+                            </a>
 
                             <?php if (($resumenSolicitudes['rechazadas'] ?? 0) > 0): ?>
                                 <span class="bg-red-50 text-red-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-red-200">
