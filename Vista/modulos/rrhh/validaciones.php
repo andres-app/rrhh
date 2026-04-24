@@ -1,10 +1,12 @@
 <?php
-//Vista/modulos/rrhh/validaciones.php
+// Vista/modulos/rrhh/validaciones.php
 require_once __DIR__ . '/../../../Modelo/MdDirectorio.php';
 
 $pendientes = MdDirectorio::mdlListarSolicitudesCambio('PENDIENTE');
 $aprobadas  = MdDirectorio::mdlListarSolicitudesCambio('APROBADO');
 $rechazadas = MdDirectorio::mdlListarSolicitudesCambio('RECHAZADO');
+
+$solicitudes = array_merge($pendientes, $aprobadas, $rechazadas);
 
 $titulo_pagina = "Validaciones | RRHH";
 $menu_activo = "validaciones";
@@ -28,198 +30,313 @@ function textoTipoSolicitud($tipo)
         default => $tipo ?: 'Solicitud',
     };
 }
+
+function normalizarValor($valor)
+{
+    if (is_array($valor)) {
+        ksort($valor);
+
+        foreach ($valor as $k => $v) {
+            $valor[$k] = normalizarValor($v);
+        }
+
+        return $valor;
+    }
+
+    return trim((string)$valor);
+}
+
+function resumenSolicitud($sol)
+{
+    $datosNuevos = json_decode((string)($sol['datos_json'] ?? ''), true) ?: [];
+    $datosAntes  = json_decode((string)($sol['datos_anteriores_json'] ?? ''), true) ?: [];
+
+    $campos = [
+        'fecha_nacimiento'      => 'Fecha nacimiento',
+        'lugar_nacimiento'     => 'Lugar nacimiento',
+        'estado_civil'         => 'Estado civil',
+        'grupo_sanguineo'      => 'Grupo sanguíneo',
+        'talla'                => 'Talla',
+        'direccion_residencia' => 'Dirección',
+        'distrito'             => 'Distrito',
+        'celular'              => 'Celular',
+        'correo_personal'      => 'Correo personal',
+        'conyuge'              => 'Cónyuge',
+        'onomastico_conyuge'   => 'Onomástico cónyuge',
+        'dni_conyuge'          => 'DNI cónyuge',
+    ];
+
+    $resumen = [];
+
+    foreach ($campos as $campo => $label) {
+        $antes  = normalizarValor($datosAntes[$campo] ?? '');
+        $despues = normalizarValor($datosNuevos[$campo] ?? '');
+
+        if ($antes !== $despues) {
+            $resumen[] = $label;
+        }
+    }
+
+    $bloques = [
+        'hijos'       => 'Familia',
+        'contratos'   => 'Contratos',
+        'formacion'   => 'Formación',
+        'experiencia' => 'Experiencia',
+        'pension'     => 'Pensión',
+        'bancario'    => 'Bancario',
+        'idiomas'     => 'Idiomas',
+    ];
+
+    foreach ($bloques as $campo => $label) {
+        $antes  = normalizarValor($datosAntes[$campo] ?? []);
+        $despues = normalizarValor($datosNuevos[$campo] ?? []);
+
+        if ($antes !== $despues) {
+            $resumen[] = $label;
+        }
+    }
+
+    return !empty($resumen)
+        ? implode(', ', array_unique($resumen))
+        : 'Sin cambios detectados';
+}
 ?>
 
 <main class="flex-1 flex flex-col h-screen overflow-hidden bg-slate-50">
-    <header class="h-20 bg-white shadow-sm flex items-center px-8 justify-between z-10 border-b border-red-50">
-        <div class="flex items-center">
-            <div class="p-2 bg-orange-100 rounded-lg mr-4">
-                <svg class="w-6 h-6 text-orange-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
+
+    <header class="h-20 bg-white/90 backdrop-blur-xl flex items-center px-8 justify-between z-10 border-b border-slate-200">
+        <div class="flex items-center gap-4">
+            <div class="w-12 h-12 rounded-2xl bg-red-900 text-white flex items-center justify-center shadow-lg shadow-red-900/20">
+                <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                        d="M9 12l2 2 4-4m5 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
                 </svg>
             </div>
             <div>
                 <h1 class="text-2xl font-black text-slate-800">Bandeja de Validaciones</h1>
                 <p class="text-xs text-slate-400 font-bold uppercase tracking-widest mt-1">
-                    Revisión de solicitudes de colaboradores
+                    Gestión de solicitudes de actualización de perfil
                 </p>
             </div>
         </div>
-
-        <div class="flex gap-2">
-            <span class="bg-amber-50 text-amber-700 border border-amber-200 text-xs font-bold px-3 py-1 rounded-full">
-                <?php echo count($pendientes); ?> Pendientes
-            </span>
-            <span class="bg-green-50 text-green-700 border border-green-200 text-xs font-bold px-3 py-1 rounded-full">
-                <?php echo count($aprobadas); ?> Aprobadas
-            </span>
-            <span class="bg-red-50 text-red-700 border border-red-200 text-xs font-bold px-3 py-1 rounded-full">
-                <?php echo count($rechazadas); ?> Rechazadas
-            </span>
-        </div>
     </header>
 
-    <div class="p-8 flex-1 overflow-y-auto space-y-8">
+    <div class="p-8 flex-1 overflow-hidden flex flex-col gap-6">
 
-        <section class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-            <div class="p-6 border-b border-slate-100 flex items-center justify-between">
+        <section class="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
+
+            <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm">
+                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total</p>
+                <h2 class="text-3xl font-black text-slate-800 mt-2"><?php echo count($solicitudes); ?></h2>
+            </div>
+
+            <div class="bg-amber-50 rounded-3xl border border-amber-200 p-5 shadow-sm">
+                <p class="text-xs font-bold text-amber-700 uppercase tracking-widest">Pendientes</p>
+                <h2 class="text-3xl font-black text-amber-900 mt-2"><?php echo count($pendientes); ?></h2>
+            </div>
+
+            <div class="bg-green-50 rounded-3xl border border-green-200 p-5 shadow-sm">
+                <p class="text-xs font-bold text-green-700 uppercase tracking-widest">Aprobadas</p>
+                <h2 class="text-3xl font-black text-green-900 mt-2"><?php echo count($aprobadas); ?></h2>
+            </div>
+
+            <div class="bg-red-50 rounded-3xl border border-red-200 p-5 shadow-sm">
+                <p class="text-xs font-bold text-red-700 uppercase tracking-widest">Rechazadas</p>
+                <h2 class="text-3xl font-black text-red-900 mt-2"><?php echo count($rechazadas); ?></h2>
+            </div>
+
+        </section>
+
+        <section class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
+
+            <div class="p-5 border-b border-slate-100 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 shrink-0">
+
                 <div>
-                    <h2 class="text-lg font-black text-slate-800">Solicitudes pendientes</h2>
-                    <p class="text-xs text-slate-400 mt-1">Aprueba o rechaza las solicitudes enviadas por colaboradores.</p>
+                    <h2 class="text-lg font-black text-slate-800">Solicitudes registradas</h2>
+                    <p class="text-xs text-slate-400 mt-1">
+                        Filtra, revisa y atiende solicitudes sin una lista infinita.
+                    </p>
+                </div>
+
+                <div class="flex flex-col md:flex-row gap-3">
+
+                    <div class="relative">
+                        <input type="text" id="buscarSolicitud"
+                            placeholder="Buscar colaborador, DNI o cambio..."
+                            class="w-full md:w-80 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-red-900/20 focus:border-red-900">
+                    </div>
+
+                    <div class="flex gap-2">
+                        <button onclick="filtrarEstado('TODOS', this)"
+                            class="filtro-estado bg-red-900 text-white px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest">
+                            Todos
+                        </button>
+                        <button onclick="filtrarEstado('PENDIENTE', this)"
+                            class="filtro-estado bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest">
+                            Pendientes
+                        </button>
+                        <button onclick="filtrarEstado('APROBADO', this)"
+                            class="filtro-estado bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest">
+                            Aprobadas
+                        </button>
+                        <button onclick="filtrarEstado('RECHAZADO', this)"
+                            class="filtro-estado bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest">
+                            Rechazadas
+                        </button>
+                    </div>
+
                 </div>
             </div>
 
-            <table class="w-full text-left">
-                <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-widest font-bold">
-                    <tr>
-                        <th class="p-4">Colaborador</th>
-                        <th class="p-4">Solicitud</th>
-                        <th class="p-4">Fecha</th>
-                        <th class="p-4">Sustento</th>
-                        <th class="p-4 text-center">Acción</th>
-                    </tr>
-                </thead>
-                <tbody class="divide-y divide-slate-100">
-                    <?php if (empty($pendientes)): ?>
+            <div class="overflow-auto flex-1">
+                <table class="w-full text-left text-sm">
+                    <thead class="bg-slate-50 border-b border-slate-200 text-slate-500 uppercase text-[10px] tracking-widest font-black sticky top-0 z-10">
                         <tr>
-                            <td colspan="5" class="p-8 text-center text-slate-400 text-sm">
-                                No hay solicitudes pendientes.
-                            </td>
+                            <th class="p-4">Colaborador</th>
+                            <th class="p-4">Solicitud</th>
+                            <th class="p-4">Estado</th>
+                            <th class="p-4">Fecha</th>
+                            <th class="p-4">Sustento</th>
+                            <th class="p-4 text-center">Acción</th>
                         </tr>
-                    <?php else: ?>
-                        <?php foreach ($pendientes as $sol): ?>
-                            <?php
-                            $datosNuevos = json_decode((string)($sol['datos_json'] ?? ''), true);
-                            $datosAntes  = json_decode((string)($sol['datos_anteriores_json'] ?? ''), true);
-                            $resumen = [];
+                    </thead>
 
-                            foreach (['direccion_residencia' => 'Dirección', 'distrito' => 'Distrito', 'celular' => 'Celular', 'correo_personal' => 'Correo personal', 'estado_civil' => 'Estado civil'] as $campo => $label) {
-                                $antes = trim((string)($datosAntes[$campo] ?? ''));
-                                $despues = trim((string)($datosNuevos[$campo] ?? ''));
-                                if ($antes !== $despues) {
-                                    $resumen[] = $label;
-                                }
-                            }
+                    <tbody class="divide-y divide-slate-100" id="tablaSolicitudes">
 
-                            if (!empty($datosNuevos['hijos'])) $resumen[] = 'Familia';
-                            if (!empty($datosNuevos['formacion'])) $resumen[] = 'Formación';
-                            if (!empty($datosNuevos['experiencia'])) $resumen[] = 'Experiencia';
-                            if (!empty($datosNuevos['pension'])) $resumen[] = 'Pensión';
-                            if (!empty($datosNuevos['bancario'])) $resumen[] = 'Bancario';
-                            if (!empty($datosNuevos['idiomas'])) $resumen[] = 'Idiomas';
-                            ?>
-                            <tr class="hover:bg-red-50/30 transition">
-                                <td class="p-4">
-                                    <div class="flex items-center">
-                                        <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($sol['nombres_apellidos'] ?? 'Colaborador'); ?>&background=880808&color=fff&size=32"
-                                            class="w-9 h-9 rounded-xl mr-3 shadow-sm">
-                                        <div>
-                                            <p class="font-black text-slate-800"><?php echo htmlspecialchars($sol['nombres_apellidos'] ?? '—'); ?></p>
-                                            <p class="text-[11px] text-slate-400">DNI: <?php echo htmlspecialchars($sol['dni'] ?? '—'); ?></p>
-                                        </div>
-                                    </div>
-                                </td>
-
-                                <td class="p-4">
-                                    <p class="text-sm font-bold text-slate-700">
-                                        <?php echo htmlspecialchars(textoTipoSolicitud($sol['tipo_seccion'] ?? '')); ?>
-                                    </p>
-                                    <p class="text-[11px] text-slate-400 mt-1">
-                                        Cambios: <?php echo htmlspecialchars(!empty($resumen) ? implode(', ', array_unique($resumen)) : 'Perfil'); ?>
-                                    </p>
-                                </td>
-
-                                <td class="p-4 text-sm text-slate-500">
-                                    <?php echo !empty($sol['created_at']) ? date('d/m/Y H:i', strtotime($sol['created_at'])) : '—'; ?>
-                                </td>
-
-                                <td class="p-4">
-                                    <?php if (!empty($sol['archivo_sustento'])): ?>
-                                        <a href="<?php echo BASE_URL . '/' . htmlspecialchars($sol['archivo_sustento']); ?>" target="_blank"
-                                            class="text-xs font-bold text-red-900 bg-red-50 border border-red-100 px-3 py-2 rounded-xl inline-flex">
-                                            Ver sustento
-                                        </a>
-                                    <?php else: ?>
-                                        <span class="text-xs text-slate-400">Sin archivo</span>
-                                    <?php endif; ?>
-                                </td>
-
-                                <td class="p-4 text-center">
-                                    <div class="flex justify-center gap-2">
-                                        <button onclick="aprobarSolicitud(<?php echo (int)$sol['id']; ?>)"
-                                            class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-green-700 transition">
-                                            Aprobar
-                                        </button>
-
-                                        <button onclick="rechazarSolicitud(<?php echo (int)$sol['id']; ?>)"
-                                            class="bg-red-900 text-white px-4 py-2 rounded-xl text-xs font-bold hover:bg-[#4c0505] transition">
-                                            Rechazar
-                                        </button>
-                                    </div>
+                        <?php if (empty($solicitudes)): ?>
+                            <tr>
+                                <td colspan="6" class="p-10 text-center text-slate-400 text-sm">
+                                    No hay solicitudes registradas.
                                 </td>
                             </tr>
-                        <?php endforeach; ?>
-                    <?php endif; ?>
-                </tbody>
-            </table>
-        </section>
+                        <?php else: ?>
 
-        <section class="grid grid-cols-1 xl:grid-cols-2 gap-6">
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-5 border-b border-slate-100">
-                    <h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Aprobadas recientes</h2>
-                </div>
-                <div class="divide-y divide-slate-100">
-                    <?php foreach (array_slice($aprobadas, 0, 5) as $sol): ?>
-                        <div class="p-4 flex justify-between gap-4">
-                            <div>
-                                <p class="text-sm font-bold text-slate-700"><?php echo htmlspecialchars($sol['nombres_apellidos'] ?? '—'); ?></p>
-                                <p class="text-xs text-slate-400"><?php echo !empty($sol['fecha_validacion']) ? date('d/m/Y H:i', strtotime($sol['fecha_validacion'])) : '—'; ?></p>
-                            </div>
-                            <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border <?php echo badgeEstadoSolicitud('APROBADO'); ?>">
-                                APROBADO
-                            </span>
-                        </div>
-                    <?php endforeach; ?>
-                    <?php if (empty($aprobadas)): ?>
-                        <div class="p-6 text-center text-sm text-slate-400">Sin aprobadas.</div>
-                    <?php endif; ?>
-                </div>
+                            <?php foreach ($solicitudes as $sol): ?>
+                                <?php
+                                $estado = $sol['estado'] ?? 'PENDIENTE';
+                                $resumen = resumenSolicitud($sol);
+                                $busqueda = strtolower(
+                                    ($sol['nombres_apellidos'] ?? '') . ' ' .
+                                    ($sol['dni'] ?? '') . ' ' .
+                                    textoTipoSolicitud($sol['tipo_seccion'] ?? '') . ' ' .
+                                    $resumen . ' ' .
+                                    $estado
+                                );
+                                ?>
+
+                                <tr class="fila-solicitud hover:bg-slate-50 transition"
+                                    data-estado="<?php echo htmlspecialchars($estado); ?>"
+                                    data-busqueda="<?php echo htmlspecialchars($busqueda); ?>">
+
+                                    <td class="p-4">
+                                        <div class="flex items-center gap-3">
+                                            <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($sol['nombres_apellidos'] ?? 'Colaborador'); ?>&background=7f1d1d&color=fff&size=64"
+                                                class="w-10 h-10 rounded-2xl shadow-sm">
+
+                                            <div>
+                                                <p class="font-black text-slate-800 leading-tight">
+                                                    <?php echo htmlspecialchars($sol['nombres_apellidos'] ?? '—'); ?>
+                                                </p>
+                                                <p class="text-[11px] text-slate-400 mt-1">
+                                                    DNI: <?php echo htmlspecialchars($sol['dni'] ?? '—'); ?>
+                                                </p>
+                                            </div>
+                                        </div>
+                                    </td>
+
+                                    <td class="p-4">
+                                        <p class="font-bold text-slate-700">
+                                            <?php echo htmlspecialchars(textoTipoSolicitud($sol['tipo_seccion'] ?? '')); ?>
+                                        </p>
+                                        <p class="text-[11px] text-slate-400 mt-1 max-w-md truncate">
+                                            Cambios: <?php echo htmlspecialchars($resumen); ?>
+                                        </p>
+                                    </td>
+
+                                    <td class="p-4">
+                                        <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border <?php echo badgeEstadoSolicitud($estado); ?>">
+                                            <?php echo htmlspecialchars($estado); ?>
+                                        </span>
+                                    </td>
+
+                                    <td class="p-4 text-slate-500 whitespace-nowrap">
+                                        <?php echo !empty($sol['created_at']) ? date('d/m/Y H:i', strtotime($sol['created_at'])) : '—'; ?>
+                                    </td>
+
+                                    <td class="p-4">
+                                        <?php if (!empty($sol['archivo_sustento'])): ?>
+                                            <a href="<?php echo BASE_URL . '/' . htmlspecialchars($sol['archivo_sustento']); ?>" target="_blank"
+                                                class="text-xs font-black text-red-900 bg-red-50 border border-red-100 px-3 py-2 rounded-xl inline-flex hover:bg-red-100 transition">
+                                                Ver archivo
+                                            </a>
+                                        <?php else: ?>
+                                            <span class="text-xs text-slate-400">Sin archivo</span>
+                                        <?php endif; ?>
+                                    </td>
+
+                                    <td class="p-4 text-center">
+                                        <?php if ($estado === 'PENDIENTE'): ?>
+                                            <div class="flex justify-center gap-2">
+                                                <button onclick="aprobarSolicitud(<?php echo (int)$sol['id']; ?>)"
+                                                    class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-green-700 transition">
+                                                    Aprobar
+                                                </button>
+
+                                                <button onclick="rechazarSolicitud(<?php echo (int)$sol['id']; ?>)"
+                                                    class="bg-red-900 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-[#4c0505] transition">
+                                                    Rechazar
+                                                </button>
+                                            </div>
+                                        <?php else: ?>
+                                            <span class="text-xs text-slate-400 font-bold">Atendida</span>
+                                        <?php endif; ?>
+                                    </td>
+
+                                </tr>
+                            <?php endforeach; ?>
+
+                        <?php endif; ?>
+
+                    </tbody>
+                </table>
             </div>
 
-            <div class="bg-white rounded-3xl shadow-sm border border-slate-200 overflow-hidden">
-                <div class="p-5 border-b border-slate-100">
-                    <h2 class="text-sm font-black text-slate-800 uppercase tracking-widest">Rechazadas recientes</h2>
-                </div>
-                <div class="divide-y divide-slate-100">
-                    <?php foreach (array_slice($rechazadas, 0, 5) as $sol): ?>
-                        <div class="p-4">
-                            <div class="flex justify-between gap-4">
-                                <div>
-                                    <p class="text-sm font-bold text-slate-700"><?php echo htmlspecialchars($sol['nombres_apellidos'] ?? '—'); ?></p>
-                                    <p class="text-xs text-slate-400"><?php echo !empty($sol['fecha_validacion']) ? date('d/m/Y H:i', strtotime($sol['fecha_validacion'])) : '—'; ?></p>
-                                </div>
-                                <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border <?php echo badgeEstadoSolicitud('RECHAZADO'); ?>">
-                                    RECHAZADO
-                                </span>
-                            </div>
-                            <?php if (!empty($sol['observacion_rrhh'])): ?>
-                                <p class="mt-2 text-xs text-red-700 bg-red-50 border border-red-100 rounded-xl p-3">
-                                    <?php echo htmlspecialchars($sol['observacion_rrhh']); ?>
-                                </p>
-                            <?php endif; ?>
-                        </div>
-                    <?php endforeach; ?>
-                    <?php if (empty($rechazadas)): ?>
-                        <div class="p-6 text-center text-sm text-slate-400">Sin rechazadas.</div>
-                    <?php endif; ?>
-                </div>
-            </div>
         </section>
+
     </div>
 </main>
 
 <script>
+    let estadoActual = 'TODOS';
+
+    function filtrarEstado(estado, boton) {
+        estadoActual = estado;
+
+        document.querySelectorAll('.filtro-estado').forEach(btn => {
+            btn.className = 'filtro-estado bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest';
+        });
+
+        boton.className = 'filtro-estado bg-red-900 text-white px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest';
+
+        aplicarFiltros();
+    }
+
+    document.getElementById('buscarSolicitud').addEventListener('input', aplicarFiltros);
+
+    function aplicarFiltros() {
+        const texto = document.getElementById('buscarSolicitud').value.toLowerCase().trim();
+
+        document.querySelectorAll('.fila-solicitud').forEach(fila => {
+            const estado = fila.dataset.estado;
+            const busqueda = fila.dataset.busqueda || '';
+
+            const coincideEstado = estadoActual === 'TODOS' || estado === estadoActual;
+            const coincideTexto = !texto || busqueda.includes(texto);
+
+            fila.style.display = coincideEstado && coincideTexto ? '' : 'none';
+        });
+    }
+
     function aprobarSolicitud(id) {
         Swal.fire({
             title: '¿Aprobar solicitud?',
