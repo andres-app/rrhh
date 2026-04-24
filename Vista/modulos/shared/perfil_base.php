@@ -35,60 +35,45 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
             <div class="bg-white rounded-3xl shadow-xl p-8 border border-slate-200 mb-6">
                 <div class="flex flex-col md:flex-row items-center gap-8">
 
-                    <!-- Avatar inicial -->
-                    <div class="h-36 w-36 rounded-3xl bg-red-900 flex items-center justify-center text-5xl font-black text-white shadow-2xl ring-8 ring-white shrink-0">
-                        <?php echo mb_substr($data['nombres_apellidos'] ?? 'C', 0, 1); ?>
+                    <!-- Avatar -->
+                    <div class="relative shrink-0">
+                        <div class="h-36 w-36 rounded-[2rem] bg-gradient-to-br from-[#310404] to-red-900 flex items-center justify-center text-5xl font-black text-white shadow-2xl ring-8 ring-white">
+                            <?php echo mb_substr($data['nombres_apellidos'] ?? 'C', 0, 1); ?>
+                        </div>
+
+                        <?php if (!empty($data['situacion'])): ?>
+                            <span class="absolute -bottom-2 left-1/2 -translate-x-1/2 bg-green-50 text-green-700 px-3 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border border-green-200 shadow-sm">
+                                <?php echo htmlspecialchars($data['situacion']); ?>
+                            </span>
+                        <?php endif; ?>
                     </div>
 
-                    <!-- Nombre y badges -->
-                    <div class="flex-1 text-center md:text-left">
-                        <h1 class="text-3xl font-black text-slate-800 tracking-tight mb-2">
+                    <!-- Datos principales -->
+                    <div class="flex-1 text-center md:text-left min-w-0">
+                        <p class="text-xs font-black uppercase tracking-[0.25em] text-red-900/60 mb-2">
+                            Perfil del colaborador
+                        </p>
+
+                        <h1 class="text-3xl lg:text-4xl font-black text-slate-800 tracking-tight leading-tight truncate">
                             <?php echo htmlspecialchars($data['nombres_apellidos'] ?? 'Colaborador'); ?>
                         </h1>
-                        <div class="flex flex-wrap justify-center md:justify-start gap-2">
-                            <span class="bg-red-50 text-red-900 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-red-100">
+
+                        <div class="mt-4 flex flex-wrap justify-center md:justify-start gap-2">
+                            <span class="bg-red-50 text-red-900 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-widest border border-red-100">
                                 <?php echo htmlspecialchars($data['puesto_cas'] ?? 'Sin puesto'); ?>
                             </span>
 
-                            <span class="bg-slate-50 text-slate-500 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-slate-200">
+                            <span class="bg-slate-50 text-slate-600 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-widest border border-slate-200">
                                 <?php echo htmlspecialchars($data['area'] ?? 'Sin área'); ?>
                             </span>
-
-                            <?php if (!empty($data['situacion'])): ?>
-                                <span class="bg-green-50 text-green-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-green-100">
-                                    <?php echo htmlspecialchars($data['situacion']); ?>
-                                </span>
-                            <?php endif; ?>
-
-                            <?php if (($resumenSolicitudes['pendientes'] ?? 0) > 0): ?>
-                                <span class="bg-amber-50 text-amber-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-amber-200">
-                                    <?php echo (int)$resumenSolicitudes['pendientes']; ?> pendiente(s)
-                                </span>
-                            <?php endif; ?>
-
-                            <a href="<?php echo BASE_URL; ?>/misvalidaciones"
-                                class="bg-slate-50 text-slate-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-slate-200 hover:bg-slate-100">
-                                Ver mis validaciones
-                            </a>
-
-                            <?php if (($resumenSolicitudes['rechazadas'] ?? 0) > 0): ?>
-                                <span class="bg-red-50 text-red-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-red-200">
-                                    <?php echo (int)$resumenSolicitudes['rechazadas']; ?> rechazada(s)
-                                </span>
-                            <?php endif; ?>
-
-                            <?php if (($resumenSolicitudes['aprobadas'] ?? 0) > 0): ?>
-                                <span class="bg-green-50 text-green-700 px-3 py-1 rounded-lg text-xs font-bold uppercase tracking-widest border border-green-200">
-                                    <?php echo (int)$resumenSolicitudes['aprobadas']; ?> aprobada(s)
-                                </span>
-                            <?php endif; ?>
                         </div>
                     </div>
 
-                    <!-- Botón Editar -->
-                    <div class="flex gap-2">
-                        <button onclick="abrirModal()" class="bg-red-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#310404] transition-all shadow-lg shadow-red-900/20 active:scale-95">
-                            <svg class="w-4 h-4 inline-block mr-1 -mt-1" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                    <!-- Acción -->
+                    <div class="shrink-0">
+                        <button onclick="abrirModal()"
+                            class="inline-flex items-center gap-2 bg-red-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#310404] transition-all shadow-lg shadow-red-900/20 active:scale-95">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
                             Editar Perfil
