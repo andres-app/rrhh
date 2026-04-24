@@ -3548,6 +3548,34 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
     // ── GUARDAR VÍA AJAX ──────────────────────────────
     function guardarPerfil() {
         const btn = document.getElementById('btn-guardar');
+        const rolSesion = "<?php echo $rolSesion; ?>";
+
+        if (rolSesion === 'colaborador') {
+            const sustentoInput = document.getElementById('archivo_sustento');
+
+            if (!sustentoInput || !sustentoInput.files || sustentoInput.files.length === 0) {
+                mostrarToast(
+                    '⚠',
+                    'Recuerda que cada cambio requiere un sustento en foto o PDF.',
+                    'bg-red-800'
+                );
+
+                if (sustentoInput) {
+                    sustentoInput.classList.add('ring-2', 'ring-red-500', 'rounded-xl');
+                    sustentoInput.scrollIntoView({
+                        behavior: 'smooth',
+                        block: 'center'
+                    });
+
+                    setTimeout(() => {
+                        sustentoInput.classList.remove('ring-2', 'ring-red-500');
+                    }, 3500);
+                }
+
+                return;
+            }
+        }
+
         btn.textContent = 'Guardando…';
         btn.disabled = true;
 
@@ -3728,6 +3756,23 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
                 btn.disabled = false;
             });
     }
+
+    document.addEventListener('DOMContentLoaded', () => {
+
+        const inputFile = document.querySelector('input[name="sustento"]');
+        const btnGuardar = document.getElementById('btn-guardar-perfil');
+
+        if (!inputFile || !btnGuardar) return;
+
+        function validarArchivo() {
+            btnGuardar.disabled = inputFile.files.length === 0;
+            btnGuardar.classList.toggle('opacity-50', btnGuardar.disabled);
+            btnGuardar.classList.toggle('cursor-not-allowed', btnGuardar.disabled);
+        }
+
+        validarArchivo();
+        inputFile.addEventListener('change', validarArchivo);
+    });
 
     // ── TOAST ─────────────────────────────────────────
     function mostrarToast(icon, msg, bgClass) {

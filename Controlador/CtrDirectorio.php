@@ -37,6 +37,14 @@ class CtrDirectorio
         }
 
         if ($rolSesion === 'colaborador') {
+
+            if (!$archivo || empty($archivo['tmp_name'])) {
+                return [
+                    'success' => false,
+                    'mensaje' => 'Debe adjuntar un sustento (imagen o PDF) para continuar'
+                ];
+            }
+
             return MdDirectorio::mdlCrearSolicitudCambio($idObjetivo, $userId, $body, $archivo);
         }
 
