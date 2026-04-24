@@ -1,4 +1,5 @@
 <?php
+//Vista/modulos/rrhh/validaciones.php
 require_once __DIR__ . '/../../../Modelo/MdDirectorio.php';
 
 $pendientes = MdDirectorio::mdlListarSolicitudesCambio('PENDIENTE');
@@ -219,45 +220,122 @@ function textoTipoSolicitud($tipo)
 </main>
 
 <script>
-function aprobarSolicitud(id) {
-    if (!confirm('¿Aprobar esta solicitud y aplicar los cambios al perfil?')) return;
+    function aprobarSolicitud(id) {
+        Swal.fire({
+            title: '¿Aprobar solicitud?',
+            text: 'Se aplicarán los cambios al perfil del colaborador.',
+            icon: 'question',
+            showCancelButton: true,
+            confirmButtonText: 'Sí, aprobar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#166534',
+            cancelButtonColor: '#7f1d1d',
+            reverseButtons: true,
+            customClass: {
+                popup: 'rounded-3xl',
+                confirmButton: 'rounded-xl px-5 py-2.5 font-bold',
+                cancelButton: 'rounded-xl px-5 py-2.5 font-bold'
+            }
+        }).then((result) => {
+            if (!result.isConfirmed) return;
 
-    fetch('<?php echo BASE_URL; ?>/rrhh/validaciones/aprobar/' + id, {
-        method: 'POST',
-        headers: {'X-Requested-With': 'XMLHttpRequest'}
-    })
-    .then(r => r.json())
-    .then(res => {
-        alert(res.mensaje || 'Solicitud procesada');
-        if (res.success) location.reload();
-    })
-    .catch(() => alert('No se pudo procesar la aprobación'));
-}
-
-function rechazarSolicitud(id) {
-    const motivo = prompt('Indica el motivo del rechazo:');
-    if (motivo === null) return;
-
-    if (!motivo.trim()) {
-        alert('Debes indicar un motivo.');
-        return;
+            fetch('<?php echo BASE_URL; ?>/rrhh/validaciones/aprobar/' + id, {
+                    method: 'POST',
+                    headers: {
+                        'X-Requested-With': 'XMLHttpRequest'
+                    }
+                })
+                .then(r => r.json())
+                .then(res => {
+                    Swal.fire({
+                        title: res.success ? 'Solicitud aprobada' : 'No se pudo aprobar',
+                        text: res.mensaje || 'Solicitud procesada.',
+                        icon: res.success ? 'success' : 'error',
+                        confirmButtonColor: '#7f1d1d',
+                        customClass: {
+                            popup: 'rounded-3xl',
+                            confirmButton: 'rounded-xl px-5 py-2.5 font-bold'
+                        }
+                    }).then(() => {
+                        if (res.success) location.reload();
+                    });
+                })
+                .catch(() => {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo procesar la aprobación.',
+                        icon: 'error',
+                        confirmButtonColor: '#7f1d1d'
+                    });
+                });
+        });
     }
 
-    fetch('<?php echo BASE_URL; ?>/rrhh/validaciones/rechazar/' + id, {
-        method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-Requested-With': 'XMLHttpRequest'
-        },
-        body: JSON.stringify({motivo: motivo.trim()})
-    })
-    .then(r => r.json())
-    .then(res => {
-        alert(res.mensaje || 'Solicitud procesada');
-        if (res.success) location.reload();
-    })
-    .catch(() => alert('No se pudo procesar el rechazo'));
-}
+    function rechazarSolicitud(id) {
+        Swal.fire({
+            title: 'Rechazar solicitud',
+            text: 'Indica el motivo del rechazo.',
+            input: 'textarea',
+            inputPlaceholder: 'Escribe el motivo...',
+            inputAttributes: {
+                maxlength: 500
+            },
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonText: 'Rechazar',
+            cancelButtonText: 'Cancelar',
+            confirmButtonColor: '#7f1d1d',
+            cancelButtonColor: '#64748b',
+            reverseButtons: true,
+            inputValidator: (value) => {
+                if (!value || !value.trim()) {
+                    return 'Debes ingresar el motivo del rechazo.';
+                }
+            },
+            customClass: {
+                popup: 'rounded-3xl',
+                input: 'rounded-2xl border-slate-200',
+                confirmButton: 'rounded-xl px-5 py-2.5 font-bold',
+                cancelButton: 'rounded-xl px-5 py-2.5 font-bold'
+            }
+        }).then((result) => {
+            if (!result.isConfirmed) return;
+
+            fetch('<?php echo BASE_URL; ?>/rrhh/validaciones/rechazar/' + id, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-Requested-With': 'XMLHttpRequest'
+                    },
+                    body: JSON.stringify({
+                        motivo: result.value.trim()
+                    })
+                })
+                .then(r => r.json())
+                .then(res => {
+                    Swal.fire({
+                        title: res.success ? 'Solicitud rechazada' : 'No se pudo rechazar',
+                        text: res.mensaje || 'Solicitud procesada.',
+                        icon: res.success ? 'success' : 'error',
+                        confirmButtonColor: '#7f1d1d',
+                        customClass: {
+                            popup: 'rounded-3xl',
+                            confirmButton: 'rounded-xl px-5 py-2.5 font-bold'
+                        }
+                    }).then(() => {
+                        if (res.success) location.reload();
+                    });
+                })
+                .catch(() => {
+                    Swal.fire({
+                        title: 'Error',
+                        text: 'No se pudo procesar el rechazo.',
+                        icon: 'error',
+                        confirmButtonColor: '#7f1d1d'
+                    });
+                });
+        });
+    }
 </script>
 
 <?php require_once __DIR__ . '/../../includes/footer.php'; ?>
