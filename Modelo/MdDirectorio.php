@@ -1485,7 +1485,20 @@ RESUMEN DASHBOARD DINÁMICO
     {
         $db = Conexion::conectar();
 
-        $sql = "SELECT *
+        $sql = "SELECT 
+                id,
+                colab_id,
+                usuario_solicita_id,
+                tipo_seccion,
+                datos_json,
+                datos_anteriores_json,
+                estado,
+                observacion_rrhh,
+                motivo_rechazo,
+                validado_por,
+                revisado_por,
+                fecha_validacion,
+                created_at
             FROM solicitudes_cambio
             WHERE colab_id = :colab_id
             ORDER BY created_at DESC";
