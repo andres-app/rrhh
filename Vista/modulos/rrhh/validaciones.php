@@ -262,30 +262,6 @@ function resumenSolicitud($sol)
 
     <div class="p-8 flex-1 overflow-hidden flex flex-col gap-6">
 
-        <section class="grid grid-cols-1 md:grid-cols-4 gap-4 shrink-0">
-
-            <div class="bg-white rounded-3xl border border-slate-200 p-5 shadow-sm">
-                <p class="text-xs font-bold text-slate-400 uppercase tracking-widest">Total</p>
-                <h2 class="text-3xl font-black text-slate-800 mt-2"><?php echo count($solicitudes); ?></h2>
-            </div>
-
-            <div class="bg-amber-50 rounded-3xl border border-amber-200 p-5 shadow-sm">
-                <p class="text-xs font-bold text-amber-700 uppercase tracking-widest">Pendientes</p>
-                <h2 class="text-3xl font-black text-amber-900 mt-2"><?php echo count($pendientes); ?></h2>
-            </div>
-
-            <div class="bg-green-50 rounded-3xl border border-green-200 p-5 shadow-sm">
-                <p class="text-xs font-bold text-green-700 uppercase tracking-widest">Aprobadas</p>
-                <h2 class="text-3xl font-black text-green-900 mt-2"><?php echo count($aprobadas); ?></h2>
-            </div>
-
-            <div class="bg-red-50 rounded-3xl border border-red-200 p-5 shadow-sm">
-                <p class="text-xs font-bold text-red-700 uppercase tracking-widest">Rechazadas</p>
-                <h2 class="text-3xl font-black text-red-900 mt-2"><?php echo count($rechazadas); ?></h2>
-            </div>
-
-        </section>
-
         <section class="bg-white rounded-3xl border border-slate-200 shadow-sm overflow-hidden flex-1 flex flex-col">
 
             <div class="p-5 border-b border-slate-100 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 shrink-0">
@@ -305,19 +281,30 @@ function resumenSolicitud($sol)
                             class="w-full md:w-80 rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm outline-none focus:ring-2 focus:ring-red-900/20 focus:border-red-900">
                     </div>
 
+                    <select id="pageSize"
+                        class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-xs font-black text-slate-600 uppercase tracking-widest outline-none focus:ring-2 focus:ring-red-900/20 focus:border-red-900">
+                        <option value="5">5</option>
+                        <option value="10" selected>10</option>
+                        <option value="25">25</option>
+                        <option value="50">50</option>
+                    </select>
+
                     <div class="flex gap-2">
                         <button onclick="filtrarEstado('TODOS', this)"
-                            class="filtro-estado bg-red-900 text-white px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest">
+                            class="filtro-estado bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest">
                             Todos
                         </button>
+
                         <button onclick="filtrarEstado('PENDIENTE', this)"
-                            class="filtro-estado bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest">
+                            class="filtro-estado bg-red-900 text-white px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest">
                             Pendientes
                         </button>
+
                         <button onclick="filtrarEstado('APROBADO', this)"
                             class="filtro-estado bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest">
                             Aprobadas
                         </button>
+
                         <button onclick="filtrarEstado('RECHAZADO', this)"
                             class="filtro-estado bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest">
                             Rechazadas
@@ -440,16 +427,70 @@ function resumenSolicitud($sol)
                 </table>
             </div>
 
+            <div class="px-5 py-4 border-t border-slate-100 bg-slate-50/70 flex flex-col md:flex-row md:items-center md:justify-between gap-4 shrink-0">
+
+                <div class="text-xs font-bold text-slate-400">
+                    Mostrando
+                    <span id="rangeInfo" class="text-red-900 font-black">0</span>
+                    de
+                    <span id="resultCount" class="text-slate-700 font-black"><?php echo count($solicitudes); ?></span>
+                    solicitudes
+                </div>
+
+                <div class="flex items-center justify-end gap-2">
+                    <button type="button" id="prevPage"
+                        class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-black text-slate-600 hover:bg-red-900 hover:text-white hover:border-red-900 transition disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-slate-600 disabled:hover:border-slate-200">
+                        Anterior
+                    </button>
+
+                    <div id="paginationNumbers" class="flex items-center gap-1"></div>
+
+                    <button type="button" id="nextPage"
+                        class="px-4 py-2 rounded-xl border border-slate-200 bg-white text-xs font-black text-slate-600 hover:bg-red-900 hover:text-white hover:border-red-900 transition disabled:opacity-40 disabled:hover:bg-white disabled:hover:text-slate-600 disabled:hover:border-slate-200">
+                        Siguiente
+                    </button>
+                </div>
+
+            </div>
+
         </section>
 
     </div>
 </main>
 
 <script>
-    let estadoActual = 'TODOS';
+    let estadoActual = 'PENDIENTE';
+    let paginaActual = 1;
+    let filasFiltradas = [];
+
+    const inputBuscar = document.getElementById('buscarSolicitud');
+    const pageSizeSelect = document.getElementById('pageSize');
+    const prevBtn = document.getElementById('prevPage');
+    const nextBtn = document.getElementById('nextPage');
+    const paginationNumbers = document.getElementById('paginationNumbers');
+    const rangeInfo = document.getElementById('rangeInfo');
+    const resultCount = document.getElementById('resultCount');
+
+    function normalizarTexto(texto) {
+        return (texto || '')
+            .toString()
+            .toLowerCase()
+            .normalize('NFD')
+            .replace(/[\u0300-\u036f]/g, '')
+            .trim();
+    }
+
+    function obtenerFilas() {
+        return Array.from(document.querySelectorAll('.fila-solicitud'));
+    }
+
+    function obtenerPageSize() {
+        return parseInt(pageSizeSelect?.value || 10, 10);
+    }
 
     function filtrarEstado(estado, boton) {
         estadoActual = estado;
+        paginaActual = 1;
 
         document.querySelectorAll('.filtro-estado').forEach(btn => {
             btn.className = 'filtro-estado bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest';
@@ -460,21 +501,122 @@ function resumenSolicitud($sol)
         aplicarFiltros();
     }
 
-    document.getElementById('buscarSolicitud').addEventListener('input', aplicarFiltros);
-
     function aplicarFiltros() {
-        const texto = document.getElementById('buscarSolicitud').value.toLowerCase().trim();
+        const texto = normalizarTexto(inputBuscar?.value || '');
+        const filas = obtenerFilas();
 
-        document.querySelectorAll('.fila-solicitud').forEach(fila => {
-            const estado = fila.dataset.estado;
-            const busqueda = fila.dataset.busqueda || '';
+        filasFiltradas = filas.filter(fila => {
+            const estado = fila.dataset.estado || '';
+            const busqueda = normalizarTexto(fila.dataset.busqueda || '');
 
             const coincideEstado = estadoActual === 'TODOS' || estado === estadoActual;
-            const coincideTexto = !texto || busqueda.includes(texto);
+            const coincideTexto = texto === '' || busqueda.includes(texto);
 
-            fila.style.display = coincideEstado && coincideTexto ? '' : 'none';
+            return coincideEstado && coincideTexto;
         });
+
+        renderizarTabla();
     }
+
+    function renderizarTabla() {
+        const filas = obtenerFilas();
+        const pageSize = obtenerPageSize();
+        const total = filasFiltradas.length;
+        const totalPaginas = Math.max(1, Math.ceil(total / pageSize));
+
+        if (paginaActual > totalPaginas) {
+            paginaActual = totalPaginas;
+        }
+
+        const inicio = (paginaActual - 1) * pageSize;
+        const fin = inicio + pageSize;
+        const visibles = filasFiltradas.slice(inicio, fin);
+
+        filas.forEach(fila => fila.style.display = 'none');
+        visibles.forEach(fila => fila.style.display = '');
+
+        const desde = total === 0 ? 0 : inicio + 1;
+        const hasta = Math.min(fin, total);
+
+        if (rangeInfo) {
+            rangeInfo.textContent = total === 0 ? '0' : `${desde}-${hasta}`;
+        }
+
+        if (resultCount) {
+            resultCount.textContent = total;
+        }
+
+        if (prevBtn) {
+            prevBtn.disabled = paginaActual <= 1 || total === 0;
+        }
+
+        if (nextBtn) {
+            nextBtn.disabled = paginaActual >= totalPaginas || total === 0;
+        }
+
+        renderizarNumeros(totalPaginas, total);
+    }
+
+    function renderizarNumeros(totalPaginas, total) {
+        if (!paginationNumbers) return;
+
+        paginationNumbers.innerHTML = '';
+
+        if (total === 0) return;
+
+        const maxBotones = 5;
+        let inicio = Math.max(1, paginaActual - 2);
+        let fin = Math.min(totalPaginas, inicio + maxBotones - 1);
+
+        if (fin - inicio < maxBotones - 1) {
+            inicio = Math.max(1, fin - maxBotones + 1);
+        }
+
+        for (let page = inicio; page <= fin; page++) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = page;
+
+            btn.className = page === paginaActual ?
+                'w-9 h-9 rounded-xl bg-red-900 text-white text-xs font-black shadow-lg shadow-red-900/20' :
+                'w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-black hover:bg-red-50 hover:text-red-900 transition';
+
+            btn.addEventListener('click', () => {
+                paginaActual = page;
+                renderizarTabla();
+            });
+
+            paginationNumbers.appendChild(btn);
+        }
+    }
+
+    inputBuscar?.addEventListener('input', function() {
+        paginaActual = 1;
+        aplicarFiltros();
+    });
+
+    pageSizeSelect?.addEventListener('change', function() {
+        paginaActual = 1;
+        aplicarFiltros();
+    });
+
+    prevBtn?.addEventListener('click', function() {
+        if (paginaActual > 1) {
+            paginaActual--;
+            renderizarTabla();
+        }
+    });
+
+    nextBtn?.addEventListener('click', function() {
+        const totalPaginas = Math.ceil(filasFiltradas.length / obtenerPageSize());
+
+        if (paginaActual < totalPaginas) {
+            paginaActual++;
+            renderizarTabla();
+        }
+    });
+
+    aplicarFiltros();
 
     function aprobarSolicitud(id) {
         Swal.fire({
