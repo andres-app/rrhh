@@ -18,6 +18,7 @@ $accesoConfig = tieneAcceso('configuracion');
 $accesoPerfil = tieneAcceso('perfil');
 $accesoDocs = tieneAcceso('documentos');
 $accesoMisValidaciones = tieneAcceso('misvalidaciones');
+$accesoContratos = tieneAcceso('contratos');
 ?>
 
 <div class="md:hidden flex items-center justify-between bg-[#1a0505] p-4 shrink-0 z-20 border-b border-red-950/50">
@@ -85,7 +86,7 @@ $accesoMisValidaciones = tieneAcceso('misvalidaciones');
             <?php endif; ?>
         <?php endif; ?>
 
-        <?php if ($accesoRRHH): ?>
+        <?php if ($accesoRRHH || $accesoContratos): ?>
             <div class="px-6 mt-8 mb-2 text-[10px] font-bold text-red-400/50 uppercase tracking-widest">Administración</div>
 
             <a href="<?= BASE_URL ?>/rrhh/dashboard" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'dashboard') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
@@ -107,6 +108,19 @@ $accesoMisValidaciones = tieneAcceso('misvalidaciones');
                     <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
                 </svg>
                 <span class="font-medium text-sm">Directorio</span>
+            </a>
+        <?php endif; ?>
+
+        <?php if ($accesoContratos): ?>
+            <a href="<?= BASE_URL ?>/rrhh/contratos"
+                class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'contratos') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
+                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M9 12h6m-6 4h6M7 4h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"></path>
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
+                        d="M14 4v5h5"></path>
+                </svg>
+                <span class="font-medium text-sm">Contratos</span>
             </a>
         <?php endif; ?>
 
