@@ -1384,44 +1384,79 @@ RESUMEN DASHBOARD DINÁMICO
         }
     }
 
-    public static function mdlRechazarSolicitudCambio(int $solicitudId, int $validadorId, string $motivo): array
-    {
-        try {
-            $pdo = Conexion::conectar();
+public static function mdlRechazarSolicitudCambio(int $solicitudId, int $validadorId, string $motivo): array
+{
+    $pdo = Conexion::conectar();
 
-            $sql = "UPDATE solicitudes_cambio
+    try {
+        $pdo->beginTransaction();
+
+        $stmtSol = $pdo->prepare("
+            SELECT archivo_sustento
+            FROM solicitudes_cambio
+            WHERE id = :id
+              AND estado = 'PENDIENTE'
+            LIMIT 1
+        ");
+        $stmtSol->execute([':id' => $solicitudId]);
+        $solicitud = $stmtSol->fetch(PDO::FETCH_ASSOC);
+
+        if (!$solicitud) {
+            $pdo->rollBack();
+            return [
+                'success' => false,
+                'mensaje' => 'La solicitud no existe o ya fue procesada'
+            ];
+        }
+
+        $sql = "UPDATE solicitudes_cambio
                 SET estado = 'RECHAZADO',
                     validado_por = :validado_por,
+                    revisado_por = :revisado_por,
                     fecha_validacion = NOW(),
-                    observacion_rrhh = :observacion_rrhh
+                    observacion_rrhh = :observacion_rrhh,
+                    motivo_rechazo = :motivo_rechazo,
+                    archivo_sustento = NULL,
+                    nombre_archivo_original = NULL,
+                    mime_archivo = NULL,
+                    tamano_archivo = NULL
                 WHERE id = :id
                   AND estado = 'PENDIENTE'";
 
-            $stmt = $pdo->prepare($sql);
-            $stmt->execute([
-                ':validado_por'    => $validadorId,
-                ':observacion_rrhh' => $motivo,
-                ':id'              => $solicitudId
-            ]);
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':validado_por'     => $validadorId,
+            ':revisado_por'     => $validadorId,
+            ':observacion_rrhh' => $motivo,
+            ':motivo_rechazo'   => $motivo,
+            ':id'               => $solicitudId
+        ]);
 
-            if ($stmt->rowCount() <= 0) {
-                return [
-                    'success' => false,
-                    'mensaje' => 'La solicitud no existe o ya fue procesada'
-                ];
+        if (!empty($solicitud['archivo_sustento'])) {
+            $rutaFisica = __DIR__ . '/../Public/' . ltrim($solicitud['archivo_sustento'], '/');
+
+            if (is_file($rutaFisica)) {
+                @unlink($rutaFisica);
             }
-
-            return [
-                'success' => true,
-                'mensaje' => 'Solicitud rechazada correctamente'
-            ];
-        } catch (Throwable $e) {
-            return [
-                'success' => false,
-                'mensaje' => 'Error al rechazar la solicitud: ' . $e->getMessage()
-            ];
         }
+
+        $pdo->commit();
+
+        return [
+            'success' => true,
+            'mensaje' => 'Solicitud rechazada correctamente'
+        ];
+    } catch (Throwable $e) {
+        if ($pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+
+        return [
+            'success' => false,
+            'mensaje' => 'Error al rechazar la solicitud: ' . $e->getMessage()
+        ];
     }
+}
 
     public static function mdlResumenSolicitudesPorColaborador(int $colabId): array
     {
