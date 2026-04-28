@@ -285,6 +285,94 @@ $totalEmpleados = count($empleados);
         </div>
     </div>
 
+<style>
+    /* LABELS — más livianos y modernos */
+    #drawerNuevoColaborador label {
+        display: block;
+        margin-bottom: 0.25rem;
+        font-size: 0.75rem;
+        font-weight: 500; /* antes 900 */
+        color: #64748b;
+        letter-spacing: 0.02em;
+    }
+
+    /* INPUTS / SELECTS — tipografía limpia */
+    #drawerNuevoColaborador input:not([type="checkbox"]),
+    #drawerNuevoColaborador select {
+        width: 100%;
+        margin-top: 0.25rem;
+        border-radius: 0.9rem;
+        border: 1px solid #e2e8f0;
+        background: #ffffff;
+        padding: 0.75rem 0.9rem;
+        font-size: 0.875rem;
+        font-weight: 400; /* antes 700 */
+        color: #0f172a;
+        outline: none;
+        transition: all .18s ease;
+    }
+
+    /* HOVER sutil */
+    #drawerNuevoColaborador input:not([type="checkbox"]):hover,
+    #drawerNuevoColaborador select:hover {
+        border-color: #cbd5e1;
+    }
+
+    /* FOCUS estilo moderno tipo SaaS */
+    #drawerNuevoColaborador input:not([type="checkbox"]):focus,
+    #drawerNuevoColaborador select:focus {
+        border-color: #7f1d1d;
+        box-shadow: 0 0 0 3px rgba(127, 29, 29, 0.12);
+    }
+
+    /* PLACEHOLDER ligero */
+    #drawerNuevoColaborador input::placeholder {
+        color: #94a3b8;
+        font-weight: 400;
+    }
+
+    /* SELECT limpio */
+    #drawerNuevoColaborador select {
+        appearance: none;
+        background-image:
+            linear-gradient(45deg, transparent 50%, #94a3b8 50%),
+            linear-gradient(135deg, #94a3b8 50%, transparent 50%);
+        background-position:
+            calc(100% - 16px) 50%,
+            calc(100% - 12px) 50%;
+        background-size: 4px 4px;
+        background-repeat: no-repeat;
+        padding-right: 2.5rem;
+    }
+
+    /* CHECKBOX minimal */
+    #drawerNuevoColaborador input[type="checkbox"] {
+        width: 1rem;
+        height: 1rem;
+        border-radius: .25rem;
+        accent-color: #7f1d1d;
+        cursor: pointer;
+    }
+
+    /* SECCIONES más limpias */
+    #drawerNuevoColaborador section {
+        background: #ffffff;
+        border-radius: 1.25rem;
+        border: 1px solid #f1f5f9;
+        padding: 1.5rem;
+    }
+
+    /* TÍTULOS más modernos */
+    #drawerNuevoColaborador section h3 {
+        font-size: 0.8rem;
+        font-weight: 600;
+        color: #7f1d1d;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        margin-bottom: 1rem;
+    }
+</style>
+
     <div id="drawerNuevoColaborador" class="fixed inset-0 z-50 hidden">
 
         <div class="absolute inset-y-0 left-64 right-0 bg-slate-900/25 backdrop-blur-sm"
@@ -309,7 +397,7 @@ $totalEmpleados = count($empleados);
                     </button>
                 </div>
 
-                <div class="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50">
+                <div class="flex-1 overflow-y-auto p-8 space-y-6 bg-gradient-to-br from-slate-50 via-white to-red-50/30">
 
                     <?php if (!empty($mensajeRegistro) && empty($mensajeRegistro['success'])): ?>
                         <div class="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-sm font-bold">
