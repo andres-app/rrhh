@@ -84,6 +84,11 @@ $totalEmpleados = count($empleados);
                     </div>
 
                     <?php if (in_array(strtolower($_SESSION['user_role'] ?? ''), ['superadmin', 'admin', 'rrhh'], true)): ?>
+                        <a href="<?= BASE_URL ?>/rrhh/directorio/excel"
+                            id="btnExportExcel"
+                            class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all">
+                            Exportar Excel
+                        </a>
                         <button onclick="abrirDrawerNuevoColaborador()"
                             class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-red-900 text-white text-sm font-bold shadow-lg shadow-red-900/20 hover:bg-red-800 transition-all">
                             <span class="text-lg">+</span>
@@ -285,93 +290,95 @@ $totalEmpleados = count($empleados);
         </div>
     </div>
 
-<style>
-    /* LABELS — más livianos y modernos */
-    #drawerNuevoColaborador label {
-        display: block;
-        margin-bottom: 0.25rem;
-        font-size: 0.75rem;
-        font-weight: 500; /* antes 900 */
-        color: #64748b;
-        letter-spacing: 0.02em;
-    }
+    <style>
+        /* LABELS — más livianos y modernos */
+        #drawerNuevoColaborador label {
+            display: block;
+            margin-bottom: 0.25rem;
+            font-size: 0.75rem;
+            font-weight: 500;
+            /* antes 900 */
+            color: #64748b;
+            letter-spacing: 0.02em;
+        }
 
-    /* INPUTS / SELECTS — tipografía limpia */
-    #drawerNuevoColaborador input:not([type="checkbox"]),
-    #drawerNuevoColaborador select {
-        width: 100%;
-        margin-top: 0.25rem;
-        border-radius: 0.9rem;
-        border: 1px solid #e2e8f0;
-        background: #ffffff;
-        padding: 0.75rem 0.9rem;
-        font-size: 0.875rem;
-        font-weight: 400; /* antes 700 */
-        color: #0f172a;
-        outline: none;
-        transition: all .18s ease;
-    }
+        /* INPUTS / SELECTS — tipografía limpia */
+        #drawerNuevoColaborador input:not([type="checkbox"]),
+        #drawerNuevoColaborador select {
+            width: 100%;
+            margin-top: 0.25rem;
+            border-radius: 0.9rem;
+            border: 1px solid #e2e8f0;
+            background: #ffffff;
+            padding: 0.75rem 0.9rem;
+            font-size: 0.875rem;
+            font-weight: 400;
+            /* antes 700 */
+            color: #0f172a;
+            outline: none;
+            transition: all .18s ease;
+        }
 
-    /* HOVER sutil */
-    #drawerNuevoColaborador input:not([type="checkbox"]):hover,
-    #drawerNuevoColaborador select:hover {
-        border-color: #cbd5e1;
-    }
+        /* HOVER sutil */
+        #drawerNuevoColaborador input:not([type="checkbox"]):hover,
+        #drawerNuevoColaborador select:hover {
+            border-color: #cbd5e1;
+        }
 
-    /* FOCUS estilo moderno tipo SaaS */
-    #drawerNuevoColaborador input:not([type="checkbox"]):focus,
-    #drawerNuevoColaborador select:focus {
-        border-color: #7f1d1d;
-        box-shadow: 0 0 0 3px rgba(127, 29, 29, 0.12);
-    }
+        /* FOCUS estilo moderno tipo SaaS */
+        #drawerNuevoColaborador input:not([type="checkbox"]):focus,
+        #drawerNuevoColaborador select:focus {
+            border-color: #7f1d1d;
+            box-shadow: 0 0 0 3px rgba(127, 29, 29, 0.12);
+        }
 
-    /* PLACEHOLDER ligero */
-    #drawerNuevoColaborador input::placeholder {
-        color: #94a3b8;
-        font-weight: 400;
-    }
+        /* PLACEHOLDER ligero */
+        #drawerNuevoColaborador input::placeholder {
+            color: #94a3b8;
+            font-weight: 400;
+        }
 
-    /* SELECT limpio */
-    #drawerNuevoColaborador select {
-        appearance: none;
-        background-image:
-            linear-gradient(45deg, transparent 50%, #94a3b8 50%),
-            linear-gradient(135deg, #94a3b8 50%, transparent 50%);
-        background-position:
-            calc(100% - 16px) 50%,
-            calc(100% - 12px) 50%;
-        background-size: 4px 4px;
-        background-repeat: no-repeat;
-        padding-right: 2.5rem;
-    }
+        /* SELECT limpio */
+        #drawerNuevoColaborador select {
+            appearance: none;
+            background-image:
+                linear-gradient(45deg, transparent 50%, #94a3b8 50%),
+                linear-gradient(135deg, #94a3b8 50%, transparent 50%);
+            background-position:
+                calc(100% - 16px) 50%,
+                calc(100% - 12px) 50%;
+            background-size: 4px 4px;
+            background-repeat: no-repeat;
+            padding-right: 2.5rem;
+        }
 
-    /* CHECKBOX minimal */
-    #drawerNuevoColaborador input[type="checkbox"] {
-        width: 1rem;
-        height: 1rem;
-        border-radius: .25rem;
-        accent-color: #7f1d1d;
-        cursor: pointer;
-    }
+        /* CHECKBOX minimal */
+        #drawerNuevoColaborador input[type="checkbox"] {
+            width: 1rem;
+            height: 1rem;
+            border-radius: .25rem;
+            accent-color: #7f1d1d;
+            cursor: pointer;
+        }
 
-    /* SECCIONES más limpias */
-    #drawerNuevoColaborador section {
-        background: #ffffff;
-        border-radius: 1.25rem;
-        border: 1px solid #f1f5f9;
-        padding: 1.5rem;
-    }
+        /* SECCIONES más limpias */
+        #drawerNuevoColaborador section {
+            background: #ffffff;
+            border-radius: 1.25rem;
+            border: 1px solid #f1f5f9;
+            padding: 1.5rem;
+        }
 
-    /* TÍTULOS más modernos */
-    #drawerNuevoColaborador section h3 {
-        font-size: 0.8rem;
-        font-weight: 600;
-        color: #7f1d1d;
-        letter-spacing: 0.08em;
-        text-transform: uppercase;
-        margin-bottom: 1rem;
-    }
-</style>
+        /* TÍTULOS más modernos */
+        #drawerNuevoColaborador section h3 {
+            font-size: 0.8rem;
+            font-weight: 600;
+            color: #7f1d1d;
+            letter-spacing: 0.08em;
+            text-transform: uppercase;
+            margin-bottom: 1rem;
+        }
+    </style>
 
     <div id="drawerNuevoColaborador" class="fixed inset-0 z-50 hidden">
 
@@ -827,5 +834,14 @@ $totalEmpleados = count($empleados);
             }, 300);
 
             document.body.classList.remove('overflow-hidden');
+        }
+
+        const btnExportExcel = document.getElementById('btnExportExcel');
+
+        if (btnExportExcel) {
+            btnExportExcel.addEventListener('click', function() {
+                const q = document.getElementById('searchInput')?.value || '';
+                this.href = `<?= BASE_URL ?>/rrhh/directorio/excel?q=${encodeURIComponent(q)}`;
+            });
         }
     </script>

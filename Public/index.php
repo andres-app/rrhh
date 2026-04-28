@@ -170,6 +170,24 @@ if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? 
     }
 }
 
+// ══════════════════════════════════════════════════════════════
+// EXPORTAR EXCEL - DIRECTORIO RRHH
+// URL: /rrhh/directorio/excel
+// ══════════════════════════════════════════════════════════════
+
+if ($module === 'rrhh' && ($parts[1] ?? '') === 'directorio' && ($parts[2] ?? '') === 'excel') {
+
+    $rolActual = strtolower(trim($_SESSION['user_role'] ?? ''));
+
+    if (!in_array($rolActual, ['superadmin', 'admin', 'rrhh'], true)) {
+        die("No tienes permiso para exportar este reporte.");
+    }
+
+    require_once __DIR__ . '/../Modelo/MdDirectorio.php';
+    require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
+    require_once __DIR__ . '/../Vista/modulos/rrhh/RptExcelDirectorio.php';
+    exit;
+}
 // ── Permisos ──────────────────────────────────────────────────
 $user_role = $_SESSION['user_role'];
 $permisos  = check_access($module, $user_role);
