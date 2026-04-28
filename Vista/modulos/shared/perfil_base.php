@@ -19,7 +19,29 @@ $bancario    = $data['bancario'] ?? [];
 $hijos = array_values(array_filter($familia, fn($f) => in_array(($f['parentesco'] ?? ''), ['HIJO', 'HIJA'], true)));
 
 // Compatibilidad con el modal copiado desde colaborador
-$perfil = $data;
+$perfil = [];
+
+if (isset($data) && is_array($data)) {
+    $perfil = $data;
+}
+
+if (!empty($data["datos_json"])) {
+    $jsonPerfil = json_decode($data["datos_json"], true);
+
+    if (is_array($jsonPerfil)) {
+        $perfil = array_merge($perfil, $jsonPerfil);
+    }
+}
+
+// Reasignar arrays reales del modelo para que NO se vacíen los inputs dinámicos
+$perfil['contratos']   = $contratos;
+$perfil['formacion']   = $formacion;
+$perfil['experiencia'] = $experiencia;
+$perfil['familia']     = $familia;
+$perfil['idiomas']     = $idiomas;
+$perfil['pension']     = $pension;
+$perfil['bancario']    = $bancario;
+
 $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($perfil['id'] ?? 0));
 ?>
 
