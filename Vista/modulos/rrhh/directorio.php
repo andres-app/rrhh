@@ -3,6 +3,18 @@ require_once ROOT_PATH . 'Controlador/CtrDirectorio.php';
 require_once ROOT_PATH . 'Modelo/MdDirectorio.php';
 
 $controlador = new CtrDirectorio();
+
+$mensajeRegistro = null;
+
+if ($_SERVER['REQUEST_METHOD'] === 'POST' && isset($_POST['crear_colaborador'])) {
+    $mensajeRegistro = $controlador->ctrCrearColaborador($_POST);
+
+    if (!empty($mensajeRegistro['success'])) {
+        header("Location: " . BASE_URL . "/directorio?creado=ok");
+        exit();
+    }
+}
+
 $empleados = $controlador->ctrMostrarDirectorio();
 
 if (!is_array($empleados)) {
@@ -71,10 +83,13 @@ $totalEmpleados = count($empleados);
                         </button>
                     </div>
 
-                    <button class="bg-red-900 hover:bg-[#4c0505] text-white px-5 py-3.5 rounded-2xl font-black shadow-xl shadow-red-900/20 transition-all flex items-center justify-center active:scale-95">
-                        <span class="mr-2 text-xl leading-none">+</span>
-                        <span class="whitespace-nowrap text-sm">Nuevo Empleado</span>
-                    </button>
+                    <?php if (in_array(strtolower($_SESSION['user_role'] ?? ''), ['superadmin', 'admin', 'rrhh'], true)): ?>
+                        <button onclick="abrirDrawerNuevoColaborador()"
+                            class="inline-flex items-center gap-2 px-5 py-3 rounded-2xl bg-red-900 text-white text-sm font-bold shadow-lg shadow-red-900/20 hover:bg-red-800 transition-all">
+                            <span class="text-lg">+</span>
+                            Nuevo colaborador
+                        </button>
+                    <?php endif; ?>
                 </div>
             </div>
         </div>
@@ -269,146 +284,429 @@ $totalEmpleados = count($empleados);
 
         </div>
     </div>
-</main>
 
-<script>
-document.addEventListener('DOMContentLoaded', function () {
-    const input = document.getElementById('searchInput');
-    const clearBtn = document.getElementById('clearSearch');
-    const rows = Array.from(document.querySelectorAll('.directorio-row'));
-    const emptyState = document.getElementById('emptyState');
-    const resultCount = document.getElementById('resultCount');
-    const rangeInfo = document.getElementById('rangeInfo');
-    const pageSizeSelect = document.getElementById('pageSize');
-    const prevBtn = document.getElementById('prevPage');
-    const nextBtn = document.getElementById('nextPage');
-    const paginationNumbers = document.getElementById('paginationNumbers');
-    const currentPageLabel = document.getElementById('currentPageLabel');
-    const totalPagesLabel = document.getElementById('totalPagesLabel');
+    <div id="drawerNuevoColaborador" class="fixed inset-0 z-50 hidden">
 
-    let currentPage = 1;
-    let filteredRows = rows;
+        <div class="absolute inset-y-0 left-64 right-0 bg-slate-900/25 backdrop-blur-sm"
+            onclick="cerrarDrawerNuevoColaborador()"></div>
 
-    function normalizeText(text) {
-        return (text || '')
-            .toString()
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .trim();
-    }
+        <aside class="absolute top-0 right-0 h-full left-64 bg-white shadow-2xl border-l border-slate-200 flex flex-col transition-transform duration-300 ease-out translate-x-full">
 
-    function getPageSize() {
-        return parseInt(pageSizeSelect.value, 10) || 25;
-    }
+            <form method="POST" class="h-full flex flex-col">
 
-    function applyFilter() {
-        const query = normalizeText(input.value);
+                <input type="hidden" name="crear_colaborador" value="1">
 
-        filteredRows = rows.filter(row => {
-            const data = normalizeText(row.dataset.search);
-            return query === '' || data.includes(query);
-        });
+                <div class="px-8 py-5 border-b border-slate-100 bg-white flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-xs font-black tracking-[0.2em] text-red-900 uppercase">Registro RRHH</p>
+                        <h2 class="text-2xl font-black text-slate-800 mt-1">Nuevo colaborador</h2>
+                        <p class="text-sm text-slate-500 mt-1">Completa la información integral del colaborador.</p>
+                    </div>
 
-        currentPage = 1;
-        renderTable();
+                    <button type="button" onclick="cerrarDrawerNuevoColaborador()"
+                        class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-red-900">
+                        ✕
+                    </button>
+                </div>
 
-        clearBtn.classList.toggle('hidden', query.length === 0);
-        clearBtn.classList.toggle('flex', query.length > 0);
-    }
+                <div class="flex-1 overflow-y-auto p-8 space-y-6 bg-slate-50">
 
-    function renderTable() {
-        const pageSize = getPageSize();
-        const totalResults = filteredRows.length;
-        const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
+                    <?php if (!empty($mensajeRegistro) && empty($mensajeRegistro['success'])): ?>
+                        <div class="p-4 rounded-2xl bg-red-50 border border-red-200 text-red-800 text-sm font-bold">
+                            <?= htmlspecialchars($mensajeRegistro['mensaje']) ?>
+                        </div>
+                    <?php endif; ?>
 
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
-        }
+                    <section class="bg-white rounded-[1.5rem] border border-slate-200 shadow-sm p-6">
+                        <h3 class="text-sm font-black text-red-900 uppercase tracking-widest mb-5">Datos personales</h3>
 
-        const start = (currentPage - 1) * pageSize;
-        const end = start + pageSize;
-        const visibleRows = filteredRows.slice(start, end);
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">DNI *</label>
+                                <input name="dni" maxlength="8" required class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
 
-        rows.forEach(row => row.classList.add('hidden'));
-        visibleRows.forEach(row => row.classList.remove('hidden'));
+                            <div class="md:col-span-2">
+                                <label class="text-xs font-bold text-slate-500">Nombres y apellidos *</label>
+                                <input name="nombres_apellidos" required class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
 
-        const showingFrom = totalResults === 0 ? 0 : start + 1;
-        const showingTo = Math.min(end, totalResults);
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">RUC</label>
+                                <input name="ruc" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
 
-        if (resultCount) resultCount.textContent = totalResults;
-        if (rangeInfo) rangeInfo.textContent = totalResults === 0 ? '0' : `${showingFrom}-${showingTo}`;
-        if (emptyState) emptyState.classList.toggle('hidden', totalResults !== 0);
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Licencia conducir</label>
+                                <input name="licencia_conducir" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
 
-        currentPageLabel.textContent = totalResults === 0 ? '0' : currentPage;
-        totalPagesLabel.textContent = totalResults === 0 ? '0' : totalPages;
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Fecha nacimiento</label>
+                                <input type="date" name="fecha_nacimiento" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
 
-        prevBtn.disabled = currentPage <= 1;
-        nextBtn.disabled = currentPage >= totalPages || totalResults === 0;
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Lugar nacimiento</label>
+                                <input name="lugar_nacimiento" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
 
-        renderPaginationNumbers(totalPages, totalResults);
-    }
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Sexo</label>
+                                <select name="sexo" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                    <option value="">Seleccionar</option>
+                                    <option value="M">Masculino</option>
+                                    <option value="F">Femenino</option>
+                                </select>
+                            </div>
 
-    function renderPaginationNumbers(totalPages, totalResults) {
-        paginationNumbers.innerHTML = '';
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Estado civil</label>
+                                <input name="estado_civil" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
 
-        if (totalResults === 0) return;
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Grupo sanguíneo</label>
+                                <input name="grupo_sanguineo" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
 
-        const maxButtons = 5;
-        let startPage = Math.max(1, currentPage - 2);
-        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Talla</label>
+                                <input name="talla" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
 
-        if (endPage - startPage < maxButtons - 1) {
-            startPage = Math.max(1, endPage - maxButtons + 1);
-        }
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Grado militar</label>
+                                <input name="grado_militar" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+                        </div>
+                    </section>
 
-        for (let page = startPage; page <= endPage; page++) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = page;
+                    <section class="bg-white rounded-[1.5rem] border border-slate-200 shadow-sm p-6">
+                        <h3 class="text-sm font-black text-red-900 uppercase tracking-widest mb-5">Contacto y domicilio</h3>
 
-            btn.className = page === currentPage
-                ? 'w-9 h-9 rounded-xl bg-red-900 text-white text-xs font-black shadow-lg shadow-red-900/20'
-                : 'w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-black hover:bg-red-50 hover:text-red-900 transition';
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Celular</label>
+                                <input name="celular" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
 
-            btn.addEventListener('click', function () {
-                currentPage = page;
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Correo personal</label>
+                                <input type="email" name="correo_personal" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Distrito</label>
+                                <input name="distrito" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div class="md:col-span-4">
+                                <label class="text-xs font-bold text-slate-500">Dirección residencia</label>
+                                <input name="direccion_residencia" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="bg-white rounded-[1.5rem] border border-slate-200 shadow-sm p-6">
+                        <h3 class="text-sm font-black text-red-900 uppercase tracking-widest mb-5">Datos laborales</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Correo institucional</label>
+                                <input type="email" name="correo_institucional" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Situación</label>
+                                <select name="situacion" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                    <option value="ACTIVO">ACTIVO</option>
+                                    <option value="INACTIVO">INACTIVO</option>
+                                    <option value="CESADO">CESADO</option>
+                                </select>
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Sueldo</label>
+                                <input type="number" step="0.01" name="sueldo" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Modalidad contrato</label>
+                                <input name="modalidad_contrato" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Puesto CAS</label>
+                                <input name="puesto_cas" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Tipo puesto</label>
+                                <input name="tipo_puesto" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Área</label>
+                                <input name="area" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Procedencia</label>
+                                <input name="procedencia" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Fecha ingreso</label>
+                                <input type="date" name="fecha_ingreso" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Fecha cese</label>
+                                <input type="date" name="fecha_cese" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+                        </div>
+                    </section>
+
+                    <section class="bg-white rounded-[1.5rem] border border-slate-200 shadow-sm p-6">
+                        <h3 class="text-sm font-black text-red-900 uppercase tracking-widest mb-5">Datos pensionarios</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Sistema pensión</label>
+                                <input name="sistema_pension" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">AFP</label>
+                                <input name="afp" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">CUSPP</label>
+                                <input name="cuspp" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Tipo comisión</label>
+                                <input name="tipo_comision" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Fecha inscripción</label>
+                                <input type="date" name="fecha_inscripcion" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <label class="flex items-center gap-3 mt-7 text-sm font-bold text-slate-600">
+                                <input type="checkbox" name="sin_afp_afiliarme" value="1" class="rounded border-slate-300 text-red-900">
+                                Sin AFP / por afiliar
+                            </label>
+                        </div>
+                    </section>
+
+                    <section class="bg-white rounded-[1.5rem] border border-slate-200 shadow-sm p-6">
+                        <h3 class="text-sm font-black text-red-900 uppercase tracking-widest mb-5">Datos bancarios</h3>
+
+                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Banco haberes</label>
+                                <input name="banco_haberes" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">Número de cuenta</label>
+                                <input name="numero_cuenta" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+
+                            <div>
+                                <label class="text-xs font-bold text-slate-500">CCI</label>
+                                <input name="numero_cuenta_cci" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                            </div>
+                        </div>
+                    </section>
+
+                </div>
+
+                <div class="px-8 py-5 border-t border-slate-100 bg-white flex justify-end gap-3">
+                    <button type="button" onclick="cerrarDrawerNuevoColaborador()"
+                        class="px-5 py-3 rounded-2xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-50">
+                        Cancelar
+                    </button>
+
+                    <button type="submit"
+                        class="px-6 py-3 rounded-2xl bg-red-900 text-white text-sm font-black shadow-lg shadow-red-900/20 hover:bg-red-800">
+                        Guardar colaborador
+                    </button>
+                </div>
+
+            </form>
+        </aside>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', function() {
+            const input = document.getElementById('searchInput');
+            const clearBtn = document.getElementById('clearSearch');
+            const rows = Array.from(document.querySelectorAll('.directorio-row'));
+            const emptyState = document.getElementById('emptyState');
+            const resultCount = document.getElementById('resultCount');
+            const rangeInfo = document.getElementById('rangeInfo');
+            const pageSizeSelect = document.getElementById('pageSize');
+            const prevBtn = document.getElementById('prevPage');
+            const nextBtn = document.getElementById('nextPage');
+            const paginationNumbers = document.getElementById('paginationNumbers');
+            const currentPageLabel = document.getElementById('currentPageLabel');
+            const totalPagesLabel = document.getElementById('totalPagesLabel');
+
+            let currentPage = 1;
+            let filteredRows = rows;
+
+            function normalizeText(text) {
+                return (text || '')
+                    .toString()
+                    .toLowerCase()
+                    .normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '')
+                    .trim();
+            }
+
+            function getPageSize() {
+                return parseInt(pageSizeSelect.value, 10) || 25;
+            }
+
+            function applyFilter() {
+                const query = normalizeText(input.value);
+
+                filteredRows = rows.filter(row => {
+                    const data = normalizeText(row.dataset.search);
+                    return query === '' || data.includes(query);
+                });
+
+                currentPage = 1;
+                renderTable();
+
+                clearBtn.classList.toggle('hidden', query.length === 0);
+                clearBtn.classList.toggle('flex', query.length > 0);
+            }
+
+            function renderTable() {
+                const pageSize = getPageSize();
+                const totalResults = filteredRows.length;
+                const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
+
+                if (currentPage > totalPages) {
+                    currentPage = totalPages;
+                }
+
+                const start = (currentPage - 1) * pageSize;
+                const end = start + pageSize;
+                const visibleRows = filteredRows.slice(start, end);
+
+                rows.forEach(row => row.classList.add('hidden'));
+                visibleRows.forEach(row => row.classList.remove('hidden'));
+
+                const showingFrom = totalResults === 0 ? 0 : start + 1;
+                const showingTo = Math.min(end, totalResults);
+
+                if (resultCount) resultCount.textContent = totalResults;
+                if (rangeInfo) rangeInfo.textContent = totalResults === 0 ? '0' : `${showingFrom}-${showingTo}`;
+                if (emptyState) emptyState.classList.toggle('hidden', totalResults !== 0);
+
+                currentPageLabel.textContent = totalResults === 0 ? '0' : currentPage;
+                totalPagesLabel.textContent = totalResults === 0 ? '0' : totalPages;
+
+                prevBtn.disabled = currentPage <= 1;
+                nextBtn.disabled = currentPage >= totalPages || totalResults === 0;
+
+                renderPaginationNumbers(totalPages, totalResults);
+            }
+
+            function renderPaginationNumbers(totalPages, totalResults) {
+                paginationNumbers.innerHTML = '';
+
+                if (totalResults === 0) return;
+
+                const maxButtons = 5;
+                let startPage = Math.max(1, currentPage - 2);
+                let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+                if (endPage - startPage < maxButtons - 1) {
+                    startPage = Math.max(1, endPage - maxButtons + 1);
+                }
+
+                for (let page = startPage; page <= endPage; page++) {
+                    const btn = document.createElement('button');
+                    btn.type = 'button';
+                    btn.textContent = page;
+
+                    btn.className = page === currentPage ?
+                        'w-9 h-9 rounded-xl bg-red-900 text-white text-xs font-black shadow-lg shadow-red-900/20' :
+                        'w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-black hover:bg-red-50 hover:text-red-900 transition';
+
+                    btn.addEventListener('click', function() {
+                        currentPage = page;
+                        renderTable();
+                    });
+
+                    paginationNumbers.appendChild(btn);
+                }
+            }
+
+            input.addEventListener('input', applyFilter);
+
+            clearBtn.addEventListener('click', function() {
+                input.value = '';
+                input.focus();
+                applyFilter();
+            });
+
+            pageSizeSelect.addEventListener('change', function() {
+                currentPage = 1;
                 renderTable();
             });
 
-            paginationNumbers.appendChild(btn);
+            prevBtn.addEventListener('click', function() {
+                if (currentPage > 1) {
+                    currentPage--;
+                    renderTable();
+                }
+            });
+
+            nextBtn.addEventListener('click', function() {
+                const totalPages = Math.ceil(filteredRows.length / getPageSize());
+
+                if (currentPage < totalPages) {
+                    currentPage++;
+                    renderTable();
+                }
+            });
+
+            applyFilter();
+        });
+
+        function abrirDrawerNuevoColaborador() {
+            const drawer = document.getElementById('drawerNuevoColaborador');
+            const panel = drawer.querySelector('aside');
+
+            drawer.classList.remove('hidden');
+
+            setTimeout(() => {
+                panel.classList.remove('translate-x-full');
+            }, 20);
+
+            document.body.classList.add('overflow-hidden');
         }
-    }
 
-    input.addEventListener('input', applyFilter);
+        function cerrarDrawerNuevoColaborador() {
+            const drawer = document.getElementById('drawerNuevoColaborador');
+            const panel = drawer.querySelector('aside');
 
-    clearBtn.addEventListener('click', function () {
-        input.value = '';
-        input.focus();
-        applyFilter();
-    });
+            panel.classList.add('translate-x-full');
 
-    pageSizeSelect.addEventListener('change', function () {
-        currentPage = 1;
-        renderTable();
-    });
+            setTimeout(() => {
+                drawer.classList.add('hidden');
+            }, 300);
 
-    prevBtn.addEventListener('click', function () {
-        if (currentPage > 1) {
-            currentPage--;
-            renderTable();
+            document.body.classList.remove('overflow-hidden');
         }
-    });
-
-    nextBtn.addEventListener('click', function () {
-        const totalPages = Math.ceil(filteredRows.length / getPageSize());
-
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderTable();
-        }
-    });
-
-    applyFilter();
-});
-</script>
+    </script>

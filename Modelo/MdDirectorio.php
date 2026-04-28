@@ -33,51 +33,62 @@ class MdDirectorio
         }
     }
 
+    private static function nullify($valor)
+    {
+        if ($valor === null) {
+            return null;
+        }
+
+        $valor = trim((string)$valor);
+
+        return $valor === '' ? null : $valor;
+    }
+
     /*=============================================
 RESUMEN DASHBOARD DINÁMICO
 =============================================*/
-public static function mdlObtenerResumenDashboard()
-{
-    try {
-        $pdo = Conexion::conectar();
+    public static function mdlObtenerResumenDashboard()
+    {
+        try {
+            $pdo = Conexion::conectar();
 
-        $respuesta = [
-            'total_colaboradores'      => 0,
-            'validaciones_pendientes'  => 0,
-            'contratos_por_vencer'     => 0,
-            'modalidades'              => [],
-            'cumpleanos'               => [],
-        ];
+            $respuesta = [
+                'total_colaboradores'      => 0,
+                'validaciones_pendientes'  => 0,
+                'contratos_por_vencer'     => 0,
+                'modalidades'              => [],
+                'cumpleanos'               => [],
+            ];
 
-        // Total colaboradores
-        $stmt = $pdo->prepare("
+            // Total colaboradores
+            $stmt = $pdo->prepare("
             SELECT COUNT(*) AS total
             FROM colab_maestro
         ");
-        $stmt->execute();
-        $respuesta['total_colaboradores'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+            $stmt->execute();
+            $respuesta['total_colaboradores'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
 
-        // Validaciones pendientes reales del flujo actual
-        $stmt = $pdo->prepare("
+            // Validaciones pendientes reales del flujo actual
+            $stmt = $pdo->prepare("
             SELECT COUNT(*) AS total
             FROM solicitudes_cambio
             WHERE estado = 'PENDIENTE'
         ");
-        $stmt->execute();
-        $respuesta['validaciones_pendientes'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+            $stmt->execute();
+            $respuesta['validaciones_pendientes'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
 
-        // Contratos por vencer próximos 30 días
-        $stmt = $pdo->prepare("
+            // Contratos por vencer próximos 30 días
+            $stmt = $pdo->prepare("
             SELECT COUNT(*) AS total
             FROM colab_contratos c
             WHERE c.fecha_cese IS NOT NULL
               AND c.fecha_cese BETWEEN CURDATE() AND DATE_ADD(CURDATE(), INTERVAL 30 DAY)
         ");
-        $stmt->execute();
-        $respuesta['contratos_por_vencer'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+            $stmt->execute();
+            $respuesta['contratos_por_vencer'] = (int)($stmt->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
 
-        // Modalidad tomando último registro laboral por colaborador
-        $stmt = $pdo->prepare("
+            // Modalidad tomando último registro laboral por colaborador
+            $stmt = $pdo->prepare("
             SELECT 
                 COALESCE(NULLIF(TRIM(l.modalidad_contrato), ''), 'SIN MODALIDAD') AS modalidad,
                 COUNT(*) AS total
@@ -90,11 +101,11 @@ public static function mdlObtenerResumenDashboard()
             GROUP BY modalidad
             ORDER BY total DESC, modalidad ASC
         ");
-        $stmt->execute();
-        $respuesta['modalidades'] = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $stmt->execute();
+            $respuesta['modalidades'] = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // Próximos cumpleaños
-        $stmt = $pdo->prepare("
+            // Próximos cumpleaños
+            $stmt = $pdo->prepare("
             SELECT
                 id,
                 nombres_apellidos AS nombre,
@@ -126,21 +137,20 @@ public static function mdlObtenerResumenDashboard()
                 END ASC
             LIMIT 5
         ");
-        $stmt->execute();
-        $respuesta['cumpleanos'] = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+            $stmt->execute();
+            $respuesta['cumpleanos'] = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        return $respuesta;
-
-    } catch (Throwable $e) {
-        return [
-            'total_colaboradores'      => 0,
-            'validaciones_pendientes'  => 0,
-            'contratos_por_vencer'     => 0,
-            'modalidades'              => [],
-            'cumpleanos'               => [],
-        ];
+            return $respuesta;
+        } catch (Throwable $e) {
+            return [
+                'total_colaboradores'      => 0,
+                'validaciones_pendientes'  => 0,
+                'contratos_por_vencer'     => 0,
+                'modalidades'              => [],
+                'cumpleanos'               => [],
+            ];
+        }
     }
-}
 
     /*=============================================
     DATOS MAESTRO + LABORAL PRINCIPAL
@@ -387,11 +397,11 @@ public static function mdlObtenerResumenDashboard()
             // ── 1.1 Actualizar campos sensibles en maestro (solo RRHH/Admin) ──
             if (in_array($rolSesion, ['rrhh', 'admin', 'superadmin'], true)) {
                 $stmtActualMaestro = $pdo->prepare("
-    SELECT nombres_apellidos, dni
-    FROM colab_maestro
-    WHERE id = :id
-    LIMIT 1
-");
+        SELECT nombres_apellidos, dni
+        FROM colab_maestro
+        WHERE id = :id
+        LIMIT 1
+      ");
                 $stmtActualMaestro->execute([
                     ':id' => (int)$datos['id'],
                 ]);
@@ -1498,5 +1508,191 @@ public static function mdlObtenerResumenDashboard()
         ]);
 
         return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    }
+
+    public static function mdlCrearColaborador(array $datos): array
+    {
+        $pdo = Conexion::conectar();
+
+        try {
+            $pdo->beginTransaction();
+
+            $dni = trim($datos['dni'] ?? '');
+
+            // VALIDACIÓN BÁSICA
+            if ($dni === '' || strlen($dni) !== 8) {
+                $pdo->rollBack();
+                return [
+                    'success' => false,
+                    'mensaje' => 'El DNI es obligatorio y debe tener 8 dígitos'
+                ];
+            }
+
+            // VALIDAR DUPLICADO COLABORADOR
+            $stmtExiste = $pdo->prepare("
+            SELECT id FROM colab_maestro WHERE dni = :dni LIMIT 1
+        ");
+            $stmtExiste->execute([':dni' => $dni]);
+
+            if ($stmtExiste->fetch()) {
+                $pdo->rollBack();
+                return [
+                    'success' => false,
+                    'mensaje' => 'Ya existe un colaborador con ese DNI'
+                ];
+            }
+
+            // VALIDAR USUARIO
+            $stmtUsuarioExiste = $pdo->prepare("
+            SELECT id FROM usuarios WHERE username = :username LIMIT 1
+        ");
+            $stmtUsuarioExiste->execute([':username' => $dni]);
+
+            if ($stmtUsuarioExiste->fetch()) {
+                $pdo->rollBack();
+                return [
+                    'success' => false,
+                    'mensaje' => 'Ya existe un usuario con ese DNI'
+                ];
+            }
+
+            // CREAR USUARIO
+            $passwordTemporal = password_hash($dni, PASSWORD_DEFAULT);
+
+            $stmtUsuario = $pdo->prepare("
+            INSERT INTO usuarios (username, password, rol, estado)
+            VALUES (:username, :password, :rol, :estado)
+        ");
+
+            $stmtUsuario->execute([
+                ':username' => $dni,
+                ':password' => $passwordTemporal,
+                ':rol'      => 'colaborador',
+                ':estado'   => 1
+            ]);
+
+            $usuarioId = (int)$pdo->lastInsertId();
+
+            // INSERT MAESTRO
+            $stmtMaestro = $pdo->prepare("
+            INSERT INTO colab_maestro (
+                usuario_id, dni, ruc, licencia_conducir,
+                nombres_apellidos, fecha_nacimiento, lugar_nacimiento,
+                sexo, estado_civil, grupo_sanguineo, talla,
+                celular, correo_personal, direccion_residencia,
+                distrito, grado_militar
+            ) VALUES (
+                :usuario_id, :dni, :ruc, :licencia,
+                :nombre, :fecha, :lugar,
+                :sexo, :estado, :grupo, :talla,
+                :celular, :correo, :direccion,
+                :distrito, :grado
+            )
+        ");
+
+            $stmtMaestro->execute([
+                ':usuario_id' => $usuarioId,
+                ':dni'        => $dni,
+                ':ruc'        => self::nullify($datos['ruc'] ?? null),
+                ':licencia'   => self::nullify($datos['licencia_conducir'] ?? null),
+                ':nombre'     => trim($datos['nombres_apellidos'] ?? ''),
+                ':fecha'  => !empty($datos['fecha_nacimiento']) ? $datos['fecha_nacimiento'] : null,
+                ':lugar'      => self::nullify($datos['lugar_nacimiento'] ?? null),
+                ':sexo'       => self::nullify($datos['sexo'] ?? null),
+                ':estado'     => self::nullify($datos['estado_civil'] ?? null),
+                ':grupo'      => self::nullify($datos['grupo_sanguineo'] ?? null),
+                ':talla'      => self::nullify($datos['talla'] ?? null),
+                ':celular'    => self::nullify($datos['celular'] ?? null),
+                ':correo'     => self::nullify($datos['correo_personal'] ?? null),
+                ':direccion'  => self::nullify($datos['direccion_residencia'] ?? null),
+                ':distrito'   => self::nullify($datos['distrito'] ?? null),
+                ':grado'      => self::nullify($datos['grado_militar'] ?? null),
+            ]);
+
+            $colabId = (int)$pdo->lastInsertId();
+
+            // LABORAL
+            $stmtLaboral = $pdo->prepare("
+            INSERT INTO colab_laboral (
+                colab_id, correo_institucional, situacion,
+                sueldo, modalidad_contrato, puesto_cas,
+                tipo_puesto, area, procedencia,
+                fecha_ingreso, fecha_cese
+            ) VALUES (
+                :id, :correo, :situacion,
+                :sueldo, :modalidad, :puesto,
+                :tipo, :area, :procedencia,
+                :ingreso, :cese
+            )
+        ");
+
+            $stmtLaboral->execute([
+                ':id'          => $colabId,
+                ':correo'      => self::nullify($datos['correo_institucional'] ?? null),
+                ':situacion'   => $datos['situacion'] ?? 'ACTIVO',
+                ':sueldo'      => ($datos['sueldo'] ?? '') !== '' ? $datos['sueldo'] : null,
+                ':modalidad'   => self::nullify($datos['modalidad_contrato'] ?? null),
+                ':puesto'      => self::nullify($datos['puesto_cas'] ?? null),
+                ':tipo'        => self::nullify($datos['tipo_puesto'] ?? null),
+                ':area'        => self::nullify($datos['area'] ?? null),
+                ':procedencia' => self::nullify($datos['procedencia'] ?? null),
+                ':ingreso'=> !empty($datos['fecha_ingreso']) ? $datos['fecha_ingreso'] : null,
+                ':cese'   => !empty($datos['fecha_cese']) ? $datos['fecha_cese'] : null,
+            ]);
+
+            // PENSIÓN (solo si hay datos)
+            if (!empty($datos['sistema_pension']) || !empty($datos['afp'])) {
+                $pdo->prepare("
+                INSERT INTO colab_pension (
+                    colab_id, sistema_pension, afp, cuspp,
+                    tipo_comision, fecha_inscripcion, sin_afp_afiliarme
+                ) VALUES (
+                    :id, :sistema, :afp, :cuspp,
+                    :tipo, :fecha, :flag
+                )
+            ")->execute([
+                    ':id'     => $colabId,
+                    ':sistema' => self::nullify($datos['sistema_pension'] ?? null),
+                    ':afp'    => self::nullify($datos['afp'] ?? null),
+                    ':cuspp'  => self::nullify($datos['cuspp'] ?? null),
+                    ':tipo'   => self::nullify($datos['tipo_comision'] ?? null),
+                    ':fecha'  => !empty($datos['fecha_inscripcion']) ? $datos['fecha_inscripcion'] : null,
+                    ':flag'   => isset($datos['sin_afp_afiliarme']) ? 1 : 0,
+                ]);
+            }
+
+            // BANCO (solo si hay datos)
+            if (!empty($datos['numero_cuenta']) || !empty($datos['banco_haberes'])) {
+                $pdo->prepare("
+                INSERT INTO colab_bancario (
+                    colab_id, banco_haberes, numero_cuenta, numero_cuenta_cci
+                ) VALUES (
+                    :id, :banco, :cuenta, :cci
+                )
+            ")->execute([
+                    ':id'     => $colabId,
+                    ':banco'  => self::nullify($datos['banco_haberes'] ?? null),
+                    ':cuenta' => self::nullify($datos['numero_cuenta'] ?? null),
+                    ':cci'    => self::nullify($datos['numero_cuenta_cci'] ?? null),
+                ]);
+            }
+
+            $pdo->commit();
+
+            return [
+                'success' => true,
+                'mensaje' => 'Colaborador registrado correctamente',
+                'id' => $colabId
+            ];
+        } catch (Throwable $e) {
+            if ($pdo->inTransaction()) {
+                $pdo->rollBack();
+            }
+
+            return [
+                'success' => false,
+                'mensaje' => 'Error al registrar colaborador: ' . $e->getMessage()
+            ];
+        }
     }
 }
