@@ -362,12 +362,24 @@ $totalEmpleados = count($empleados);
 
                             <div>
                                 <label class="text-xs font-bold text-slate-500">Estado civil</label>
-                                <input name="estado_civil" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                <select name="estado_civil"
+                                    class="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                    <option value="">Seleccionar</option>
+                                    <?php foreach (['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente'] as $opt): ?>
+                                        <option value="<?= $opt ?>"><?= $opt ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
 
                             <div>
                                 <label class="text-xs font-bold text-slate-500">Grupo sanguíneo</label>
-                                <input name="grupo_sanguineo" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                <select name="grupo_sanguineo"
+                                    class="mt-1 w-full rounded-2xl border border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                    <option value="">Seleccionar</option>
+                                    <?php foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $g): ?>
+                                        <option value="<?= $g ?>"><?= $g ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
 
                             <div>
@@ -474,12 +486,22 @@ $totalEmpleados = count($empleados);
                         <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                             <div>
                                 <label class="text-xs font-bold text-slate-500">Sistema pensión</label>
-                                <input name="sistema_pension" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                <select name="sistema_pension" class="field-input">
+                                    <option value="">Seleccionar</option>
+                                    <?php foreach (['CNP', 'D.L 20520', 'CAJA MILITAR', 'OTROS'] as $opt): ?>
+                                        <option value="<?= $opt ?>"><?= $opt ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
 
                             <div>
                                 <label class="text-xs font-bold text-slate-500">AFP</label>
-                                <input name="afp" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                <select name="afp" class="field-input">
+                                    <option value="">Seleccionar</option>
+                                    <?php foreach (['PRIMA', 'INTEGRA', 'PROFUTURO', 'HABITAT', 'OTRO'] as $opt): ?>
+                                        <option value="<?= $opt ?>"><?= $opt ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
 
                             <div>
@@ -489,7 +511,12 @@ $totalEmpleados = count($empleados);
 
                             <div>
                                 <label class="text-xs font-bold text-slate-500">Tipo comisión</label>
-                                <input name="tipo_comision" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
+                                <select name="tipo_comision" class="field-input">
+                                    <option value="">Seleccionar</option>
+                                    <?php foreach (['FLUJO', 'MIXTA', 'OTRO'] as $opt): ?>
+                                        <option value="<?= $opt ?>"><?= $opt ?></option>
+                                    <?php endforeach; ?>
+                                </select>
                             </div>
 
                             <div>
