@@ -84,139 +84,226 @@ if (!function_exists('formatearMesCortoDashboard')) {
 
         <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
 
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-red-200 transition-all group">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-[#4c0505] rounded-2xl shadow-lg shadow-red-900/20 group-hover:bg-red-800 transition-colors">
-                        <svg class="w-6 h-6 text-red-100" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
+            <!-- KPI 1 -->
+            <div class="relative overflow-hidden p-6 rounded-3xl shadow-xl bg-gradient-to-br from-[#5b0a0a] via-[#7A0C19] to-[#3a0404] text-white group hover:scale-[1.02] transition-all duration-300">
+
+                <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_right,_white,_transparent_60%)]"></div>
+
+                <div class="flex justify-between items-start mb-4 relative z-10">
+                    <div class="p-3 bg-white/10 backdrop-blur rounded-2xl border border-white/20 shadow-inner">
+                        <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"></path>
                         </svg>
                     </div>
-                    <span class="bg-green-100 text-green-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Actualizado</span>
+                    <span class="bg-white/10 border border-white/20 text-white text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider backdrop-blur">
+                        Actualizado
+                    </span>
                 </div>
-                <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">Total Colaboradores</h3>
-                <p class="text-3xl font-black text-slate-800 mt-1"><?= number_format($totalColaboradores) ?></p>
+
+                <h3 class="text-white/70 text-xs font-bold uppercase tracking-widest">
+                    Total Colaboradores
+                </h3>
+
+                <p class="text-4xl font-black mt-1 tracking-tight">
+                    <?= number_format($totalColaboradores) ?>
+                </p>
             </div>
 
-            <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-red-200 transition-all group cursor-pointer" onclick="window.location.href='<?= BASE_URL ?>/rrhh/validaciones'">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-orange-600 rounded-2xl shadow-lg shadow-orange-900/20 group-hover:bg-orange-500 transition-colors">
+            <!-- KPI 2 -->
+            <div onclick="window.location.href='<?= BASE_URL ?>/rrhh/validaciones'"
+                class="relative cursor-pointer overflow-hidden p-6 rounded-3xl shadow-xl bg-gradient-to-br from-[#7A0C19] via-[#a0142a] to-[#5b0a0a] text-white group hover:scale-[1.02] transition-all duration-300">
+
+                <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_top_left,_white,_transparent_60%)]"></div>
+
+                <div class="flex justify-between items-start mb-4 relative z-10">
+                    <div class="p-3 bg-white/10 backdrop-blur rounded-2xl border border-white/20">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"></path>
                         </svg>
                     </div>
-                    <span class="bg-orange-100 text-orange-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">Acción requerida</span>
+                    <span class="bg-amber-400/20 text-amber-200 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-amber-300/30">
+                        Acción requerida
+                    </span>
                 </div>
-                <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">Validaciones Pendientes</h3>
-                <p class="text-3xl font-black text-slate-800 mt-1"><?= number_format($validacionesPendientes) ?></p>
+
+                <h3 class="text-white/70 text-xs font-bold uppercase tracking-widest">
+                    Validaciones Pendientes
+                </h3>
+
+                <p class="text-4xl font-black mt-1 tracking-tight">
+                    <?= number_format($validacionesPendientes) ?>
+                </p>
             </div>
 
-            <div
-                class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm hover:border-red-200 transition-all group cursor-pointer"
-                onclick="window.location.href='<?= BASE_URL ?>/rrhh/contratos'">
-                <div class="flex justify-between items-start mb-4">
-                    <div class="p-3 bg-red-700 rounded-2xl shadow-lg shadow-red-900/20 group-hover:bg-red-600 transition-colors">
+            <!-- KPI 3 -->
+            <div onclick="window.location.href='<?= BASE_URL ?>/rrhh/contratos'"
+                class="relative cursor-pointer overflow-hidden p-6 rounded-3xl shadow-xl bg-gradient-to-br from-[#3a0404] via-[#7A0C19] to-[#2a0202] text-white group hover:scale-[1.02] transition-all duration-300">
+
+                <div class="absolute inset-0 opacity-10 bg-[radial-gradient(circle_at_bottom_right,_white,_transparent_60%)]"></div>
+
+                <div class="flex justify-between items-start mb-4 relative z-10">
+                    <div class="p-3 bg-white/10 backdrop-blur rounded-2xl border border-white/20">
                         <svg class="w-6 h-6 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
                         </svg>
                     </div>
-                    <span class="bg-red-100 text-red-700 text-[10px] font-bold px-2 py-1 rounded-full uppercase tracking-wider">
+
+                    <span class="bg-red-400/20 text-red-200 text-[10px] font-bold px-3 py-1 rounded-full uppercase tracking-wider border border-red-300/30">
                         Próximos 30 días
                     </span>
                 </div>
 
-                <h3 class="text-slate-400 text-xs font-bold uppercase tracking-widest">
+                <h3 class="text-white/70 text-xs font-bold uppercase tracking-widest">
                     Contratos por Vencer
                 </h3>
 
-                <p class="text-3xl font-black text-slate-800 mt-1">
+                <p class="text-4xl font-black mt-1 tracking-tight">
                     <?= number_format($contratosPorVencer) ?>
                 </p>
             </div>
 
         </div>
 
-        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-            <div class="lg:col-span-2 space-y-8">
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-lg font-bold text-slate-800">Distribución por Modalidad</h2>
-                        <button class="text-red-800 text-sm font-bold hover:text-red-600 transition">Ver reporte completo</button>
-                    </div>
+    <!-- =======================
+        MODALIDADES (PREMIUM)
+    ======================= -->
+    <div class="lg:col-span-2">
+        <div class="relative overflow-hidden p-6 rounded-3xl shadow-xl border border-white/40 bg-white/70 backdrop-blur-xl">
 
-                    <div class="space-y-6">
-                        <?php if (!empty($modalidades)): ?>
-                            <?php foreach ($modalidades as $index => $modalidad): ?>
-                                <?php
-                                $nombre = trim((string)($modalidad['modalidad'] ?? ''));
-                                $nombre = $nombre !== '' ? $nombre : 'SIN MODALIDAD';
+            <!-- glow -->
+            <div class="absolute -top-20 -right-20 w-64 h-64 bg-[#7A0C19]/10 rounded-full blur-3xl"></div>
 
-                                $total = (int)($modalidad['total'] ?? 0);
-                                $porcentaje = $totalModalidades > 0 ? round(($total / $totalModalidades) * 100, 2) : 0;
-
-                                if ($index === 0) {
-                                    $textoColor = 'text-red-800';
-                                    $barraColor = 'bg-[#600505]';
-                                } elseif ($index === 1) {
-                                    $textoColor = 'text-red-500';
-                                    $barraColor = 'bg-red-400';
-                                } else {
-                                    $textoColor = 'text-slate-600';
-                                    $barraColor = 'bg-slate-400';
-                                }
-                                ?>
-                                <div>
-                                    <div class="flex justify-between text-sm font-medium mb-2">
-                                        <span class="text-slate-700"><?= htmlspecialchars($nombre) ?></span>
-                                        <span class="<?= $textoColor ?> font-bold"><?= number_format($total) ?> Colaboradores</span>
-                                    </div>
-                                    <div class="w-full bg-slate-100 rounded-full h-3">
-                                        <div class="<?= $barraColor ?> h-3 rounded-full" style="width: <?= $porcentaje ?>%"></div>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <div class="text-sm text-slate-500">No hay datos de modalidad disponibles.</div>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-
-            <div class="space-y-8">
-                <div class="bg-white p-6 rounded-3xl border border-slate-200 shadow-sm">
-                    <h2 class="text-lg font-bold text-slate-800 mb-6 flex items-center">
-                        <span class="text-2xl mr-2">🎂</span> Próximos Cumpleaños
+            <div class="flex justify-between items-center mb-8 relative z-10">
+                <div>
+                    <h2 class="text-xl font-black text-slate-800 tracking-tight">
+                        Distribución por Modalidad
                     </h2>
-
-                    <div class="space-y-4">
-                        <?php if (!empty($cumpleanos)): ?>
-                            <?php foreach ($cumpleanos as $cumple): ?>
-                                <?php
-                                $fecha  = $cumple['fecha_nacimiento'] ?? null;
-                                $mes    = formatearMesCortoDashboard($fecha);
-                                $dia    = (!empty($fecha) && strtotime($fecha)) ? date('d', strtotime($fecha)) : '--';
-                                $nombre = trim((string)($cumple['nombre'] ?? 'Sin nombre'));
-                                $detalle = trim((string)($cumple['detalle'] ?? 'Cumpleaños registrado'));
-                                ?>
-                                <div class="flex items-center p-3 bg-slate-50 rounded-xl border border-slate-100">
-                                    <div class="w-12 h-12 bg-slate-200 text-slate-600 rounded-xl flex flex-col items-center justify-center font-bold">
-                                        <span class="text-[10px] uppercase"><?= htmlspecialchars($mes) ?></span>
-                                        <span class="text-lg leading-none"><?= htmlspecialchars($dia) ?></span>
-                                    </div>
-                                    <div class="ml-4 min-w-0">
-                                        <p class="font-bold text-slate-800 text-sm truncate"><?= htmlspecialchars($nombre) ?></p>
-                                        <p class="text-xs text-slate-500 truncate"><?= htmlspecialchars($detalle) ?></p>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php else: ?>
-                            <div class="text-sm text-slate-500">No hay cumpleaños próximos registrados.</div>
-                        <?php endif; ?>
-                    </div>
+                    <p class="text-xs text-slate-500">Composición actual del personal</p>
                 </div>
             </div>
 
+            <div class="space-y-6 relative z-10">
+
+                <?php if (!empty($modalidades)): ?>
+                    <?php foreach ($modalidades as $index => $modalidad): ?>
+
+                        <?php
+                        $nombre = trim((string)($modalidad['modalidad'] ?? ''));
+                        $nombre = $nombre !== '' ? $nombre : 'SIN MODALIDAD';
+
+                        $total = (int)($modalidad['total'] ?? 0);
+                        $porcentaje = $totalModalidades > 0 ? round(($total / $totalModalidades) * 100, 1) : 0;
+
+                        // paleta premium guinda
+                        $colores = [
+                            ['text' => 'text-[#7A0C19]', 'bg' => 'bg-gradient-to-r from-[#7A0C19] to-[#a0142a]'],
+                            ['text' => 'text-red-500', 'bg' => 'bg-gradient-to-r from-red-400 to-red-600'],
+                            ['text' => 'text-slate-500', 'bg' => 'bg-gradient-to-r from-slate-300 to-slate-400'],
+                        ];
+
+                        $c = $colores[$index] ?? $colores[2];
+                        ?>
+
+                        <div class="group">
+
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="text-sm font-semibold text-slate-700">
+                                    <?= htmlspecialchars($nombre) ?>
+                                </span>
+
+                                <div class="text-right">
+                                    <span class="<?= $c['text'] ?> font-black text-sm">
+                                        <?= number_format($total) ?>
+                                    </span>
+                                    <span class="text-xs text-slate-400 ml-1">
+                                        (<?= $porcentaje ?>%)
+                                    </span>
+                                </div>
+                            </div>
+
+                            <!-- barra -->
+                            <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                                <div class="<?= $c['bg'] ?> h-3 rounded-full shadow-md group-hover:brightness-110 transition-all duration-300"
+                                     style="width: <?= $porcentaje ?>%">
+                                </div>
+                            </div>
+
+                        </div>
+
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="text-sm text-slate-500">No hay datos disponibles.</div>
+                <?php endif; ?>
+
+            </div>
         </div>
+    </div>
+
+
+    <!-- =======================
+        CUMPLEAÑOS (PREMIUM)
+    ======================= -->
+    <div>
+        <div class="relative overflow-hidden p-6 rounded-3xl shadow-xl border border-white/40 bg-white/70 backdrop-blur-xl">
+
+            <!-- glow -->
+            <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-[#7A0C19]/10 rounded-full blur-3xl"></div>
+
+            <h2 class="text-xl font-black text-slate-800 mb-6 flex items-center">
+                <span class="mr-2 text-2xl">🎂</span>
+                Próximos Cumpleaños
+            </h2>
+
+            <div class="space-y-4">
+
+                <?php if (!empty($cumpleanos)): ?>
+                    <?php foreach ($cumpleanos as $cumple): ?>
+
+                        <?php
+                        $fecha  = $cumple['fecha_nacimiento'] ?? null;
+                        $mes    = formatearMesCortoDashboard($fecha);
+                        $dia    = (!empty($fecha) && strtotime($fecha)) ? date('d', strtotime($fecha)) : '--';
+                        $nombre = trim((string)($cumple['nombre'] ?? 'Sin nombre'));
+                        $detalle = trim((string)($cumple['detalle'] ?? 'Cumpleaños registrado'));
+                        ?>
+
+                        <div class="flex items-center p-3 rounded-2xl bg-white/80 border border-slate-100 shadow-sm hover:shadow-md transition">
+
+                            <!-- fecha -->
+                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#7A0C19] to-[#a0142a] text-white flex flex-col items-center justify-center font-bold shadow-lg">
+                                <span class="text-[10px] uppercase"><?= htmlspecialchars($mes) ?></span>
+                                <span class="text-lg leading-none"><?= htmlspecialchars($dia) ?></span>
+                            </div>
+
+                            <!-- info -->
+                            <div class="ml-4 min-w-0">
+                                <p class="font-bold text-slate-800 text-sm truncate">
+                                    <?= htmlspecialchars($nombre) ?>
+                                </p>
+                                <p class="text-xs text-slate-500 truncate">
+                                    <?= htmlspecialchars($detalle) ?>
+                                </p>
+                            </div>
+
+                            <!-- badge -->
+                            <div class="ml-auto text-[10px] px-2 py-1 rounded-full bg-[#7A0C19]/10 text-[#7A0C19] font-bold">
+                                Próximo
+                            </div>
+
+                        </div>
+
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <div class="text-sm text-slate-500">No hay cumpleaños registrados.</div>
+                <?php endif; ?>
+
+            </div>
+        </div>
+    </div>
+
+</div>
     </div>
 </main>
 
