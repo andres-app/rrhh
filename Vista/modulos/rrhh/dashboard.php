@@ -164,146 +164,146 @@ if (!function_exists('formatearMesCortoDashboard')) {
 
         </div>
 
-<div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-    <!-- =======================
+            <!-- =======================
         MODALIDADES (PREMIUM)
     ======================= -->
-    <div class="lg:col-span-2">
-        <div class="relative overflow-hidden p-6 rounded-3xl shadow-xl border border-white/40 bg-white/70 backdrop-blur-xl">
+            <div class="lg:col-span-2">
+                <div class="relative overflow-hidden p-6 rounded-3xl shadow-xl border border-white/40 bg-white/70 backdrop-blur-xl">
 
-            <!-- glow -->
-            <div class="absolute -top-20 -right-20 w-64 h-64 bg-[#7A0C19]/10 rounded-full blur-3xl"></div>
+                    <!-- glow -->
+                    <div class="absolute -top-20 -right-20 w-64 h-64 bg-[#7A0C19]/10 rounded-full blur-3xl"></div>
 
-            <div class="flex justify-between items-center mb-8 relative z-10">
-                <div>
-                    <h2 class="text-xl font-black text-slate-800 tracking-tight">
-                        Distribución por Modalidad
-                    </h2>
-                    <p class="text-xs text-slate-500">Composición actual del personal</p>
+                    <div class="flex justify-between items-center mb-8 relative z-10">
+                        <div>
+                            <h2 class="text-xl font-black text-slate-800 tracking-tight">
+                                Distribución por Modalidad
+                            </h2>
+                            <p class="text-xs text-slate-500">Composición actual del personal</p>
+                        </div>
+                    </div>
+
+                    <div class="space-y-6 relative z-10">
+
+                        <?php if (!empty($modalidades)): ?>
+                            <?php foreach ($modalidades as $index => $modalidad): ?>
+
+                                <?php
+                                $nombre = trim((string)($modalidad['modalidad'] ?? ''));
+                                $nombre = $nombre !== '' ? $nombre : 'SIN MODALIDAD';
+
+                                $total = (int)($modalidad['total'] ?? 0);
+                                $porcentaje = $totalModalidades > 0 ? round(($total / $totalModalidades) * 100, 1) : 0;
+
+                                // paleta premium guinda
+                                $colores = [
+                                    ['text' => 'text-[#7A0C19]', 'bg' => 'bg-gradient-to-r from-[#7A0C19] to-[#a0142a]'],
+                                    ['text' => 'text-red-500', 'bg' => 'bg-gradient-to-r from-red-400 to-red-600'],
+                                    ['text' => 'text-slate-500', 'bg' => 'bg-gradient-to-r from-slate-300 to-slate-400'],
+                                ];
+
+                                $c = $colores[$index] ?? $colores[2];
+                                ?>
+
+                                <div class="group">
+
+                                    <div class="flex justify-between items-center mb-2">
+                                        <span class="text-sm font-semibold text-slate-700">
+                                            <?= htmlspecialchars($nombre) ?>
+                                        </span>
+
+                                        <div class="text-right">
+                                            <span class="<?= $c['text'] ?> font-black text-sm">
+                                                <?= number_format($total) ?>
+                                            </span>
+                                            <span class="text-xs text-slate-400 ml-1">
+                                                (<?= $porcentaje ?>%)
+                                            </span>
+                                        </div>
+                                    </div>
+
+                                    <!-- barra -->
+                                    <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
+                                        <div class="<?= $c['bg'] ?> h-3 rounded-full shadow-md group-hover:brightness-110 transition-all duration-300"
+                                            style="width: <?= $porcentaje ?>%">
+                                        </div>
+                                    </div>
+
+                                </div>
+
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="text-sm text-slate-500">No hay datos disponibles.</div>
+                        <?php endif; ?>
+
+                    </div>
                 </div>
             </div>
 
-            <div class="space-y-6 relative z-10">
 
-                <?php if (!empty($modalidades)): ?>
-                    <?php foreach ($modalidades as $index => $modalidad): ?>
-
-                        <?php
-                        $nombre = trim((string)($modalidad['modalidad'] ?? ''));
-                        $nombre = $nombre !== '' ? $nombre : 'SIN MODALIDAD';
-
-                        $total = (int)($modalidad['total'] ?? 0);
-                        $porcentaje = $totalModalidades > 0 ? round(($total / $totalModalidades) * 100, 1) : 0;
-
-                        // paleta premium guinda
-                        $colores = [
-                            ['text' => 'text-[#7A0C19]', 'bg' => 'bg-gradient-to-r from-[#7A0C19] to-[#a0142a]'],
-                            ['text' => 'text-red-500', 'bg' => 'bg-gradient-to-r from-red-400 to-red-600'],
-                            ['text' => 'text-slate-500', 'bg' => 'bg-gradient-to-r from-slate-300 to-slate-400'],
-                        ];
-
-                        $c = $colores[$index] ?? $colores[2];
-                        ?>
-
-                        <div class="group">
-
-                            <div class="flex justify-between items-center mb-2">
-                                <span class="text-sm font-semibold text-slate-700">
-                                    <?= htmlspecialchars($nombre) ?>
-                                </span>
-
-                                <div class="text-right">
-                                    <span class="<?= $c['text'] ?> font-black text-sm">
-                                        <?= number_format($total) ?>
-                                    </span>
-                                    <span class="text-xs text-slate-400 ml-1">
-                                        (<?= $porcentaje ?>%)
-                                    </span>
-                                </div>
-                            </div>
-
-                            <!-- barra -->
-                            <div class="w-full h-3 bg-slate-100 rounded-full overflow-hidden">
-                                <div class="<?= $c['bg'] ?> h-3 rounded-full shadow-md group-hover:brightness-110 transition-all duration-300"
-                                     style="width: <?= $porcentaje ?>%">
-                                </div>
-                            </div>
-
-                        </div>
-
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="text-sm text-slate-500">No hay datos disponibles.</div>
-                <?php endif; ?>
-
-            </div>
-        </div>
-    </div>
-
-
-    <!-- =======================
+            <!-- =======================
         CUMPLEAÑOS (PREMIUM)
     ======================= -->
-    <div>
-        <div class="relative overflow-hidden p-6 rounded-3xl shadow-xl border border-white/40 bg-white/70 backdrop-blur-xl">
+            <div>
+                <div class="relative overflow-hidden p-6 rounded-3xl shadow-xl border border-white/40 bg-white/70 backdrop-blur-xl">
 
-            <!-- glow -->
-            <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-[#7A0C19]/10 rounded-full blur-3xl"></div>
+                    <!-- glow -->
+                    <div class="absolute -bottom-20 -left-20 w-64 h-64 bg-[#7A0C19]/10 rounded-full blur-3xl"></div>
 
-            <h2 class="text-xl font-black text-slate-800 mb-6 flex items-center">
-                <span class="mr-2 text-2xl">🎂</span>
-                Próximos Cumpleaños
-            </h2>
+                    <h2 class="text-xl font-black text-slate-800 mb-6 flex items-center">
+                        <span class="mr-2 text-2xl">🎂</span>
+                        Próximos Cumpleaños
+                    </h2>
 
-            <div class="space-y-4">
+                    <div class="space-y-4">
 
-                <?php if (!empty($cumpleanos)): ?>
-                    <?php foreach ($cumpleanos as $cumple): ?>
+                        <?php if (!empty($cumpleanos)): ?>
+                            <?php foreach ($cumpleanos as $cumple): ?>
 
-                        <?php
-                        $fecha  = $cumple['fecha_nacimiento'] ?? null;
-                        $mes    = formatearMesCortoDashboard($fecha);
-                        $dia    = (!empty($fecha) && strtotime($fecha)) ? date('d', strtotime($fecha)) : '--';
-                        $nombre = trim((string)($cumple['nombre'] ?? 'Sin nombre'));
-                        $detalle = trim((string)($cumple['detalle'] ?? 'Cumpleaños registrado'));
-                        ?>
+                                <?php
+                                $fecha  = $cumple['fecha_nacimiento'] ?? null;
+                                $mes    = formatearMesCortoDashboard($fecha);
+                                $dia    = (!empty($fecha) && strtotime($fecha)) ? date('d', strtotime($fecha)) : '--';
+                                $nombre = trim((string)($cumple['nombre'] ?? 'Sin nombre'));
+                                $detalle = trim((string)($cumple['detalle'] ?? 'Cumpleaños registrado'));
+                                ?>
 
-                        <div class="flex items-center p-3 rounded-2xl bg-white/80 border border-slate-100 shadow-sm hover:shadow-md transition">
+                                <div class="flex items-center p-3 rounded-2xl bg-white/80 border border-slate-100 shadow-sm hover:shadow-md transition">
 
-                            <!-- fecha -->
-                            <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#7A0C19] to-[#a0142a] text-white flex flex-col items-center justify-center font-bold shadow-lg">
-                                <span class="text-[10px] uppercase"><?= htmlspecialchars($mes) ?></span>
-                                <span class="text-lg leading-none"><?= htmlspecialchars($dia) ?></span>
-                            </div>
+                                    <!-- fecha -->
+                                    <div class="w-12 h-12 rounded-xl bg-gradient-to-br from-[#7A0C19] to-[#a0142a] text-white flex flex-col items-center justify-center font-bold shadow-lg">
+                                        <span class="text-[10px] uppercase"><?= htmlspecialchars($mes) ?></span>
+                                        <span class="text-lg leading-none"><?= htmlspecialchars($dia) ?></span>
+                                    </div>
 
-                            <!-- info -->
-                            <div class="ml-4 min-w-0">
-                                <p class="font-bold text-slate-800 text-sm truncate">
-                                    <?= htmlspecialchars($nombre) ?>
-                                </p>
-                                <p class="text-xs text-slate-500 truncate">
-                                    <?= htmlspecialchars($detalle) ?>
-                                </p>
-                            </div>
+                                    <!-- info -->
+                                    <div class="ml-4 min-w-0">
+                                        <p class="font-bold text-slate-800 text-sm truncate">
+                                            <?= htmlspecialchars($nombre) ?>
+                                        </p>
+                                        <p class="text-xs text-slate-500 truncate">
+                                            <?= htmlspecialchars($detalle) ?>
+                                        </p>
+                                    </div>
 
-                            <!-- badge -->
-                            <div class="ml-auto text-[10px] px-2 py-1 rounded-full bg-[#7A0C19]/10 text-[#7A0C19] font-bold">
-                                Próximo
-                            </div>
+                                    <!-- badge -->
+                                    <div class="ml-auto text-[10px] px-2 py-1 rounded-full bg-[#7A0C19]/10 text-[#7A0C19] font-bold">
+                                        Próximo
+                                    </div>
 
-                        </div>
+                                </div>
 
-                    <?php endforeach; ?>
-                <?php else: ?>
-                    <div class="text-sm text-slate-500">No hay cumpleaños registrados.</div>
-                <?php endif; ?>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <div class="text-sm text-slate-500">No hay cumpleaños registrados.</div>
+                        <?php endif; ?>
 
+                    </div>
+                </div>
             </div>
-        </div>
-    </div>
 
-</div>
+        </div>
     </div>
 </main>
 

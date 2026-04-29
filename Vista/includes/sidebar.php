@@ -7,227 +7,191 @@ function tieneAcceso($modulo)
     $rol = strtolower(trim($_SESSION['user_role']));
     $modulo = strtolower(trim($modulo));
 
-    // Regla especial:
-    // "Mis validaciones" SOLO debe verlo colaborador
     if ($modulo === 'misvalidaciones' && $rol !== 'colaborador') {
         return false;
     }
 
-    // Superadmin tiene acceso general, excepto reglas especiales arriba
     if ($rol === 'superadmin') return true;
 
-    // Consultamos permisos reales
     $permisos = check_access($modulo, $_SESSION['user_role']);
     return !empty($permisos['can_view']);
 }
 
-// Pre-calculamos accesos para no repetir llamadas
+// Accesos
 $accesoRRHH = tieneAcceso('rrhh');
 $accesoConfig = tieneAcceso('configuracion');
 $accesoPerfil = tieneAcceso('perfil');
 $accesoDocs = tieneAcceso('documentos');
 $accesoMisValidaciones = tieneAcceso('misvalidaciones');
 $accesoContratos = tieneAcceso('contratos');
+
+// COMPONENTE ITEM PREMIUM
+function itemSidebar($ruta, $icono, $texto, $activo)
+{
+    $base = "flex items-center gap-3 px-4 py-3 mx-3 rounded-2xl transition-all duration-200 group";
+
+    $estado = $activo
+        ? "bg-gradient-to-r from-[#7A0C19] to-[#a0142a] text-white shadow-lg shadow-red-900/30"
+        : "text-red-100/70 hover:bg-white/10 backdrop-blur-sm shadow-inner hover:text-white";
+
+    return "
+    <a href='{$ruta}' class='{$base} {$estado}'>
+        <div class='w-9 h-9 flex items-center justify-center rounded-xl bg-white/10 backdrop-blur-sm shadow-inner group-hover:bg-white/10 transition'>
+            {$icono}
+        </div>
+        <span class='text-sm font-semibold tracking-wide'>{$texto}</span>
+    </a>";
+}
 ?>
 
-<div class="md:hidden flex items-center justify-between bg-[#1a0505] p-4 shrink-0 z-20 border-b border-red-950/50">
+<!-- MOBILE HEADER -->
+<div class="md:hidden flex items-center justify-between bg-gradient-to-r from-[#1a0505] to-[#0d0202] p-4 border-b border-red-950/50">
     <div class="flex items-center">
-        <div class="w-8 h-8 bg-red-800 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-red-900/40">
-            <span class="text-white font-bold text-xl leading-none">P</span>
+        <div class="w-10 h-10 bg-gradient-to-br from-[#7A0C19] to-[#a0142a] rounded-xl flex items-center justify-center shadow-lg">
+            <span class="text-white font-bold text-lg">P</span>
         </div>
-        <span class="text-xl font-bold text-white tracking-wide">RRHH<span class="text-red-400">Panel</span></span>
+        <span class="ml-3 text-lg font-bold text-white">RRHH<span class="text-red-400">Panel</span></span>
     </div>
-    <button id="btn-menu" class="text-red-200 hover:text-white focus:outline-none">
-        <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16"></path>
-        </svg>
+    <button id="btn-menu" class="text-white">
+        ☰
     </button>
 </div>
 
-<div id="sidebar-overlay" class="fixed inset-0 bg-black/60 z-30 hidden backdrop-blur-sm transition-opacity opacity-0"></div>
+<div id="sidebar-overlay" class="fixed inset-0 bg-black/60 hidden z-30"></div>
 
-<aside id="sidebar" class="w-64 bg-[#1a0505] text-red-100/70 flex flex-col z-40 border-r border-red-950 shadow-xl fixed inset-y-0 left-0 transform -translate-x-full md:relative md:translate-x-0 transition-transform duration-300 ease-in-out h-full">
+<aside id="sidebar"
+    class="w-64 bg-gradient-to-b from-[#1a0505] via-[#140303] to-[#0d0202] text-white flex flex-col fixed md:relative h-full z-40 transform -translate-x-full md:translate-x-0 transition">
 
-    <div class="h-20 flex items-center justify-between px-6 border-b border-red-950 shrink-0">
-        <div class="flex items-center">
-            <div class="w-8 h-8 bg-red-800 rounded-lg flex items-center justify-center mr-3 shadow-lg shadow-red-900/50">
-                <span class="text-white font-bold text-xl leading-none">P</span>
-            </div>
-            <span class="text-xl font-bold text-white tracking-wide">RRHH<span class="text-red-500">Panel</span></span>
+    <!-- HEADER -->
+    <div class="h-20 flex items-center px-6 border-b border-white/5">
+        <div class="w-10 h-10 bg-gradient-to-br from-[#7A0C19] to-[#a0142a] rounded-xl flex items-center justify-center shadow-lg">
+            <span class="text-white font-bold">P</span>
         </div>
-        <button id="btn-close-menu" class="md:hidden text-red-300 hover:text-white">
-            <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
-            </svg>
-        </button>
+        <span class="ml-3 text-lg font-bold">RRHH<span class="text-red-400">Panel</span></span>
     </div>
 
+    <!-- NAV -->
     <nav class="flex-1 overflow-y-auto py-6 custom-scrollbar">
 
+        <!-- MI ESPACIO -->
         <?php if ($accesoPerfil || $accesoDocs || $accesoMisValidaciones): ?>
-            <div class="px-6 mb-2 text-[10px] font-bold text-red-400/50 uppercase tracking-widest">Mi Espacio</div>
+            <div class="text-[10px] font-bold text-white/30 uppercase tracking-widest px-6 mb-3">
+                Mi Espacio
+            </div>
 
             <?php if ($accesoPerfil): ?>
-                <a href="<?= BASE_URL ?>/perfil" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'perfil') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"></path>
-                    </svg>
-                    <span class="font-medium text-sm">Mi Perfil</span>
-                </a>
+                <?= itemSidebar(BASE_URL . "/perfil",
+                    '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"> <path d="M12 12c2.7 0 5-2.69 5-6s-2.3-6-5-6-5 2.69-5 6 2.3 6 5 6zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z"/> </svg>',
+                    "Mi Perfil",
+                    $menu_activo == 'perfil'
+                ) ?>
             <?php endif; ?>
 
             <?php if ($accesoMisValidaciones): ?>
-                <a href="<?= BASE_URL ?>/misvalidaciones" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'misvalidaciones') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m5 2a8 8 0 11-16 0 8 8 0 0116 0z"></path>
-                    </svg>
-                    <span class="font-medium text-sm">Mis Validaciones</span>
-                </a>
+                <?= itemSidebar(BASE_URL . "/misvalidaciones",
+                    '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"> <path d="M9 12l2 2 4-4m1-7H8a2 2 0 00-2 2v14l6-3 6 3V5a2 2 0 00-2-2z"/> </svg>',
+                    "Mis Validaciones",
+                    $menu_activo == 'misvalidaciones'
+                ) ?>
             <?php endif; ?>
 
             <?php if ($accesoDocs): ?>
-                <a href="<?= BASE_URL ?>/documentos" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'documentos') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-                    <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"></path>
-                    </svg>
-                    <span class="font-medium text-sm">Mis Documentos</span>
-                </a>
+                <?= itemSidebar(BASE_URL . "/documentos",
+                    '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"> <path d="M14 2H6a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2V8l-6-6z"/> </svg>',
+                    "Documentos",
+                    $menu_activo == 'documentos'
+                ) ?>
             <?php endif; ?>
         <?php endif; ?>
 
+
+        <!-- ADMIN -->
         <?php if ($accesoRRHH || $accesoContratos): ?>
-            <div class="px-6 mt-8 mb-2 text-[10px] font-bold text-red-400/50 uppercase tracking-widest">Administración</div>
+            <div class="text-[10px] font-bold text-white/30 uppercase tracking-widest px-6 mt-8 mb-3">
+                Administración
+            </div>
 
-            <a href="<?= BASE_URL ?>/rrhh/dashboard" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'dashboard') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M4 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2V6zM14 6a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2h-2a2 2 0 01-2-2V6zM4 16a2 2 0 012-2h2a2 2 0 012 2v2a2 2 0 01-2 2H6a2 2 0 01-2-2v-2zM14 16a2 2 0 012-2h2a2 2 0 012 2v10a2 2 0 01-2 2h-2a2 2 0 01-2-2v-10z"></path>
-                </svg>
-                <span class="font-medium text-sm">Dashboard</span>
-            </a>
+            <?= itemSidebar(BASE_URL . "/rrhh/dashboard",
+                '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"> <path d="M3 13h8V3H3v10zm10 8h8V3h-8v18zM3 21h8v-6H3v6z"/> </svg>',
+                "Dashboard",
+                $menu_activo == 'dashboard'
+            ) ?>
 
-            <a href="<?= BASE_URL ?>/rrhh/validaciones" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'validaciones') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"></path>
-                </svg>
-                <span class="font-medium text-sm flex-1">Validaciones</span>
-            </a>
+            <?= itemSidebar(BASE_URL . "/rrhh/validaciones",
+                '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"> <path d="M9 12l2 2 4-4m1-7H8a2 2 0 00-2 2v14l6-3 6 3V5a2 2 0 00-2-2z"/> </svg>',
+                "Validaciones",
+                $menu_activo == 'validaciones'
+            ) ?>
 
-            <a href="<?= BASE_URL ?>/rrhh/directorio" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'directorio') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"></path>
-                </svg>
-                <span class="font-medium text-sm">Directorio</span>
-            </a>
+            <?= itemSidebar(BASE_URL . "/rrhh/directorio",
+                '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"> <path d="M16 11c1.657 0 3-1.79 3-4s-1.343-4-3-4-3 1.79-3 4 1.343 4 3 4zM8 11c1.657 0 3-1.79 3-4S9.657 3 8 3 5 4.79 5 7s1.343 4 3 4zm0 2c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm8 0c-.29 0-.62.02-.97.05 1.37.98 2.97 2.44 2.97 3.95v3h6v-3c0-2.66-5.33-4-8-4z"/> </svg>',
+                "Directorio",
+                $menu_activo == 'directorio'
+            ) ?>
         <?php endif; ?>
 
         <?php if ($accesoContratos): ?>
-            <a href="<?= BASE_URL ?>/rrhh/contratos"
-                class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'contratos') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M9 12h6m-6 4h6M7 4h7l5 5v11a2 2 0 01-2 2H7a2 2 0 01-2-2V6a2 2 0 012-2z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5"
-                        d="M14 4v5h5"></path>
-                </svg>
-                <span class="font-medium text-sm">Contratos</span>
-            </a>
+            <?= itemSidebar(BASE_URL . "/rrhh/contratos",
+                '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"> <path d="M6 2a2 2 0 00-2 2v16l4-2 4 2 4-2 4 2V4a2 2 0 00-2-2H6z"/> </svg>',
+                "Contratos",
+                $menu_activo == 'contratos'
+            ) ?>
         <?php endif; ?>
 
+        <!-- CONFIG -->
         <?php if ($accesoConfig): ?>
-            <div class="px-6 mt-8 mb-2 text-[10px] font-bold text-red-400/50 uppercase tracking-widest">Configuración</div>
-            <a href="<?= BASE_URL ?>/configuracion" class="flex items-center px-6 py-3 transition-all duration-200 <?= ($menu_activo == 'configuracion') ? 'bg-red-900/30 text-red-400 border-l-4 border-red-600' : 'hover:bg-red-900/20 hover:text-white border-l-4 border-transparent' ?>">
-                <svg class="w-5 h-5 mr-3" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"></path>
-                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"></path>
-                </svg>
-                <span class="font-medium text-sm">Permisos</span>
-            </a>
+            <div class="text-[10px] font-bold text-white/30 uppercase tracking-widest px-6 mt-8 mb-3">
+                Configuración
+            </div>
+
+            <?= itemSidebar(BASE_URL . "/configuracion",
+                '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"> <path d="M19.14 12.94a7.49 7.49 0 000-1.88l2.03-1.58a.5.5 0 00.12-.65l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.28 7.28 0 00-1.63-.94l-.36-2.54A.5.5 0 0013.9 1h-3.8a.5.5 0 00-.5.42l-.36 2.54c-.58.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 00-.6.22L2.7 7.48a.5.5 0 00.12.65l2.03 1.58a7.49 7.49 0 000 1.88L2.82 13.17a.5.5 0 00-.12.65l1.92 3.32c.14.24.43.34.68.22l2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54c.04.24.25.42.5.42h3.8c.25 0 .46-.18.5-.42l.36-2.54c.58-.23 1.13-.54 1.63-.94l2.39.96c.25.12.54.02.68-.22l1.92-3.32a.5.5 0 00-.12-.65l-2.03-1.58zM12 15a3 3 0 110-6 3 3 0 010 6z"/> </svg>',
+                "Permisos",
+                $menu_activo == 'configuracion'
+            ) ?>
         <?php endif; ?>
 
     </nav>
 
-    <a href="<?= BASE_URL ?>/logout" class="flex items-center p-2 rounded-xl hover:bg-red-900/30 transition cursor-pointer group">
-        <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['username'] ?? 'Usuario') ?>&background=880808&color=fff"
-            class="w-9 h-9 rounded-full shadow-md border border-red-900 group-hover:border-red-500 transition-colors">
+    <!-- USER -->
+    <a href="<?= BASE_URL ?>/logout" class="mx-3 mb-4 p-3 rounded-2xl bg-white/10 backdrop-blur-sm shadow-inner hover:bg-white/10 transition flex items-center gap-3">
 
-        <div class="ml-3 overflow-hidden flex-1">
-            <p class="text-sm font-bold text-white truncate">
-                <?= $_SESSION['nombre_completo'] ?>
-            </p>
-            <p class="text-[10px] text-red-400/60 uppercase font-medium">
-                <?= $_SESSION['user_role'] ?>
-            </p>
-            <span class="text-xs text-red-400/70 hover:text-red-400 transition block">
-                Cerrar sesión
-            </span>
+        <img src="https://ui-avatars.com/api/?name=<?= urlencode($_SESSION['username'] ?? 'Usuario') ?>&background=7A0C19&color=fff"
+            class="w-10 h-10 rounded-xl">
+
+        <div class="flex-1 overflow-hidden">
+            <p class="text-sm font-bold truncate"><?= $_SESSION['nombre_completo'] ?></p>
+            <p class="text-[10px] text-white/40 uppercase"><?= $_SESSION['user_role'] ?></p>
         </div>
 
-        <svg class="w-4 h-4 text-red-700 group-hover:text-red-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"></path>
-        </svg>
+        <span class="text-white/40">→</span>
     </a>
+
 </aside>
 
 <style>
-    /* Ocultar scrollbar para Chrome, Safari y Opera */
-    .custom-scrollbar::-webkit-scrollbar {
-        display: none;
-    }
-
-    /* Ocultar scrollbar para IE, Edge y Firefox */
-    .custom-scrollbar {
-        -ms-overflow-style: none;
-        /* IE and Edge */
-        scrollbar-width: none;
-        /* Firefox */
-    }
+.custom-scrollbar::-webkit-scrollbar { display: none; }
+.custom-scrollbar { scrollbar-width: none; }
 </style>
 
 <script>
-    // Usamos una función autoejecutable para que no choque con otras variables de tu sistema
-    (function() {
-        function iniciarMenu() {
-            const btnMenu = document.getElementById("btn-menu");
-            const btnCloseMenu = document.getElementById("btn-close-menu");
-            const sidebar = document.getElementById("sidebar");
-            const overlay = document.getElementById("sidebar-overlay");
+(function(){
+    const btnMenu = document.getElementById("btn-menu");
+    const sidebar = document.getElementById("sidebar");
+    const overlay = document.getElementById("sidebar-overlay");
 
-            // Si por alguna razón el sidebar no existe en esta vista, no hacemos nada para evitar errores
-            if (!sidebar) return;
-
-            // 1. Abrir Menú
-            if (btnMenu) {
-                // Usamos onclick tradicional que es más resistente a recargas de AJAX o includes de PHP
-                btnMenu.onclick = function(e) {
-                    e.preventDefault();
-                    sidebar.classList.remove("-translate-x-full");
-                    if (overlay) overlay.classList.remove("hidden");
-                };
-            }
-
-            // 2. Cerrar Menú con la 'X'
-            if (btnCloseMenu) {
-                btnCloseMenu.onclick = function(e) {
-                    e.preventDefault();
-                    sidebar.classList.add("-translate-x-full");
-                    if (overlay) overlay.classList.add("hidden");
-                };
-            }
-
-            // 3. Cerrar Menú tocando el fondo oscuro
-            if (overlay) {
-                overlay.onclick = function() {
-                    sidebar.classList.add("-translate-x-full");
-                    overlay.classList.add("hidden");
-                };
-            }
+    if(btnMenu){
+        btnMenu.onclick = () => {
+            sidebar.classList.remove("-translate-x-full");
+            overlay.classList.remove("hidden");
         }
+    }
 
-        // Verificamos si la página ya cargó. Si sí, lo ejecutamos ya. Si no, esperamos.
-        if (document.readyState === "loading") {
-            document.addEventListener("DOMContentLoaded", iniciarMenu);
-        } else {
-            iniciarMenu();
+    if(overlay){
+        overlay.onclick = () => {
+            sidebar.classList.add("-translate-x-full");
+            overlay.classList.add("hidden");
         }
-    })();
+    }
+})();
 </script>
