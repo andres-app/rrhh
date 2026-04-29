@@ -188,11 +188,11 @@ RESUMEN DASHBOARD DINÁMICO
                 l.situacion
             FROM colab_maestro m
             INNER JOIN colab_laboral l ON m.id = l.colab_id
-            WHERE m.id = :id
+            WHERE m.usuario_id = :usuario_id
             ORDER BY l.fecha_ingreso DESC
             LIMIT 1
         ");
-        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+        $stmt->bindParam(':usuario_id', $id, PDO::PARAM_INT);
         $stmt->execute();
         $perfil = $stmt->fetch(PDO::FETCH_ASSOC);
 
