@@ -175,7 +175,7 @@ if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? 
 // URL: /rrhh/directorio/excel
 // ══════════════════════════════════════════════════════════════
 
-if ($module === 'rrhh' && ($parts[1] ?? '') === 'directorio' && ($parts[2] ?? '') === 'excel') {
+if ($module === 'rrhh' && ($parts[1] ?? '') === 'directorio' && ($parts[2] ?? '') === 'xlsx') {
 
     $rolActual = strtolower(trim($_SESSION['user_role'] ?? ''));
 
@@ -185,7 +185,7 @@ if ($module === 'rrhh' && ($parts[1] ?? '') === 'directorio' && ($parts[2] ?? ''
 
     require_once __DIR__ . '/../Modelo/MdDirectorio.php';
     require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
-    require_once __DIR__ . '/../Vista/modulos/rrhh/RptExcelDirectorio.php';
+    require_once __DIR__ . '/../Vista/modulos/rrhh/RptExcelDirectorioXlsx.php';
     exit;
 }
 // ── Permisos ──────────────────────────────────────────────────

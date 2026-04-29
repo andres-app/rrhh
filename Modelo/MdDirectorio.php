@@ -1636,7 +1636,7 @@ RESUMEN DASHBOARD DINÁMICO
                 ':tipo'        => self::nullify($datos['tipo_puesto'] ?? null),
                 ':area'        => self::nullify($datos['area'] ?? null),
                 ':procedencia' => self::nullify($datos['procedencia'] ?? null),
-                ':ingreso'=> !empty($datos['fecha_ingreso']) ? $datos['fecha_ingreso'] : null,
+                ':ingreso' => !empty($datos['fecha_ingreso']) ? $datos['fecha_ingreso'] : null,
                 ':cese'   => !empty($datos['fecha_cese']) ? $datos['fecha_cese'] : null,
             ]);
 
@@ -1695,4 +1695,94 @@ RESUMEN DASHBOARD DINÁMICO
             ];
         }
     }
+
+public static function mdlMostrarDirectorioExcel()
+{
+    try {
+        $sql = "
+            SELECT
+                m.id,
+                CAST(m.dni AS CHAR) AS dni,
+                m.nombres_apellidos,
+                CAST(m.ruc AS CHAR) AS ruc,
+                CAST(m.licencia_conducir AS CHAR) AS licencia_conducir,
+                m.fecha_nacimiento,
+                m.lugar_nacimiento,
+                CASE
+                    WHEN m.fecha_nacimiento IS NOT NULL
+                    THEN TIMESTAMPDIFF(YEAR, m.fecha_nacimiento, CURDATE())
+                    ELSE NULL
+                END AS edad,
+                m.sexo,
+                m.estado_civil,
+                m.grupo_sanguineo,
+                m.talla,
+                m.grado_militar,
+                CAST(m.celular AS CHAR) AS celular,
+                m.correo_personal,
+                m.direccion_residencia,
+                m.distrito,
+
+                l.correo_institucional,
+                COALESCE(NULLIF(TRIM(l.situacion), ''), 'ACTIVO') AS situacion,
+                l.sueldo,
+                COALESCE(
+                    NULLIF(TRIM(l.modalidad_contrato), ''),
+                    NULLIF(TRIM(ct.modalidad), '')
+                ) AS modalidad_contrato,
+                l.puesto_cas,
+                l.tipo_puesto,
+                l.area,
+                l.procedencia,
+
+                ct.fecha_ingreso,
+                ct.fecha_cese,
+
+                p.sistema_pension,
+                p.afp,
+                CAST(p.cuspp AS CHAR) AS cuspp,
+                p.tipo_comision,
+                p.fecha_inscripcion,
+                COALESCE(p.sin_afp_afiliarme, 0) AS sin_afp_afiliarme,
+
+                b.banco_haberes,
+                CAST(b.numero_cuenta AS CHAR) AS numero_cuenta,
+                CAST(b.numero_cuenta_cci AS CHAR) AS numero_cuenta_cci
+
+            FROM colab_maestro m
+
+            LEFT JOIN (
+                SELECT l1.*
+                FROM colab_laboral l1
+                INNER JOIN (
+                    SELECT colab_id, MAX(id) AS max_id
+                    FROM colab_laboral
+                    GROUP BY colab_id
+                ) ul ON ul.max_id = l1.id
+            ) l ON l.colab_id = m.id
+
+            LEFT JOIN (
+                SELECT c1.*
+                FROM colab_contratos c1
+                INNER JOIN (
+                    SELECT colab_id, MAX(id) AS max_id
+                    FROM colab_contratos
+                    GROUP BY colab_id
+                ) uc ON uc.max_id = c1.id
+            ) ct ON ct.colab_id = m.id
+
+            LEFT JOIN colab_pension  p ON p.colab_id = m.id
+            LEFT JOIN colab_bancario b ON b.colab_id = m.id
+
+            ORDER BY m.nombres_apellidos ASC
+        ";
+
+        $stmt = Conexion::conectar()->prepare($sql);
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    } catch (Throwable $e) {
+        return [];
+    }
+}
 }

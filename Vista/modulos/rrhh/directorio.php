@@ -84,7 +84,7 @@ $totalEmpleados = count($empleados);
                     </div>
 
                     <?php if (in_array(strtolower($_SESSION['user_role'] ?? ''), ['superadmin', 'admin', 'rrhh'], true)): ?>
-                        <a href="<?= BASE_URL ?>/rrhh/directorio/excel"
+                        <a href="<?= BASE_URL ?>/rrhh/directorio/xlsx"
                             id="btnExportExcel"
                             class="inline-flex items-center justify-center gap-2 px-5 py-3 rounded-2xl bg-emerald-600 text-white text-sm font-bold shadow-lg shadow-emerald-600/20 hover:bg-emerald-700 transition-all">
                             Exportar Excel
@@ -841,7 +841,7 @@ $totalEmpleados = count($empleados);
         if (btnExportExcel) {
             btnExportExcel.addEventListener('click', function() {
                 const q = document.getElementById('searchInput')?.value || '';
-                this.href = `<?= BASE_URL ?>/rrhh/directorio/excel?q=${encodeURIComponent(q)}`;
+                this.href = `<?= BASE_URL ?>/rrhh/directorio/xlsx?q=${encodeURIComponent(q)}`;
             });
         }
     </script>

@@ -8,6 +8,11 @@ class CtrDirectorio
         return MdDirectorio::mdlMostrarDirectorio();
     }
 
+    public function ctrMostrarDirectorioExcel()
+    {
+        return MdDirectorio::mdlMostrarDirectorioExcel();
+    }
+
     public function ctrMostrarDashboard()
     {
         return MdDirectorio::mdlObtenerResumenDashboard();
@@ -107,24 +112,24 @@ class CtrDirectorio
         return MdDirectorio::mdlRechazarSolicitudCambio($solicitudId, $userId, $motivo);
     }
 
-public function ctrCrearColaborador(array $body): array
-{
-    $rolSesion = strtolower(trim($_SESSION['user_role'] ?? ''));
+    public function ctrCrearColaborador(array $body): array
+    {
+        $rolSesion = strtolower(trim($_SESSION['user_role'] ?? ''));
 
-    if (!in_array($rolSesion, ['superadmin', 'admin', 'rrhh'], true)) {
-        return [
-            'success' => false,
-            'mensaje' => 'No tienes permisos para crear colaboradores'
-        ];
+        if (!in_array($rolSesion, ['superadmin', 'admin', 'rrhh'], true)) {
+            return [
+                'success' => false,
+                'mensaje' => 'No tienes permisos para crear colaboradores'
+            ];
+        }
+
+        if (empty(trim($body['dni'] ?? '')) || empty(trim($body['nombres_apellidos'] ?? ''))) {
+            return [
+                'success' => false,
+                'mensaje' => 'DNI y nombres completos son obligatorios'
+            ];
+        }
+
+        return MdDirectorio::mdlCrearColaborador($body);
     }
-
-    if (empty(trim($body['dni'] ?? '')) || empty(trim($body['nombres_apellidos'] ?? ''))) {
-        return [
-            'success' => false,
-            'mensaje' => 'DNI y nombres completos son obligatorios'
-        ];
-    }
-
-    return MdDirectorio::mdlCrearColaborador($body);
-}
 }
