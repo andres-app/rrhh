@@ -1723,6 +1723,7 @@ public static function mdlMostrarDirectorioExcel()
                 m.direccion_residencia,
                 m.distrito,
 
+                l.nsa_cip,
                 l.correo_institucional,
                 COALESCE(NULLIF(TRIM(l.situacion), ''), 'ACTIVO') AS situacion,
                 l.sueldo,
@@ -1737,6 +1738,15 @@ public static function mdlMostrarDirectorioExcel()
 
                 ct.fecha_ingreso,
                 ct.fecha_cese,
+
+                fam.n_hijos,
+                fam.conyuge,
+                fam.onomastico_conyuge,
+
+                form.profesion,
+                form.institucion,
+                form.grado,
+                form.curso_especializacion,
 
                 p.sistema_pension,
                 p.afp,
@@ -1770,6 +1780,46 @@ public static function mdlMostrarDirectorioExcel()
                     GROUP BY colab_id
                 ) uc ON uc.max_id = c1.id
             ) ct ON ct.colab_id = m.id
+
+            LEFT JOIN (
+                SELECT
+                    f.colab_id,
+                    SUM(CASE WHEN f.parentesco IN ('HIJO', 'HIJA') THEN 1 ELSE 0 END) AS n_hijos,
+                    MAX(CASE WHEN f.parentesco = 'CONYUGE' THEN f.nombre_completo END) AS conyuge,
+                    MAX(CASE WHEN f.parentesco = 'CONYUGE' THEN f.fecha_nacimiento END) AS onomastico_conyuge
+                FROM colab_familia f
+                GROUP BY f.colab_id
+            ) fam ON fam.colab_id = m.id
+
+            LEFT JOIN (
+                SELECT
+                    cf.colab_id,
+                    GROUP_CONCAT(
+                        NULLIF(TRIM(cf.descripcion_carrera), '')
+                        ORDER BY cf.id ASC
+                        SEPARATOR '\n'
+                    ) AS profesion,
+                    GROUP_CONCAT(
+                        NULLIF(TRIM(cf.institucion), '')
+                        ORDER BY cf.id ASC
+                        SEPARATOR '\n'
+                    ) AS institucion,
+                    GROUP_CONCAT(
+                        COALESCE(
+                            NULLIF(TRIM(cf.grado_alcanzado), ''),
+                            NULLIF(TRIM(cf.tipo_grado), '')
+                        )
+                        ORDER BY cf.id ASC
+                        SEPARATOR '\n'
+                    ) AS grado,
+                    GROUP_CONCAT(
+                        NULLIF(TRIM(cf.especialidad), '')
+                        ORDER BY cf.id ASC
+                        SEPARATOR '\n'
+                    ) AS curso_especializacion
+                FROM colab_formacion cf
+                GROUP BY cf.colab_id
+            ) form ON form.colab_id = m.id
 
             LEFT JOIN colab_pension  p ON p.colab_id = m.id
             LEFT JOIN colab_bancario b ON b.colab_id = m.id

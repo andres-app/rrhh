@@ -32,41 +32,49 @@ if ($q !== '') {
 }
 
 $columnas = [
-    'dni'                   => 'DNI',
-    'nombres_apellidos'     => 'NOMBRES Y APELLIDOS',
-    'ruc'                   => 'RUC',
-    'licencia_conducir'     => 'LICENCIA',
-    'fecha_nacimiento'      => 'FECHA NAC.',
-    'lugar_nacimiento'      => 'LUGAR NAC.',
-    'edad'                  => 'EDAD',
-    'sexo'                  => 'SEXO',
-    'estado_civil'          => 'ESTADO CIVIL',
-    'grupo_sanguineo'       => 'GRUPO SANG.',
-    'talla'                 => 'TALLA',
-    'grado_militar'         => 'GRADO MILITAR',
-    'celular'               => 'CELULAR',
-    'correo_personal'       => 'CORREO PERSONAL',
-    'direccion_residencia'  => 'DIRECCIÓN',
-    'distrito'              => 'DISTRITO',
-    'correo_institucional'  => 'CORREO INSTITUCIONAL',
-    'situacion'             => 'SITUACIÓN',
-    'sueldo'                => 'SUELDO',
-    'modalidad_contrato'    => 'MODALIDAD',
-    'puesto_cas'            => 'PUESTO CAS',
-    'tipo_puesto'           => 'TIPO PUESTO',
-    'area'                  => 'ÁREA',
-    'procedencia'           => 'PROCEDENCIA',
-    'fecha_ingreso'         => 'FECHA INGRESO',
-    'fecha_cese'            => 'FECHA CESE',
-    'sistema_pension'       => 'SISTEMA PENSIÓN',
-    'afp'                   => 'AFP',
-    'cuspp'                 => 'CUSPP',
-    'tipo_comision'         => 'TIPO COMISIÓN',
-    'fecha_inscripcion'     => 'FECHA INSCRIPCIÓN',
-    'sin_afp_afiliarme'     => 'SIN AFP',
-    'banco_haberes'         => 'BANCO',
-    'numero_cuenta'         => 'N° CUENTA',
-    'numero_cuenta_cci'     => 'CCI',
+    'dni'                    => 'DNI',
+    'nombres_apellidos'      => 'NOMBRES Y APELLIDOS',
+    'ruc'                    => 'RUC',
+    'licencia_conducir'      => 'LICENCIA',
+    'fecha_nacimiento'       => 'FECHA NAC.',
+    'lugar_nacimiento'       => 'LUGAR NAC.',
+    'edad'                   => 'EDAD',
+    'sexo'                   => 'SEXO',
+    'estado_civil'           => 'ESTADO CIVIL',
+    'grupo_sanguineo'        => 'GRUPO SANG.',
+    'talla'                  => 'TALLA',
+    'grado_militar'          => 'GRADO MILITAR',
+    'celular'                => 'CELULAR',
+    'correo_personal'        => 'CORREO PERSONAL',
+    'direccion_residencia'   => 'DIRECCIÓN',
+    'distrito'               => 'DISTRITO',
+    'nsa_cip'                => 'NSA-CIP',
+    'correo_institucional'   => 'CORREO INSTITUCIONAL',
+    'situacion'              => 'SITUACIÓN',
+    'sueldo'                 => 'SUELDO',
+    'modalidad_contrato'     => 'MODALIDAD',
+    'puesto_cas'             => 'PUESTO CAS',
+    'tipo_puesto'            => 'TIPO PUESTO',
+    'area'                   => 'ÁREA',
+    'procedencia'            => 'PROCEDENCIA',
+    'fecha_ingreso'          => 'FECHA INGRESO',
+    'fecha_cese'             => 'FECHA CESE',
+    'n_hijos'                => 'N° DE HIJOS',
+    'conyuge'                => 'CONYUGE',
+    'onomastico_conyuge'     => 'ONOMÁSTICO CONYUGE',
+    'profesion'              => 'PROFESIÓN',
+    'institucion'            => 'INSTITUCIÓN',
+    'grado'                  => 'GRADO',
+    'curso_especializacion'  => 'CURSO DE ESPECIALIZACIÓN',
+    'sistema_pension'        => 'SISTEMA PENSIÓN',
+    'afp'                    => 'AFP',
+    'cuspp'                  => 'CUSPP',
+    'tipo_comision'          => 'TIPO COMISIÓN',
+    'fecha_inscripcion'      => 'FECHA INSCRIPCIÓN',
+    'sin_afp_afiliarme'      => 'SIN AFP',
+    'banco_haberes'          => 'BANCO',
+    'numero_cuenta'          => 'N° CUENTA',
+    'numero_cuenta_cci'      => 'CCI',
 ];
 
 $camposTextoForzado = [
@@ -74,6 +82,7 @@ $camposTextoForzado = [
     'ruc',
     'licencia_conducir',
     'celular',
+    'nsa_cip',
     'cuspp',
     'numero_cuenta',
     'numero_cuenta_cci',
@@ -97,7 +106,7 @@ function e($valor): string
     return htmlspecialchars($valor, ENT_QUOTES, 'UTF-8');
 }
 
-function celdaTextoPlanoExcel($valor): string
+function e_excel_multilinea($valor): string
 {
     if ($valor === null) {
         return '';
@@ -112,7 +121,10 @@ function celdaTextoPlanoExcel($valor): string
         }
     }
 
-    return htmlspecialchars($valor, ENT_QUOTES, 'UTF-8');
+    $valor = htmlspecialchars($valor, ENT_QUOTES, 'UTF-8');
+    $valor = nl2br($valor, false);
+
+    return $valor;
 }
 
 $filename = 'DIRECTORIO_RRHH_' . date('Ymd_His') . '.xls';
@@ -225,6 +237,11 @@ echo "\xEF\xBB\xBF";
             white-space: nowrap;
         }
 
+        .multilinea {
+            white-space: normal;
+            line-height: 1.35;
+        }
+
         .estado {
             background: #dcfce7;
             text-align: center;
@@ -253,6 +270,7 @@ echo "\xEF\xBB\xBF";
         col.col-cper    { width: 220px; }
         col.col-dir     { width: 380px; }
         col.col-dist    { width: 120px; }
+        col.col-nsacip  { width: 110px; }
         col.col-cinst   { width: 220px; }
         col.col-sit     { width: 90px; }
         col.col-sueldo  { width: 100px; }
@@ -263,6 +281,13 @@ echo "\xEF\xBB\xBF";
         col.col-proc    { width: 140px; }
         col.col-fing    { width: 95px; }
         col.col-fcese   { width: 95px; }
+        col.col-hijos   { width: 90px; }
+        col.col-cony    { width: 180px; }
+        col.col-ocon    { width: 120px; }
+        col.col-prof    { width: 230px; }
+        col.col-instf   { width: 230px; }
+        col.col-grf     { width: 150px; }
+        col.col-esp     { width: 260px; }
         col.col-spen    { width: 130px; }
         col.col-afp     { width: 100px; }
         col.col-cuspp   { width: 120px; }
@@ -294,6 +319,7 @@ echo "\xEF\xBB\xBF";
             <col class="col-cper">
             <col class="col-dir">
             <col class="col-dist">
+            <col class="col-nsacip">
             <col class="col-cinst">
             <col class="col-sit">
             <col class="col-sueldo">
@@ -304,6 +330,13 @@ echo "\xEF\xBB\xBF";
             <col class="col-proc">
             <col class="col-fing">
             <col class="col-fcese">
+            <col class="col-hijos">
+            <col class="col-cony">
+            <col class="col-ocon">
+            <col class="col-prof">
+            <col class="col-instf">
+            <col class="col-grf">
+            <col class="col-esp">
             <col class="col-spen">
             <col class="col-afp">
             <col class="col-cuspp">
@@ -364,12 +397,16 @@ echo "\xEF\xBB\xBF";
                             $class .= ' money';
                         }
 
-                        if (in_array($campo, ['fecha_nacimiento', 'fecha_ingreso', 'fecha_cese', 'fecha_inscripcion'], true)) {
+                        if (in_array($campo, ['fecha_nacimiento', 'fecha_ingreso', 'fecha_cese', 'fecha_inscripcion', 'onomastico_conyuge'], true)) {
                             $class .= ' fecha';
                         }
 
                         if (in_array($campo, $camposTextoForzado, true)) {
                             $class .= ' texto';
+                        }
+
+                        if (in_array($campo, ['profesion', 'institucion', 'grado', 'curso_especializacion'], true)) {
+                            $class .= ' multilinea';
                         }
 
                         if ($campo === 'situacion') {
@@ -383,7 +420,11 @@ echo "\xEF\xBB\xBF";
 
                         <?php if (in_array($campo, $camposTextoForzado, true)): ?>
                             <td class="<?php echo trim($class); ?>" style='mso-number-format:"\@";' x:str>
-                                <?php echo celdaTextoPlanoExcel($valor); ?>
+                                <?php echo e($valor); ?>
+                            </td>
+                        <?php elseif (in_array($campo, ['profesion', 'institucion', 'grado', 'curso_especializacion'], true)): ?>
+                            <td class="<?php echo trim($class); ?>">
+                                <?php echo e_excel_multilinea($valor); ?>
                             </td>
                         <?php else: ?>
                             <td class="<?php echo trim($class); ?>">
