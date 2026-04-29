@@ -23,7 +23,7 @@ class MdDirectorio
                     l.correo_institucional,
                     l.situacion
                 FROM colab_maestro m
-                INNER JOIN colab_laboral l ON m.id = l.colab_id
+                LEFT JOIN colab_laboral l ON m.id = l.colab_id
                 ORDER BY m.nombres_apellidos ASC
             ");
             $stmt->execute();
@@ -156,191 +156,150 @@ RESUMEN DASHBOARD DINÁMICO
     DATOS MAESTRO + LABORAL PRINCIPAL
     (Se toma el registro laboral más reciente como principal)
     =============================================*/
-    public static function mdlObtenerPerfilCompleto($id)
-    {
-        $pdo = Conexion::conectar();
+public static function mdlObtenerPerfilCompleto($usuarioId)
+{
+    $pdo = Conexion::conectar();
 
-        // 1. Datos maestro + laboral más reciente como contexto principal
-        $stmt = $pdo->prepare("
-            SELECT 
-                m.id,
-                m.nombres_apellidos,
-                m.dni,
-                m.fecha_nacimiento,
-                m.lugar_nacimiento,
-                m.edad,
-                m.sexo,
-                m.estado_civil,
-                m.grupo_sanguineo,
-                m.talla,
-                m.celular,
-                m.correo_personal,
-                m.direccion_residencia,
-                m.distrito,
-                l.sueldo,
-                l.nsa_cip,
-                l.correo_institucional,
-                l.puesto_cas,
-                l.tipo_puesto,
-                l.area,
-                l.procedencia,
-                l.modalidad_contrato AS mod_contrato,
-                l.situacion
-            FROM colab_maestro m
-            INNER JOIN colab_laboral l ON m.id = l.colab_id
-            WHERE m.usuario_id = :usuario_id
-            ORDER BY l.fecha_ingreso DESC
-            LIMIT 1
-        ");
-        $stmt->bindParam(':usuario_id', $id, PDO::PARAM_INT);
-        $stmt->execute();
-        $perfil = $stmt->fetch(PDO::FETCH_ASSOC);
+    // 1. Datos maestro + laboral más reciente
+    $stmt = $pdo->prepare("
+        SELECT 
+            m.id,
+            m.nombres_apellidos,
+            m.dni,
+            m.fecha_nacimiento,
+            m.lugar_nacimiento,
+            m.edad,
+            m.sexo,
+            m.estado_civil,
+            m.grupo_sanguineo,
+            m.talla,
+            m.celular,
+            m.correo_personal,
+            m.direccion_residencia,
+            m.distrito,
+            l.sueldo,
+            l.nsa_cip,
+            l.correo_institucional,
+            l.puesto_cas,
+            l.tipo_puesto,
+            l.area,
+            l.procedencia,
+            l.modalidad_contrato AS mod_contrato,
+            l.situacion
+        FROM colab_maestro m
 
-        if (!$perfil) return false;
+        LEFT JOIN (
+            SELECT l1.*
+            FROM colab_laboral l1   
+            INNER JOIN (
+                SELECT colab_id, MAX(id) AS max_id
+                FROM colab_laboral
+                GROUP BY colab_id
+            ) ult ON ult.max_id = l1.id
+        ) l ON l.colab_id = m.id
 
-        // 2. Historial de contratos
-        $stmt2 = $pdo->prepare("
-            SELECT 
-                id,
-                colab_id,
-                fecha_ingreso,
-                fecha_cese,
-                modalidad
-            FROM colab_contratos
-            WHERE colab_id = :id
-            ORDER BY fecha_ingreso ASC, id ASC
-        ");
-        $stmt2->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt2->execute();
-        $perfil['contratos'] = $stmt2->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        WHERE m.usuario_id = :usuario_id
+        LIMIT 1
+    ");
 
-        // 3. Formación académica
-        $stmt3 = $pdo->prepare("
-            SELECT 
-                id,
-                tipo_grado,
-                descripcion_carrera,
-                institucion,
-                anio_realizacion,
-                horas_lectivas,
-                especialidad,
-                grado_alcanzado,
-                estado_validacion
-            FROM colab_formacion
-            WHERE colab_id = :id
-            ORDER BY id ASC
-        ");
-        $stmt3->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt3->execute();
-        $perfil['formacion'] = $stmt3->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    $stmt->bindParam(':usuario_id', $usuarioId, PDO::PARAM_INT);
+    $stmt->execute();
 
-        // 4. Experiencia laboral
-        $stmtExp = $pdo->prepare("
-            SELECT
-                id,
-                empresa_entidad,
-                unidad_organica_area,
-                cargo_puesto,
-                fecha_inicio,
-                fecha_fin,
-                actualmente_trabaja,
-                funciones_principales,
-                archivo_sustento,
-                estado_validacion
-            FROM colab_experiencia
-            WHERE colab_id = :id
-            ORDER BY fecha_inicio DESC, id DESC
-        ");
-        $stmtExp->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmtExp->execute();
-        $perfil['experiencia'] = $stmtExp->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    $perfil = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        // 5. Familia
-        $stmt4 = $pdo->prepare("
-            SELECT 
-                id,
-                parentesco,
-                nombre_completo,
-                dni_familiar,
-                fecha_nacimiento,
-                archivo_sustento,
-                estado_validacion
-            FROM colab_familia
-            WHERE colab_id = :id
-            ORDER BY parentesco ASC, nombre_completo ASC
-        ");
-        $stmt4->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt4->execute();
-        $familia = $stmt4->fetchAll(PDO::FETCH_ASSOC) ?: [];
-        $perfil['familia'] = $familia;
+    if (!$perfil) return false;
 
-        $conyuge_row = array_filter($familia, fn($f) => ($f['parentesco'] ?? '') === 'CONYUGE');
-        $conyuge_row = reset($conyuge_row);
+    $colabId = (int)$perfil['id'];
 
-        $perfil['conyuge']            = $conyuge_row['nombre_completo'] ?? null;
-        $perfil['onomastico_conyuge'] = $conyuge_row['fecha_nacimiento'] ?? null;
-        $perfil['dni_conyuge']        = $conyuge_row['dni_familiar'] ?? null;
+    // 2. CONTRATOS
+    $stmt2 = $pdo->prepare("
+        SELECT id, colab_id, fecha_ingreso, fecha_cese, modalidad
+        FROM colab_contratos
+        WHERE colab_id = :id
+        ORDER BY fecha_ingreso ASC
+    ");
+    $stmt2->execute([':id' => $colabId]);
+    $perfil['contratos'] = $stmt2->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // 6. Conteo de hijos
-        $stmt5 = $pdo->prepare("
-            SELECT COUNT(*) AS total
-            FROM colab_familia
-            WHERE colab_id = :id
-              AND parentesco IN ('HIJO', 'HIJA')
-        ");
-        $stmt5->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt5->execute();
-        $perfil['n_hijos'] = (int)($stmt5->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
+    // 3. FORMACIÓN
+    $stmt3 = $pdo->prepare("
+        SELECT *
+        FROM colab_formacion
+        WHERE colab_id = :id
+        ORDER BY id ASC
+    ");
+    $stmt3->execute([':id' => $colabId]);
+    $perfil['formacion'] = $stmt3->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // 7. Pensión
-        $stmt6 = $pdo->prepare("
-            SELECT
-                id,
-                sistema_pension,
-                afp,
-                cuspp,
-                tipo_comision,
-                fecha_inscripcion,
-                sin_afp_afiliarme
-            FROM colab_pension
-            WHERE colab_id = :id
-            LIMIT 1
-        ");
-        $stmt6->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt6->execute();
-        $perfil['pension'] = $stmt6->fetch(PDO::FETCH_ASSOC) ?: [];
+    // 4. EXPERIENCIA
+    $stmt4 = $pdo->prepare("
+        SELECT *
+        FROM colab_experiencia
+        WHERE colab_id = :id
+        ORDER BY fecha_inicio DESC
+    ");
+    $stmt4->execute([':id' => $colabId]);
+    $perfil['experiencia'] = $stmt4->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // 8. Bancario
-        $stmt7 = $pdo->prepare("
-            SELECT
-                id,
-                banco_haberes,
-                numero_cuenta,
-                numero_cuenta_cci
-            FROM colab_bancario
-            WHERE colab_id = :id
-            LIMIT 1
-        ");
-        $stmt7->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt7->execute();
-        $perfil['bancario'] = $stmt7->fetch(PDO::FETCH_ASSOC) ?: [];
+    // 5. FAMILIA
+    $stmt5 = $pdo->prepare("
+        SELECT *
+        FROM colab_familia
+        WHERE colab_id = :id
+    ");
+    $stmt5->execute([':id' => $colabId]);
+    $familia = $stmt5->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    $perfil['familia'] = $familia;
 
-        // 9. Idiomas
-        $stmt8 = $pdo->prepare("
-            SELECT
-                id,
-                idioma,
-                nivel
-            FROM colab_idioma
-            WHERE colab_id = :id
-            ORDER BY id ASC
-        ");
-        $stmt8->bindParam(':id', $id, PDO::PARAM_INT);
-        $stmt8->execute();
-        $perfil['idiomas'] = $stmt8->fetchAll(PDO::FETCH_ASSOC) ?: [];
+    // CONYUGE
+    $conyuge = array_filter($familia, fn($f) => ($f['parentesco'] ?? '') === 'CONYUGE');
+    $conyuge = reset($conyuge);
 
-        return $perfil;
-    }
+    $perfil['conyuge'] = $conyuge['nombre_completo'] ?? null;
+    $perfil['onomastico_conyuge'] = $conyuge['fecha_nacimiento'] ?? null;
+    $perfil['dni_conyuge'] = $conyuge['dni_familiar'] ?? null;
+
+    // HIJOS
+    $stmt6 = $pdo->prepare("
+        SELECT COUNT(*) as total
+        FROM colab_familia
+        WHERE colab_id = :id
+        AND parentesco IN ('HIJO','HIJA')
+    ");
+    $stmt6->execute([':id' => $colabId]);
+    $perfil['n_hijos'] = (int)($stmt6->fetch()['total'] ?? 0);
+
+    // PENSION
+    $stmt7 = $pdo->prepare("
+        SELECT *
+        FROM colab_pension
+        WHERE colab_id = :id
+        LIMIT 1
+    ");
+    $stmt7->execute([':id' => $colabId]);
+    $perfil['pension'] = $stmt7->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    // BANCARIO
+    $stmt8 = $pdo->prepare("
+        SELECT *
+        FROM colab_bancario
+        WHERE colab_id = :id
+        LIMIT 1
+    ");
+    $stmt8->execute([':id' => $colabId]);
+    $perfil['bancario'] = $stmt8->fetch(PDO::FETCH_ASSOC) ?: [];
+
+    // IDIOMAS
+    $stmt9 = $pdo->prepare("
+        SELECT *
+        FROM colab_idioma
+        WHERE colab_id = :id
+    ");
+    $stmt9->execute([':id' => $colabId]);
+    $perfil['idiomas'] = $stmt9->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
+    return $perfil;
+}
 
     public static function mdlActualizarPerfil($datos)
     {
@@ -1696,10 +1655,10 @@ RESUMEN DASHBOARD DINÁMICO
         }
     }
 
-public static function mdlMostrarDirectorioExcel()
-{
-    try {
-        $sql = "
+    public static function mdlMostrarDirectorioExcel()
+    {
+        try {
+            $sql = "
             SELECT
                 m.id,
                 CAST(m.dni AS CHAR) AS dni,
@@ -1827,12 +1786,12 @@ public static function mdlMostrarDirectorioExcel()
             ORDER BY m.nombres_apellidos ASC
         ";
 
-        $stmt = Conexion::conectar()->prepare($sql);
-        $stmt->execute();
+            $stmt = Conexion::conectar()->prepare($sql);
+            $stmt->execute();
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-    } catch (Throwable $e) {
-        return [];
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            return [];
+        }
     }
-}
 }
