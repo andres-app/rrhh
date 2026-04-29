@@ -1985,19 +1985,31 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
 
     <!-- Footer con navegación del wizard -->
     <div class="modal-footer sticky bottom-0 z-20 px-6 lg:px-8 py-5 border-t border-slate-100 flex items-center justify-between">
-        <button id="btn-anterior" onclick="pasoAnterior()"
-            class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition-all hidden">
-            ← Anterior
+
+        <!-- BOTÓN CERRAR -->
+        <button onclick="cerrarModal()"
+            class="px-5 py-2.5 rounded-xl border border-red-200 text-red-700 text-sm font-bold hover:bg-red-50 transition-all">
+            ✕ Cerrar
         </button>
-        <div class="flex-1"></div>
-        <button id="btn-siguiente" onclick="pasoSiguiente()"
-            class="px-6 py-2.5 rounded-xl bg-red-900 text-white text-sm font-bold hover:bg-[#310404] transition-all shadow-md shadow-red-900/20 active:scale-95">
-            Siguiente →
-        </button>
-        <button id="btn-guardar" onclick="guardarPerfil()"
-            class="px-6 py-2.5 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all shadow-md hidden active:scale-95">
-            <?php echo $rolSesion === 'colaborador' ? '✓ Enviar Solicitud' : '✓ Guardar Cambios'; ?>
-        </button>
+
+        <!-- NAVEGACIÓN -->
+        <div class="flex items-center gap-3 ml-auto">
+            <button id="btn-anterior" onclick="pasoAnterior()"
+                class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition-all hidden">
+                ← Anterior
+            </button>
+
+            <button id="btn-siguiente" onclick="pasoSiguiente()"
+                class="px-6 py-2.5 rounded-xl bg-red-900 text-white text-sm font-bold hover:bg-[#310404] transition-all shadow-md">
+                Siguiente →
+            </button>
+
+            <button id="btn-guardar" onclick="guardarPerfil()"
+                class="px-6 py-2.5 rounded-xl bg-green-600 text-white text-sm font-bold hover:bg-green-700 transition-all shadow-md hidden">
+                ✓ Guardar Cambios
+            </button>
+        </div>
+
     </div>
 
 </div><!-- /panel -->
@@ -2990,13 +3002,11 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
     }
 
     function cerrarModal() {
-        const m = document.getElementById('modal-perfil');
-        if (!m) return;
-
-        m.classList.remove('modal-open');
-        setTimeout(() => {
-            if (m) m.classList.add('hidden');
-        }, 350);
+        if (confirm('¿Deseas salir sin guardar los cambios?')) {
+            const m = document.getElementById('modal-perfil');
+            m.classList.remove('modal-open');
+            setTimeout(() => m.classList.add('hidden'), 350);
+        }
     }
 
     function irPaso(n) {
