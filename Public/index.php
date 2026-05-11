@@ -114,6 +114,28 @@ if ($module === 'perfil' && ($parts[1] ?? '') === 'actualizar') {
     }
 }
 
+if ($module === 'perfil' && ($parts[1] ?? '') === 'cambiar-clave') {
+
+    while (ob_get_level()) {
+        ob_end_clean();
+    }
+
+    header('Content-Type: application/json; charset=utf-8');
+
+    try {
+        $respuesta = CtrUsuario::ctrCambiarClavePerfil();
+
+        echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
+        exit;
+    } catch (Throwable $e) {
+        echo json_encode([
+            'success' => false,
+            'mensaje' => 'Error interno: ' . $e->getMessage()
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+}
+
 if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? '') === 'aprobar') {
     require_once __DIR__ . '/../Modelo/MdDirectorio.php';
     require_once __DIR__ . '/../Controlador/CtrDirectorio.php';

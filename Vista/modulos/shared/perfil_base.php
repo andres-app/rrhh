@@ -92,9 +92,17 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
                     </div>
 
                     <!-- Acción -->
-                    <div class="shrink-0">
+                    <div class="shrink-0 flex flex-col sm:flex-row gap-3">
+                        <button onclick="abrirModalClave()"
+                            class="inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 active:scale-95">
+                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V7a4.5 4.5 0 00-9 0v3.5m-.75 0h10.5A1.75 1.75 0 0119 12.25v6A1.75 1.75 0 0117.25 20H6.75A1.75 1.75 0 015 18.25v-6a1.75 1.75 0 011.75-1.75z" />
+                            </svg>
+                            Cambiar Clave
+                        </button>
+
                         <button onclick="abrirModal()"
-                            class="inline-flex items-center gap-2 bg-red-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#310404] transition-all shadow-lg shadow-red-900/20 active:scale-95">
+                            class="inline-flex items-center justify-center gap-2 bg-red-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#310404] transition-all shadow-lg shadow-red-900/20 active:scale-95">
                             <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                 <path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
                             </svg>
@@ -2015,9 +2023,92 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
 </div><!-- /panel -->
 </div><!-- /modal -->
 
+<!-- Modal Cambiar Clave -->
+<div id="modal-clave" class="fixed inset-0 z-[70] hidden" role="dialog" aria-modal="true">
+
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cerrarModalClave()"></div>
+
+    <div class="absolute inset-0 flex items-center justify-center px-4">
+        <div class="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl border border-slate-200 overflow-hidden animate-in">
+
+            <div class="bg-gradient-to-r from-[#310404] to-red-900 px-7 py-6">
+                <div class="flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-red-200 text-xs font-black uppercase tracking-[0.22em] mb-1">
+                            Seguridad
+                        </p>
+                        <h2 class="text-white text-xl font-black">
+                            Cambiar clave de acceso
+                        </h2>
+                    </div>
+
+                    <button type="button" onclick="cerrarModalClave()" class="text-red-200 hover:text-white transition">
+                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+
+            <div class="p-7 space-y-5">
+                <div class="bg-red-50 border border-red-100 rounded-2xl p-4">
+                    <p class="text-sm text-red-900 font-semibold leading-relaxed">
+                        Para proteger tu cuenta, ingresa tu clave actual y luego define una nueva clave.
+                    </p>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Clave actual</label>
+                    <div class="relative">
+                        <input type="password" id="clave_actual" class="field-input pr-12" autocomplete="current-password">
+                        <button type="button" onclick="toggleClaveInput('clave_actual')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-900">
+                            👁
+                        </button>
+                    </div>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Nueva clave</label>
+                    <div class="relative">
+                        <input type="password" id="clave_nueva" class="field-input pr-12" autocomplete="new-password" minlength="8">
+                        <button type="button" onclick="toggleClaveInput('clave_nueva')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-900">
+                            👁
+                        </button>
+                    </div>
+                    <p class="text-[11px] text-slate-400 font-semibold">
+                        Mínimo 8 caracteres. Recomendado: letras, números y símbolos.
+                    </p>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Confirmar nueva clave</label>
+                    <div class="relative">
+                        <input type="password" id="clave_confirmar" class="field-input pr-12" autocomplete="new-password" minlength="8">
+                        <button type="button" onclick="toggleClaveInput('clave_confirmar')" class="absolute right-4 top-1/2 -translate-y-1/2 text-slate-400 hover:text-red-900">
+                            👁
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="px-7 py-5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
+                <button type="button" onclick="cerrarModalClave()"
+                    class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition-all">
+                    Cancelar
+                </button>
+
+                <button type="button" id="btn-guardar-clave" onclick="guardarClavePerfil()"
+                    class="px-6 py-2.5 rounded-xl bg-red-900 text-white text-sm font-bold hover:bg-[#310404] transition-all shadow-md">
+                    Guardar clave
+                </button>
+            </div>
+        </div>
+    </div>
+</div>
+
 
 <!-- Toast de confirmación -->
-<div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[60] hidden">
+<div id="toast" class="fixed bottom-8 left-1/2 -translate-x-1/2 z-[9999] hidden pointer-events-none">
     <div class="bg-slate-800 text-white px-6 py-3 rounded-2xl shadow-2xl text-sm font-bold flex items-center gap-2">
         <span id="toast-icon">✓</span>
         <span id="toast-msg">Cambios guardados correctamente</span>
@@ -3859,6 +3950,105 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
         }
 
         sueldoVisible = !sueldoVisible;
+    }
+
+    function abrirModalClave() {
+        const modal = document.getElementById('modal-clave');
+        if (!modal) return;
+
+        document.getElementById('clave_actual').value = '';
+        document.getElementById('clave_nueva').value = '';
+        document.getElementById('clave_confirmar').value = '';
+
+        modal.classList.remove('hidden');
+
+        setTimeout(() => {
+            document.getElementById('clave_actual')?.focus();
+        }, 100);
+    }
+
+    function cerrarModalClave() {
+        const modal = document.getElementById('modal-clave');
+        if (!modal) return;
+
+        modal.classList.add('hidden');
+    }
+
+    function toggleClaveInput(id) {
+        const input = document.getElementById(id);
+        if (!input) return;
+
+        input.type = input.type === 'password' ? 'text' : 'password';
+    }
+
+    function guardarClavePerfil() {
+        const btn = document.getElementById('btn-guardar-clave');
+
+        const claveActual = document.getElementById('clave_actual')?.value?.trim() || '';
+        const claveNueva = document.getElementById('clave_nueva')?.value?.trim() || '';
+        const claveConfirmar = document.getElementById('clave_confirmar')?.value?.trim() || '';
+
+        if (!claveActual || !claveNueva || !claveConfirmar) {
+            mostrarToast('⚠', 'Completa todos los campos.', 'bg-red-800');
+            return;
+        }
+
+        if (claveNueva.length < 8) {
+            mostrarToast('⚠', 'La nueva clave debe tener mínimo 8 caracteres.', 'bg-red-800');
+            return;
+        }
+
+        if (claveNueva !== claveConfirmar) {
+            mostrarToast('⚠', 'La confirmación no coincide con la nueva clave.', 'bg-red-800');
+            return;
+        }
+
+        if (claveActual === claveNueva) {
+            mostrarToast('⚠', 'La nueva clave debe ser diferente a la actual.', 'bg-red-800');
+            return;
+        }
+
+        btn.disabled = true;
+        btn.textContent = 'Guardando…';
+
+        fetch('<?php echo BASE_URL; ?>/perfil/cambiar-clave', {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-Requested-With': 'XMLHttpRequest'
+                },
+                body: JSON.stringify({
+                    clave_actual: claveActual,
+                    clave_nueva: claveNueva,
+                    clave_confirmar: claveConfirmar
+                })
+            })
+            .then(r => r.text())
+            .then(raw => {
+                let res;
+
+                try {
+                    res = JSON.parse(raw.trim());
+                } catch (e) {
+                    console.error(raw);
+                    throw new Error('Respuesta inválida del servidor');
+                }
+
+                if (res.success) {
+                    cerrarModalClave();
+                    mostrarToast('✓', res.mensaje || 'Clave actualizada correctamente.', 'bg-green-700');
+                } else {
+                    mostrarToast('✗', res.mensaje || 'No se pudo cambiar la clave.', 'bg-red-800');
+                }
+            })
+            .catch(err => {
+                console.error(err);
+                mostrarToast('✗', 'La respuesta del servidor no fue válida.', 'bg-red-800');
+            })
+            .finally(() => {
+                btn.disabled = false;
+                btn.textContent = 'Guardar clave';
+            });
     }
 </script>
 
