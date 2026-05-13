@@ -1,7 +1,20 @@
 <?php
+//Vista/modulos/colaborador/misvalidaciones.php
 require_once ROOT_PATH . 'Modelo/MdDirectorio.php';
 
-$colabId = (int)($_SESSION['colab_id'] ?? $_SESSION['user_id'] ?? 0);
+$userIdSesion = (int)($_SESSION['user_id'] ?? 0);
+
+$perfilSesion = MdDirectorio::mdlObtenerPerfilPorUsuario($userIdSesion);
+
+if (!$perfilSesion || empty($perfilSesion['id'])) {
+    echo "No se encontró el perfil asociado a este usuario.";
+    exit;
+}
+
+$colabId = (int)$perfilSesion['id'];
+
+$_SESSION['colab_id'] = $colabId;
+
 $solicitudes = MdDirectorio::mdlListarSolicitudesPorColaborador($colabId);
 
 $titulo_pagina = "Mis Validaciones - RRHH";
@@ -165,22 +178,76 @@ function renderDetalleValor($valor): string
     return $html;
 }
 
+function valorNormalizadoVacio($valor): bool
+{
+    if ($valor === null) return true;
+    if ($valor === '') return true;
+    if ($valor === []) return true;
+
+    if (is_array($valor)) {
+        return count($valor) === 0;
+    }
+
+    return false;
+}
+
 function normalizarParaComparar($valor, string $campo = '')
 {
-    if ($valor === null) return '';
-    if ($valor === '') return '';
+    if ($valor === null || $valor === '') {
+        return '';
+    }
 
     if (!is_array($valor)) {
-        return trim((string)$valor);
+        $v = trim((string)$valor);
+
+        if ($campo === 'sin_afp_afiliarme' && ($v === '0' || strtolower($v) === 'false')) {
+            return '';
+        }
+
+        return $v;
     }
+
+    if ($valor === []) {
+        return [];
+    }
+
+    $esLista = array_keys($valor) === range(0, count($valor) - 1);
 
     $ignorarInternos = [
         'id',
+        'colab_id',
+        'usuario_id',
+        'edad',
+        'n_hijos',
         'archivo_sustento',
+        'nombre_archivo_original',
+        'mime_archivo',
+        'tamano_archivo',
         'estado_validacion',
         'created_at',
         'updated_at',
     ];
+
+    if ($esLista) {
+        $normalizadoLista = [];
+
+        foreach ($valor as $item) {
+            $itemNormalizado = normalizarParaComparar($item, $campo);
+
+            if (!valorNormalizadoVacio($itemNormalizado)) {
+                $normalizadoLista[] = $itemNormalizado;
+            }
+        }
+
+        usort($normalizadoLista, function ($a, $b) {
+            return strcmp(
+                json_encode($a, JSON_UNESCAPED_UNICODE),
+                json_encode($b, JSON_UNESCAPED_UNICODE)
+            );
+        });
+
+        return $normalizadoLista;
+    }
 
     $normalizado = [];
 
@@ -189,19 +256,19 @@ function normalizarParaComparar($valor, string $campo = '')
             continue;
         }
 
-        // Homologar nombres de campos familia/hijos
         if ($k === 'nombre_completo') $k = 'nombre';
         if ($k === 'dni_familiar') $k = 'dni';
+        if ($k === 'modalidad_contrato') $k = 'mod_contrato';
 
-        if ($v === null) $v = '';
-        if (is_numeric($v)) $v = (string)$v;
+        $valorNormalizado = normalizarParaComparar($v, (string)$k);
 
-        $normalizado[$k] = is_array($v)
-            ? normalizarParaComparar($v, $campo)
-            : trim((string)$v);
+        if (!valorNormalizadoVacio($valorNormalizado)) {
+            $normalizado[$k] = $valorNormalizado;
+        }
     }
 
     ksort($normalizado);
+
     return $normalizado;
 }
 
@@ -566,162 +633,162 @@ function obtenerCambios($antes, $despues): array
 <?php endforeach; ?>
 
 <script>
-document.addEventListener('DOMContentLoaded', function () {
-    const input = document.getElementById('searchInput');
-    const clearBtn = document.getElementById('clearSearch');
-    const rows = Array.from(document.querySelectorAll('.validacion-row'));
-    const emptyState = document.getElementById('emptyState');
-    const noDataRow = document.getElementById('noDataRow');
-    const resultCount = document.getElementById('resultCount');
-    const rangeInfo = document.getElementById('rangeInfo');
-    const pageSizeSelect = document.getElementById('pageSize');
-    const prevBtn = document.getElementById('prevPage');
-    const nextBtn = document.getElementById('nextPage');
-    const paginationNumbers = document.getElementById('paginationNumbers');
-    const currentPageLabel = document.getElementById('currentPageLabel');
-    const totalPagesLabel = document.getElementById('totalPagesLabel');
+    document.addEventListener('DOMContentLoaded', function() {
+        const input = document.getElementById('searchInput');
+        const clearBtn = document.getElementById('clearSearch');
+        const rows = Array.from(document.querySelectorAll('.validacion-row'));
+        const emptyState = document.getElementById('emptyState');
+        const noDataRow = document.getElementById('noDataRow');
+        const resultCount = document.getElementById('resultCount');
+        const rangeInfo = document.getElementById('rangeInfo');
+        const pageSizeSelect = document.getElementById('pageSize');
+        const prevBtn = document.getElementById('prevPage');
+        const nextBtn = document.getElementById('nextPage');
+        const paginationNumbers = document.getElementById('paginationNumbers');
+        const currentPageLabel = document.getElementById('currentPageLabel');
+        const totalPagesLabel = document.getElementById('totalPagesLabel');
 
-    let currentPage = 1;
-    let filteredRows = rows;
+        let currentPage = 1;
+        let filteredRows = rows;
 
-    function normalizeText(text) {
-        return (text || '')
-            .toString()
-            .toLowerCase()
-            .normalize('NFD')
-            .replace(/[\u0300-\u036f]/g, '')
-            .trim();
-    }
-
-    function getPageSize() {
-        return parseInt(pageSizeSelect.value, 10) || 10;
-    }
-
-    function applyFilter() {
-        const query = normalizeText(input.value);
-
-        filteredRows = rows.filter(row => {
-            const data = normalizeText(row.dataset.search);
-            return query === '' || data.includes(query);
-        });
-
-        currentPage = 1;
-
-        clearBtn.classList.toggle('hidden', query.length === 0);
-        clearBtn.classList.toggle('flex', query.length > 0);
-
-        renderTable();
-    }
-
-    function renderTable() {
-        const pageSize = getPageSize();
-        const totalResults = filteredRows.length;
-        const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
-
-        if (currentPage > totalPages) {
-            currentPage = totalPages;
+        function normalizeText(text) {
+            return (text || '')
+                .toString()
+                .toLowerCase()
+                .normalize('NFD')
+                .replace(/[\u0300-\u036f]/g, '')
+                .trim();
         }
 
-        const start = (currentPage - 1) * pageSize;
-        const end = start + pageSize;
-        const visibleRows = filteredRows.slice(start, end);
-
-        rows.forEach(row => row.classList.add('hidden'));
-        visibleRows.forEach(row => row.classList.remove('hidden'));
-
-        const showingFrom = totalResults === 0 ? 0 : start + 1;
-        const showingTo = Math.min(end, totalResults);
-
-        if (resultCount) resultCount.textContent = totalResults;
-        if (rangeInfo) rangeInfo.textContent = totalResults === 0 ? '0' : `${showingFrom}-${showingTo}`;
-
-        if (emptyState) {
-            emptyState.classList.toggle('hidden', totalResults !== 0 || rows.length === 0);
+        function getPageSize() {
+            return parseInt(pageSizeSelect.value, 10) || 10;
         }
 
-        if (noDataRow) {
-            noDataRow.classList.toggle('hidden', rows.length !== 0);
-        }
+        function applyFilter() {
+            const query = normalizeText(input.value);
 
-        currentPageLabel.textContent = totalResults === 0 ? '0' : currentPage;
-        totalPagesLabel.textContent = totalResults === 0 ? '0' : totalPages;
-
-        prevBtn.disabled = currentPage <= 1 || totalResults === 0;
-        nextBtn.disabled = currentPage >= totalPages || totalResults === 0;
-
-        renderPaginationNumbers(totalPages, totalResults);
-    }
-
-    function renderPaginationNumbers(totalPages, totalResults) {
-        paginationNumbers.innerHTML = '';
-
-        if (totalResults === 0) return;
-
-        const maxButtons = 5;
-        let startPage = Math.max(1, currentPage - 2);
-        let endPage = Math.min(totalPages, startPage + maxButtons - 1);
-
-        if (endPage - startPage < maxButtons - 1) {
-            startPage = Math.max(1, endPage - maxButtons + 1);
-        }
-
-        for (let page = startPage; page <= endPage; page++) {
-            const btn = document.createElement('button');
-            btn.type = 'button';
-            btn.textContent = page;
-
-            btn.className = page === currentPage
-                ? 'w-9 h-9 rounded-xl bg-red-900 text-white text-xs font-black shadow-lg shadow-red-900/20'
-                : 'w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-black hover:bg-red-50 hover:text-red-900 transition';
-
-            btn.addEventListener('click', function () {
-                currentPage = page;
-                renderTable();
+            filteredRows = rows.filter(row => {
+                const data = normalizeText(row.dataset.search);
+                return query === '' || data.includes(query);
             });
 
-            paginationNumbers.appendChild(btn);
+            currentPage = 1;
+
+            clearBtn.classList.toggle('hidden', query.length === 0);
+            clearBtn.classList.toggle('flex', query.length > 0);
+
+            renderTable();
         }
-    }
 
-    input.addEventListener('input', applyFilter);
+        function renderTable() {
+            const pageSize = getPageSize();
+            const totalResults = filteredRows.length;
+            const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
 
-    clearBtn.addEventListener('click', function () {
-        input.value = '';
-        input.focus();
+            if (currentPage > totalPages) {
+                currentPage = totalPages;
+            }
+
+            const start = (currentPage - 1) * pageSize;
+            const end = start + pageSize;
+            const visibleRows = filteredRows.slice(start, end);
+
+            rows.forEach(row => row.classList.add('hidden'));
+            visibleRows.forEach(row => row.classList.remove('hidden'));
+
+            const showingFrom = totalResults === 0 ? 0 : start + 1;
+            const showingTo = Math.min(end, totalResults);
+
+            if (resultCount) resultCount.textContent = totalResults;
+            if (rangeInfo) rangeInfo.textContent = totalResults === 0 ? '0' : `${showingFrom}-${showingTo}`;
+
+            if (emptyState) {
+                emptyState.classList.toggle('hidden', totalResults !== 0 || rows.length === 0);
+            }
+
+            if (noDataRow) {
+                noDataRow.classList.toggle('hidden', rows.length !== 0);
+            }
+
+            currentPageLabel.textContent = totalResults === 0 ? '0' : currentPage;
+            totalPagesLabel.textContent = totalResults === 0 ? '0' : totalPages;
+
+            prevBtn.disabled = currentPage <= 1 || totalResults === 0;
+            nextBtn.disabled = currentPage >= totalPages || totalResults === 0;
+
+            renderPaginationNumbers(totalPages, totalResults);
+        }
+
+        function renderPaginationNumbers(totalPages, totalResults) {
+            paginationNumbers.innerHTML = '';
+
+            if (totalResults === 0) return;
+
+            const maxButtons = 5;
+            let startPage = Math.max(1, currentPage - 2);
+            let endPage = Math.min(totalPages, startPage + maxButtons - 1);
+
+            if (endPage - startPage < maxButtons - 1) {
+                startPage = Math.max(1, endPage - maxButtons + 1);
+            }
+
+            for (let page = startPage; page <= endPage; page++) {
+                const btn = document.createElement('button');
+                btn.type = 'button';
+                btn.textContent = page;
+
+                btn.className = page === currentPage ?
+                    'w-9 h-9 rounded-xl bg-red-900 text-white text-xs font-black shadow-lg shadow-red-900/20' :
+                    'w-9 h-9 rounded-xl bg-white border border-slate-200 text-slate-600 text-xs font-black hover:bg-red-50 hover:text-red-900 transition';
+
+                btn.addEventListener('click', function() {
+                    currentPage = page;
+                    renderTable();
+                });
+
+                paginationNumbers.appendChild(btn);
+            }
+        }
+
+        input.addEventListener('input', applyFilter);
+
+        clearBtn.addEventListener('click', function() {
+            input.value = '';
+            input.focus();
+            applyFilter();
+        });
+
+        pageSizeSelect.addEventListener('change', function() {
+            currentPage = 1;
+            renderTable();
+        });
+
+        prevBtn.addEventListener('click', function() {
+            if (currentPage > 1) {
+                currentPage--;
+                renderTable();
+            }
+        });
+
+        nextBtn.addEventListener('click', function() {
+            const totalPages = Math.ceil(filteredRows.length / getPageSize());
+
+            if (currentPage < totalPages) {
+                currentPage++;
+                renderTable();
+            }
+        });
+
         applyFilter();
     });
 
-    pageSizeSelect.addEventListener('change', function () {
-        currentPage = 1;
-        renderTable();
-    });
+    function abrirModal(id) {
+        document.getElementById(id)?.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
 
-    prevBtn.addEventListener('click', function () {
-        if (currentPage > 1) {
-            currentPage--;
-            renderTable();
-        }
-    });
-
-    nextBtn.addEventListener('click', function () {
-        const totalPages = Math.ceil(filteredRows.length / getPageSize());
-
-        if (currentPage < totalPages) {
-            currentPage++;
-            renderTable();
-        }
-    });
-
-    applyFilter();
-});
-
-function abrirModal(id) {
-    document.getElementById(id)?.classList.remove('hidden');
-    document.body.classList.add('overflow-hidden');
-}
-
-function cerrarModal(id) {
-    document.getElementById(id)?.classList.add('hidden');
-    document.body.classList.remove('overflow-hidden');
-}
+    function cerrarModal(id) {
+        document.getElementById(id)?.classList.add('hidden');
+        document.body.classList.remove('overflow-hidden');
+    }
 </script>

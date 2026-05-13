@@ -1167,6 +1167,7 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
                             <div class="field-group">
                                 <label class="field-label">Estado Civil</label>
                                 <select name="estado_civil" class="field-input">
+                                    <option value="">Seleccionar</option>
                                     <?php foreach (['Soltero/a', 'Casado/a', 'Divorciado/a', 'Viudo/a', 'Conviviente'] as $opt):
                                         $sel = ($perfil['estado_civil'] ?? '') === $opt ? 'selected' : ''; ?>
                                         <option value="<?php echo $opt; ?>" <?php echo $sel; ?>>
@@ -1179,6 +1180,7 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
                             <div class="field-group">
                                 <label class="field-label">Grupo Sanguíneo</label>
                                 <select name="grupo_sanguineo" class="field-input">
+                                    <option value="">Seleccionar</option>
                                     <?php foreach (['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] as $g):
                                         $sel = ($perfil['grupo_sanguineo'] ?? '') === $g ? 'selected' : ''; ?>
                                         <option value="<?php echo $g; ?>" <?php echo $sel; ?>>
@@ -3030,6 +3032,90 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
     // ── MODAL & WIZARD ────────────────────────────────
     const valoresOriginales = {};
 
+    function esVacioComparacion(valor) {
+        if (valor === null || valor === undefined) return true;
+        if (typeof valor === 'string') return valor.trim() === '';
+        if (Array.isArray(valor)) return valor.length === 0;
+        if (typeof valor === 'object') return Object.keys(valor).length === 0;
+        return false;
+    }
+
+    function normalizarComparacion(valor, campo = '') {
+        if (valor === null || valor === undefined) return '';
+
+        if (typeof valor !== 'object') {
+            let v = String(valor).trim();
+
+            if (campo === 'sin_afp_afiliarme' && (v === '0' || v === 'false')) {
+                return '';
+            }
+
+            return v;
+        }
+
+        if (Array.isArray(valor)) {
+            return valor
+                .map(item => normalizarComparacion(item, campo))
+                .filter(item => !esVacioComparacion(item))
+                .sort((a, b) => JSON.stringify(a).localeCompare(JSON.stringify(b)));
+        }
+
+        const ignorar = [
+            'id',
+            'colab_id',
+            'usuario_id',
+            'edad',
+            'n_hijos',
+            'estado_validacion',
+            'archivo_sustento',
+            'created_at',
+            'updated_at'
+        ];
+
+        const salida = {};
+
+        Object.keys(valor).sort().forEach(k => {
+            if (ignorar.includes(k)) return;
+
+            let key = k;
+
+            if (key === 'nombre_completo') key = 'nombre';
+            if (key === 'dni_familiar') key = 'dni';
+            if (key === 'modalidad_contrato') key = 'mod_contrato';
+
+            const normalizado = normalizarComparacion(valor[k], key);
+
+            if (!esVacioComparacion(normalizado)) {
+                salida[key] = normalizado;
+            }
+        });
+
+        return salida;
+    }
+
+    function sonIguales(a, b) {
+        return JSON.stringify(normalizarComparacion(a)) === JSON.stringify(normalizarComparacion(b));
+    }
+
+    function obtenerPensionActual() {
+        return {
+            sistema_pension: document.querySelector('[name="pension[sistema_pension]"]')?.value || '',
+            afp: document.querySelector('[name="pension[afp]"]')?.value || '',
+            cuspp: document.querySelector('[name="pension[cuspp]"]')?.value?.trim() || '',
+            tipo_comision: document.querySelector('[name="pension[tipo_comision]"]')?.value || '',
+            fecha_inscripcion: document.querySelector('[name="pension[fecha_inscripcion]"]')?.value || '',
+            sin_afp_afiliarme: document.querySelector('[name="pension[sin_afp_afiliarme]"]')?.checked ? 1 : 0
+        };
+    }
+
+    function obtenerBancarioActual() {
+        return {
+            banco_haberes: document.querySelector('[name="bancario[banco_haberes]"]')?.value?.trim() || '',
+            numero_cuenta: document.querySelector('[name="bancario[numero_cuenta]"]')?.value?.trim() || '',
+            numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value?.trim() || ''
+        };
+    }
+
     let pasoActual = 1;
     const totalPasos = 4;
 
@@ -3145,6 +3231,9 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
             numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value?.trim() || ''
         };
 
+        valoresOriginales.pension = obtenerPensionActual();
+        valoresOriginales.bancario = obtenerBancarioActual();
+
         irPaso(1);
     }
 
@@ -3247,7 +3336,7 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
             return String(v);
         };
 
-        const iguales = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+        const iguales = sonIguales;
 
         const labelsCampos = {
             nombres_apellidos: 'Nombres y Apellidos',
@@ -3859,20 +3948,16 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
         });
         campos['experiencia'] = experiencia;
 
-        campos['pension'] = {
-            sistema_pension: document.querySelector('[name="pension[sistema_pension]"]')?.value || '',
-            afp: document.querySelector('[name="pension[afp]"]')?.value || '',
-            cuspp: document.querySelector('[name="pension[cuspp]"]')?.value || '',
-            tipo_comision: document.querySelector('[name="pension[tipo_comision]"]')?.value || '',
-            fecha_inscripcion: document.querySelector('[name="pension[fecha_inscripcion]"]')?.value || '',
-            sin_afp_afiliarme: document.querySelector('[name="pension[sin_afp_afiliarme]"]')?.checked ? 1 : 0
-        };
+        const pensionActualGuardar = obtenerPensionActual();
+        const bancarioActualGuardar = obtenerBancarioActual();
 
-        campos['bancario'] = {
-            banco_haberes: document.querySelector('[name="bancario[banco_haberes]"]')?.value?.trim() || '',
-            numero_cuenta: document.querySelector('[name="bancario[numero_cuenta]"]')?.value?.trim() || '',
-            numero_cuenta_cci: document.querySelector('[name="bancario[numero_cuenta_cci]"]')?.value?.trim() || ''
-        };
+        if (!sonIguales(valoresOriginales.pension || {}, pensionActualGuardar)) {
+            campos['pension'] = pensionActualGuardar;
+        }
+
+        if (!sonIguales(valoresOriginales.bancario || {}, bancarioActualGuardar)) {
+            campos['bancario'] = bancarioActualGuardar;
+        }
 
         const idiomas = [];
         document.querySelectorAll('.idioma-row').forEach(row => {

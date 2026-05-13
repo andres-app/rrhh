@@ -44,6 +44,156 @@ class MdDirectorio
         return $valor === '' ? null : $valor;
     }
 
+    private static function valorSolicitudVacio($valor): bool
+    {
+        if ($valor === null || $valor === '' || $valor === []) {
+            return true;
+        }
+
+        if (is_array($valor)) {
+            return count($valor) === 0;
+        }
+
+        return false;
+    }
+
+    private static function normalizarSolicitudComparar($valor, string $campo = '')
+    {
+        if ($valor === null || $valor === '') {
+            return '';
+        }
+
+        if (!is_array($valor)) {
+            $v = trim((string)$valor);
+
+            if ($campo === 'sin_afp_afiliarme' && ($v === '0' || strtolower($v) === 'false')) {
+                return '';
+            }
+
+            return $v;
+        }
+
+        if ($valor === []) {
+            return [];
+        }
+
+        $esLista = array_keys($valor) === range(0, count($valor) - 1);
+
+        $ignorar = [
+            'id',
+            'colab_id',
+            'usuario_id',
+            'edad',
+            'n_hijos',
+            'archivo_sustento',
+            'nombre_archivo_original',
+            'mime_archivo',
+            'tamano_archivo',
+            'estado_validacion',
+            'created_at',
+            'updated_at',
+        ];
+
+        if ($esLista) {
+            $lista = [];
+
+            foreach ($valor as $item) {
+                $itemNormalizado = self::normalizarSolicitudComparar($item, $campo);
+
+                if (!self::valorSolicitudVacio($itemNormalizado)) {
+                    $lista[] = $itemNormalizado;
+                }
+            }
+
+            usort($lista, function ($a, $b) {
+                return strcmp(
+                    json_encode($a, JSON_UNESCAPED_UNICODE),
+                    json_encode($b, JSON_UNESCAPED_UNICODE)
+                );
+            });
+
+            return $lista;
+        }
+
+        $salida = [];
+
+        foreach ($valor as $k => $v) {
+            if (in_array($k, $ignorar, true)) {
+                continue;
+            }
+
+            if ($k === 'nombre_completo') $k = 'nombre';
+            if ($k === 'dni_familiar') $k = 'dni';
+            if ($k === 'modalidad_contrato') $k = 'mod_contrato';
+
+            $normalizado = self::normalizarSolicitudComparar($v, (string)$k);
+
+            if (!self::valorSolicitudVacio($normalizado)) {
+                $salida[$k] = $normalizado;
+            }
+        }
+
+        ksort($salida);
+
+        return $salida;
+    }
+
+    private static function valorAnteriorSolicitud(array $antes, string $campo)
+    {
+        if ($campo === 'hijos') {
+            $familia = $antes['familia'] ?? [];
+
+            if (!is_array($familia)) {
+                return [];
+            }
+
+            return array_values(array_filter($familia, function ($item) {
+                $parentesco = strtoupper(trim($item['parentesco'] ?? ''));
+                return in_array($parentesco, ['HIJO', 'HIJA'], true);
+            }));
+        }
+
+        return $antes[$campo] ?? null;
+    }
+
+    private static function solicitudTieneCambiosReales(array $antes, array $despues): bool
+    {
+        $ignorar = [
+            'id',
+            'colab_id',
+            'usuario_id',
+            'edad',
+            'n_hijos',
+            'familia',
+            'archivo_sustento',
+            'nombre_archivo_original',
+            'mime_archivo',
+            'tamano_archivo',
+            'created_at',
+            'updated_at',
+        ];
+
+        foreach ($despues as $campo => $valorNuevo) {
+            if (in_array($campo, $ignorar, true)) {
+                continue;
+            }
+
+            $valorAnterior = self::valorAnteriorSolicitud($antes, (string)$campo);
+
+            $anteriorNormalizado = self::normalizarSolicitudComparar($valorAnterior, (string)$campo);
+            $nuevoNormalizado = self::normalizarSolicitudComparar($valorNuevo, (string)$campo);
+
+            if (
+                json_encode($anteriorNormalizado, JSON_UNESCAPED_UNICODE) !==
+                json_encode($nuevoNormalizado, JSON_UNESCAPED_UNICODE)
+            ) {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
     /*=============================================
 RESUMEN DASHBOARD DINÁMICO
 =============================================*/
@@ -1348,6 +1498,14 @@ RESUMEN DASHBOARD DINÁMICO
             if (!$perfilActual) {
                 $db->rollBack();
                 return ['success' => false, 'mensaje' => 'No se encontró el perfil del colaborador'];
+            }
+
+            if (!self::solicitudTieneCambiosReales($perfilActual, $datosNuevos)) {
+                $db->rollBack();
+                return [
+                    'success' => false,
+                    'mensaje' => 'No se detectaron cambios reales para enviar a validación'
+                ];
             }
 
             $archivoGuardado = self::mdlGuardarArchivoSustentoTemporal($archivo);
