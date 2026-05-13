@@ -94,6 +94,8 @@ function labelSubCampo($campo): string
         'sistema_pension' => 'Sistema',
         'afp' => 'AFP',
         'cuspp' => 'CUSPP',
+        'fecha_inscripcion' => 'Fecha inscripción',
+        'sin_afp_afiliarme' => 'Sin AFP / Afiliarme',
         'tipo_comision' => 'Comisión',
         'banco_haberes' => 'Banco',
         'numero_cuenta' => 'Cuenta',
@@ -175,6 +177,146 @@ function renderDetalleValor($valor): string
     }
 
     $html .= '</div>';
+    return $html;
+}
+
+function valorDetalleLegible($valor, string $campo = ''): string
+{
+    if ($campo === 'sin_afp_afiliarme') {
+        return !empty($valor) && (string)$valor !== '0' ? 'Sí' : 'No';
+    }
+
+    if ($valor === null || $valor === '' || $valor === []) {
+        return 'Sin registro';
+    }
+
+    if (is_string($valor) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $valor)) {
+        return date('d/m/Y', strtotime($valor));
+    }
+
+    if (is_array($valor)) {
+        return valorPlano($valor);
+    }
+
+    return (string)$valor;
+}
+
+function normalizarSubCampoDetalle($valor, string $campo = ''): string
+{
+    if ($campo === 'sin_afp_afiliarme') {
+        return !empty($valor) && (string)$valor !== '0' ? '1' : '';
+    }
+
+    if ($valor === null || $valor === '') {
+        return '';
+    }
+
+    if (is_array($valor)) {
+        return json_encode(normalizarParaComparar($valor, $campo), JSON_UNESCAPED_UNICODE);
+    }
+
+    return trim((string)$valor);
+}
+
+function obtenerSubCambiosAsociativos($antes, $despues): array
+{
+    $antes = is_array($antes) ? $antes : [];
+    $despues = is_array($despues) ? $despues : [];
+
+    $ignorar = [
+        'id',
+        'colab_id',
+        'usuario_id',
+        'created_at',
+        'updated_at',
+        'estado_validacion',
+    ];
+
+    $keys = array_unique(array_merge(array_keys($antes), array_keys($despues)));
+    $subcambios = [];
+
+    foreach ($keys as $key) {
+        if (in_array($key, $ignorar, true)) {
+            continue;
+        }
+
+        $valorAntes = $antes[$key] ?? null;
+        $valorDespues = $despues[$key] ?? null;
+
+        $antesNorm = normalizarSubCampoDetalle($valorAntes, (string)$key);
+        $despuesNorm = normalizarSubCampoDetalle($valorDespues, (string)$key);
+
+        if ($antesNorm !== $despuesNorm) {
+            $subcambios[] = [
+                'campo' => (string)$key,
+                'campo_label' => labelSubCampo((string)$key),
+                'antes' => $valorAntes,
+                'despues' => $valorDespues,
+            ];
+        }
+    }
+
+    return $subcambios;
+}
+
+function renderDetalleCambio(array $c): string
+{
+    if (empty($c['subcambios']) || !is_array($c['subcambios'])) {
+        return '
+            <div class="grid grid-cols-1 lg:grid-cols-2">
+                <div class="p-5 bg-slate-50 border-b lg:border-b-0 lg:border-r border-slate-200">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
+                        Antes
+                    </p>
+                    ' . renderDetalleValor($c['antes']) . '
+                </div>
+
+                <div class="p-5 bg-white">
+                    <p class="text-[10px] font-black uppercase tracking-widest text-red-900 mb-3">
+                        Después
+                    </p>
+                    ' . renderDetalleValor($c['despues']) . '
+                </div>
+            </div>
+        ';
+    }
+
+    $html = '<div class="p-5 bg-white space-y-3">';
+
+    foreach ($c['subcambios'] as $sub) {
+        $html .= '
+            <div class="rounded-2xl border border-slate-200 overflow-hidden">
+                <div class="px-4 py-3 bg-slate-50 border-b border-slate-200">
+                    <p class="text-xs font-black uppercase tracking-widest text-slate-700">
+                        ' . e($sub['campo_label']) . '
+                    </p>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2">
+                    <div class="p-4 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                            Antes
+                        </p>
+                        <p class="text-sm font-bold text-slate-700">
+                            ' . e(valorDetalleLegible($sub['antes'], $sub['campo'])) . '
+                        </p>
+                    </div>
+
+                    <div class="p-4 bg-white">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-red-900 mb-2">
+                            Después
+                        </p>
+                        <p class="text-sm font-bold text-slate-900">
+                            ' . e(valorDetalleLegible($sub['despues'], $sub['campo'])) . '
+                        </p>
+                    </div>
+                </div>
+            </div>
+        ';
+    }
+
+    $html .= '</div>';
+
     return $html;
 }
 
@@ -320,9 +462,24 @@ function obtenerCambios($antes, $despues): array
         $anteriorNormalizado = normalizarParaComparar($valorAnterior, $campo);
         $nuevoNormalizado = normalizarParaComparar($valorNuevo, $campo);
 
-        if (json_encode($anteriorNormalizado, JSON_UNESCAPED_UNICODE) !== json_encode($nuevoNormalizado, JSON_UNESCAPED_UNICODE)) {
+        if (
+            json_encode($anteriorNormalizado, JSON_UNESCAPED_UNICODE) !==
+            json_encode($nuevoNormalizado, JSON_UNESCAPED_UNICODE)
+        ) {
+            $subcambios = [];
+
+            if (in_array($campo, ['pension', 'bancario'], true)) {
+                $subcambios = obtenerSubCambiosAsociativos($valorAnterior, $valorNuevo);
+            }
+
             $cambios[] = [
+                'campo_key' => $campo,
                 'campo' => labelCampo($campo),
+                'subcampos' => array_map(
+                    fn($item) => $item['campo_label'],
+                    $subcambios
+                ),
+                'subcambios' => $subcambios,
                 'antes' => $valorAnterior,
                 'despues' => $valorNuevo,
             ];
@@ -471,7 +628,15 @@ function obtenerCambios($antes, $despues): array
                                         <?php else: ?>
                                             <?php foreach (array_slice($cambios, 0, 4) as $c): ?>
                                                 <span class="px-2.5 py-1 rounded-lg text-[10px] font-black uppercase tracking-wider bg-red-50 text-red-900 border border-red-100">
-                                                    <?php echo e($c['campo']); ?>
+                                                    <?php
+                                                    $textoCambio = $c['campo'];
+
+                                                    if (!empty($c['subcampos']) && is_array($c['subcampos'])) {
+                                                        $textoCambio .= ': ' . implode(', ', $c['subcampos']);
+                                                    }
+
+                                                    echo e($textoCambio);
+                                                    ?>
                                                 </span>
                                             <?php endforeach; ?>
 
@@ -609,21 +774,7 @@ function obtenerCambios($antes, $despues): array
                                 </p>
                             </div>
 
-                            <div class="grid grid-cols-1 lg:grid-cols-2">
-                                <div class="p-5 bg-slate-50 border-b lg:border-b-0 lg:border-r border-slate-200">
-                                    <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
-                                        Antes
-                                    </p>
-                                    <?php echo renderDetalleValor($c['antes']); ?>
-                                </div>
-
-                                <div class="p-5 bg-white">
-                                    <p class="text-[10px] font-black uppercase tracking-widest text-red-900 mb-3">
-                                        Después
-                                    </p>
-                                    <?php echo renderDetalleValor($c['despues']); ?>
-                                </div>
-                            </div>
+                            <?php echo renderDetalleCambio($c); ?>
                         </div>
                     <?php endforeach; ?>
                 </div>

@@ -31,9 +31,15 @@ function textoTipoSolicitud($tipo)
     };
 }
 
-function valorLimpio($valor)
+function valorLimpio($valor, string $campo = ''): string
 {
-    if ($valor === null) return '';
+    if ($campo === 'sin_afp_afiliarme') {
+        return !empty($valor) && (string)$valor !== '0' ? '1' : '';
+    }
+
+    if ($valor === null) {
+        return '';
+    }
 
     if (is_bool($valor)) {
         return $valor ? '1' : '0';
@@ -42,65 +48,9 @@ function valorLimpio($valor)
     return trim((string)$valor);
 }
 
-function normalizarFila(array $fila, array $campos): array
+function labelCampoSolicitud(string $campo): string
 {
-    $limpio = [];
-
-    foreach ($campos as $campo) {
-        $limpio[$campo] = valorLimpio($fila[$campo] ?? '');
-    }
-
-    return $limpio;
-}
-
-function normalizarLista(array $lista, array $campos): array
-{
-    $resultado = [];
-
-    foreach ($lista as $fila) {
-        if (!is_array($fila)) continue;
-
-        $item = normalizarFila($fila, $campos);
-
-        $vacio = true;
-        foreach ($item as $valor) {
-            if ($valor !== '') {
-                $vacio = false;
-                break;
-            }
-        }
-
-        if (!$vacio) {
-            $resultado[] = $item;
-        }
-    }
-
-    usort($resultado, function ($a, $b) {
-        return json_encode($a, JSON_UNESCAPED_UNICODE) <=> json_encode($b, JSON_UNESCAPED_UNICODE);
-    });
-
-    return $resultado;
-}
-
-function bloqueCambio(array $antes, array $despues, string $campo, array $camposComparar): bool
-{
-    $listaAntes = $antes[$campo] ?? [];
-    $listaDespues = $despues[$campo] ?? [];
-
-    if (!is_array($listaAntes)) $listaAntes = [];
-    if (!is_array($listaDespues)) $listaDespues = [];
-
-    return normalizarLista($listaAntes, $camposComparar) !== normalizarLista($listaDespues, $camposComparar);
-}
-
-function resumenSolicitud($sol)
-{
-    $datosNuevos = json_decode((string)($sol['datos_json'] ?? ''), true) ?: [];
-    $datosAntes  = json_decode((string)($sol['datos_anteriores_json'] ?? ''), true) ?: [];
-
-    $resumen = [];
-
-    $camposSimples = [
+    $labels = [
         'fecha_nacimiento'      => 'Fecha nacimiento',
         'lugar_nacimiento'     => 'Lugar nacimiento',
         'estado_civil'         => 'Estado civil',
@@ -111,133 +61,771 @@ function resumenSolicitud($sol)
         'celular'              => 'Celular',
         'correo_personal'      => 'Correo personal',
         'conyuge'              => 'Cónyuge',
-        'onomastico_conyuge'   => 'Onomástico cónyuge',
+        'onomastico_conyuge'   => 'Fecha nac. cónyuge',
         'dni_conyuge'          => 'DNI cónyuge',
+
+        'contratos'            => 'Contratos',
+        'formacion'            => 'Formación',
+        'experiencia'          => 'Experiencia',
+        'hijos'                => 'Familia',
+        'idiomas'              => 'Idiomas',
+        'pension'              => 'Sistema de pensiones',
+        'bancario'             => 'Datos bancarios',
     ];
 
-    foreach ($camposSimples as $campo => $label) {
-        $antes = valorLimpio($datosAntes[$campo] ?? '');
-        $despues = valorLimpio($datosNuevos[$campo] ?? '');
+    return $labels[$campo] ?? ucwords(str_replace('_', ' ', $campo));
+}
 
-        if ($antes !== $despues) {
-            $resumen[] = $label;
+function labelSubCampoSolicitud(string $campo): string
+{
+    $labels = [
+        'fecha_ingreso'          => 'Fecha ingreso',
+        'fecha_cese'             => 'Fecha cese',
+        'modalidad'              => 'Modalidad',
+
+        'tipo_grado'             => 'Tipo / grado',
+        'descripcion_carrera'    => 'Carrera / descripción',
+        'institucion'            => 'Institución',
+        'anio_realizacion'       => 'Año',
+        'horas_lectivas'         => 'Horas lectivas',
+        'especialidad'           => 'Especialidad',
+        'grado_alcanzado'        => 'Grado alcanzado',
+
+        'empresa_entidad'        => 'Entidad',
+        'unidad_organica_area'   => 'Área',
+        'cargo_puesto'           => 'Cargo',
+        'fecha_inicio'           => 'Fecha inicio',
+        'fecha_fin'              => 'Fecha fin',
+        'actualmente_trabaja'    => 'Actualmente trabaja',
+        'funciones_principales'  => 'Funciones',
+
+        'nombre'                 => 'Nombre',
+        'nombre_completo'        => 'Nombre',
+        'parentesco'             => 'Parentesco',
+        'fecha_nacimiento'       => 'Fecha nacimiento',
+        'dni'                    => 'DNI',
+        'dni_familiar'           => 'DNI',
+
+        'idioma'                 => 'Idioma',
+        'nivel'                  => 'Nivel',
+
+        'sistema_pension'        => 'Sistema',
+        'afp'                    => 'AFP',
+        'cuspp'                  => 'CUSPP',
+        'tipo_comision'          => 'Tipo comisión',
+        'fecha_inscripcion'      => 'Fecha inscripción',
+        'sin_afp_afiliarme'      => 'Sin AFP / Afiliarme',
+
+        'banco_haberes'          => 'Banco',
+        'numero_cuenta'          => 'Cuenta',
+        'numero_cuenta_cci'      => 'CCI',
+    ];
+
+    return $labels[$campo] ?? ucwords(str_replace('_', ' ', $campo));
+}
+
+function normalizarFilaSolicitud(array $fila, array $campos): array
+{
+    $limpio = [];
+
+    foreach ($campos as $campo) {
+        $limpio[$campo] = valorLimpio($fila[$campo] ?? '', $campo);
+    }
+
+    return $limpio;
+}
+
+function filaVaciaSolicitud(array $fila): bool
+{
+    foreach ($fila as $valor) {
+        if ($valor !== '') {
+            return false;
         }
     }
 
-    if (bloqueCambio($datosAntes, $datosNuevos, 'contratos', [
-        'fecha_ingreso',
-        'fecha_cese',
-        'modalidad'
-    ])) {
-        $resumen[] = 'Contratos';
+    return true;
+}
+
+function normalizarListaSolicitud(array $lista, array $campos): array
+{
+    $resultado = [];
+
+    foreach ($lista as $fila) {
+        if (!is_array($fila)) {
+            continue;
+        }
+
+        $item = normalizarFilaSolicitud($fila, $campos);
+
+        if (!filaVaciaSolicitud($item)) {
+            $resultado[] = $item;
+        }
     }
 
-    if (bloqueCambio($datosAntes, $datosNuevos, 'formacion', [
-        'tipo_grado',
-        'descripcion_carrera',
-        'institucion',
-        'anio_realizacion',
-        'horas_lectivas',
-        'especialidad',
-        'grado_alcanzado'
-    ])) {
-        $resumen[] = 'Formación';
-    }
+    usort($resultado, function ($a, $b) {
+        return strcmp(
+            json_encode($a, JSON_UNESCAPED_UNICODE),
+            json_encode($b, JSON_UNESCAPED_UNICODE)
+        );
+    });
 
-    if (bloqueCambio($datosAntes, $datosNuevos, 'experiencia', [
-        'empresa_entidad',
-        'unidad_organica_area',
-        'cargo_puesto',
-        'fecha_inicio',
-        'fecha_fin',
-        'actualmente_trabaja',
-        'funciones_principales'
-    ])) {
-        $resumen[] = 'Experiencia';
-    }
+    return $resultado;
+}
 
-    /*
-    IMPORTANTE:
-    En BD viene como familia, pero desde el formulario viene como hijos.
-    Por eso se comparan los hijos de familia contra hijos del JSON nuevo.
-    */
+function obtenerHijosDesdeFamiliaAnterior(array $datosAntes): array
+{
     $familiaAntes = $datosAntes['familia'] ?? [];
     $hijosAntes = [];
 
-    if (is_array($familiaAntes)) {
-        foreach ($familiaAntes as $familiar) {
-            if (!is_array($familiar)) continue;
+    if (!is_array($familiaAntes)) {
+        return [];
+    }
 
-            $parentesco = strtoupper(valorLimpio($familiar['parentesco'] ?? ''));
+    foreach ($familiaAntes as $familiar) {
+        if (!is_array($familiar)) {
+            continue;
+        }
 
-            if (in_array($parentesco, ['HIJO', 'HIJA'], true)) {
-                $hijosAntes[] = [
-                    'nombre' => $familiar['nombre_completo'] ?? '',
-                    'parentesco' => $familiar['parentesco'] ?? '',
-                    'fecha_nacimiento' => $familiar['fecha_nacimiento'] ?? '',
-                    'dni' => $familiar['dni_familiar'] ?? '',
-                ];
+        $parentesco = strtoupper(valorLimpio($familiar['parentesco'] ?? ''));
+
+        if (in_array($parentesco, ['HIJO', 'HIJA'], true)) {
+            $hijosAntes[] = [
+                'id'               => $familiar['id'] ?? '',
+                'nombre'           => $familiar['nombre_completo'] ?? '',
+                'parentesco'       => $familiar['parentesco'] ?? '',
+                'fecha_nacimiento' => $familiar['fecha_nacimiento'] ?? '',
+                'dni'              => $familiar['dni_familiar'] ?? '',
+            ];
+        }
+    }
+
+    return $hijosAntes;
+}
+
+function subCamposAsociativosCambiados(array $antes, array $despues, array $campos): array
+{
+    $cambiados = [];
+
+    foreach ($campos as $campo) {
+        $valorAntes = valorLimpio($antes[$campo] ?? '', $campo);
+        $valorDespues = valorLimpio($despues[$campo] ?? '', $campo);
+
+        if ($valorAntes !== $valorDespues) {
+            $cambiados[] = labelSubCampoSolicitud($campo);
+        }
+    }
+
+    return $cambiados;
+}
+
+function subCamposListaCambiados(array $antes, array $despues, array $campos): array
+{
+    $listaAntes = normalizarListaSolicitud($antes, $campos);
+    $listaDespues = normalizarListaSolicitud($despues, $campos);
+
+    if ($listaAntes === $listaDespues) {
+        return [];
+    }
+
+    $cambiados = [];
+
+    $max = max(count($listaAntes), count($listaDespues));
+
+    for ($i = 0; $i < $max; $i++) {
+        $filaAntes = $listaAntes[$i] ?? [];
+        $filaDespues = $listaDespues[$i] ?? [];
+
+        foreach ($campos as $campo) {
+            $valorAntes = $filaAntes[$campo] ?? '';
+            $valorDespues = $filaDespues[$campo] ?? '';
+
+            if ($valorAntes !== $valorDespues) {
+                $cambiados[] = labelSubCampoSolicitud($campo);
             }
         }
     }
 
-    $datosAntesHijos = ['hijos' => $hijosAntes];
+    return array_values(array_unique($cambiados));
+}
 
-    if (bloqueCambio($datosAntesHijos, $datosNuevos, 'hijos', [
+function agregarResumenCambio(array &$resumen, string $bloque, array $subcampos = []): void
+{
+    $label = labelCampoSolicitud($bloque);
+
+    if (!empty($subcampos)) {
+        $resumen[] = $label . ': ' . implode(', ', array_values(array_unique($subcampos)));
+        return;
+    }
+
+    $resumen[] = $label;
+}
+
+function resumenSolicitud($sol)
+{
+    $datosNuevos = json_decode((string)($sol['datos_json'] ?? ''), true) ?: [];
+    $datosAntes  = json_decode((string)($sol['datos_anteriores_json'] ?? ''), true) ?: [];
+
+    $resumen = [];
+
+    $camposSimples = [
+        'fecha_nacimiento',
+        'lugar_nacimiento',
+        'estado_civil',
+        'grupo_sanguineo',
+        'talla',
+        'direccion_residencia',
+        'distrito',
+        'celular',
+        'correo_personal',
+        'conyuge',
+        'onomastico_conyuge',
+        'dni_conyuge',
+    ];
+
+    foreach ($camposSimples as $campo) {
+        $antes = valorLimpio($datosAntes[$campo] ?? '', $campo);
+        $despues = valorLimpio($datosNuevos[$campo] ?? '', $campo);
+
+        if ($antes !== $despues) {
+            $resumen[] = labelCampoSolicitud($campo);
+        }
+    }
+
+    $bloquesLista = [
+        'contratos' => [
+            'fecha_ingreso',
+            'fecha_cese',
+            'modalidad',
+        ],
+        'formacion' => [
+            'tipo_grado',
+            'descripcion_carrera',
+            'institucion',
+            'anio_realizacion',
+            'horas_lectivas',
+            'especialidad',
+            'grado_alcanzado',
+        ],
+        'experiencia' => [
+            'empresa_entidad',
+            'unidad_organica_area',
+            'cargo_puesto',
+            'fecha_inicio',
+            'fecha_fin',
+            'actualmente_trabaja',
+            'funciones_principales',
+        ],
+        'idiomas' => [
+            'idioma',
+            'nivel',
+        ],
+    ];
+
+    foreach ($bloquesLista as $bloque => $campos) {
+        $antes = is_array($datosAntes[$bloque] ?? null) ? $datosAntes[$bloque] : [];
+        $despues = is_array($datosNuevos[$bloque] ?? null) ? $datosNuevos[$bloque] : [];
+
+        $subcambios = subCamposListaCambiados($antes, $despues, $campos);
+
+        if (!empty($subcambios)) {
+            agregarResumenCambio($resumen, $bloque, $subcambios);
+        }
+    }
+
+    $hijosAntes = obtenerHijosDesdeFamiliaAnterior($datosAntes);
+    $hijosDespues = is_array($datosNuevos['hijos'] ?? null) ? $datosNuevos['hijos'] : [];
+
+    $subcambiosHijos = subCamposListaCambiados($hijosAntes, $hijosDespues, [
         'nombre',
         'parentesco',
         'fecha_nacimiento',
-        'dni'
-    ])) {
-        $resumen[] = 'Familia';
+        'dni',
+    ]);
+
+    if (!empty($subcambiosHijos)) {
+        agregarResumenCambio($resumen, 'hijos', $subcambiosHijos);
     }
 
     $pensionAntes = is_array($datosAntes['pension'] ?? null) ? $datosAntes['pension'] : [];
     $pensionNueva = is_array($datosNuevos['pension'] ?? null) ? $datosNuevos['pension'] : [];
 
-    if (normalizarFila($pensionAntes, [
+    $subcambiosPension = subCamposAsociativosCambiados($pensionAntes, $pensionNueva, [
         'sistema_pension',
         'afp',
         'cuspp',
         'tipo_comision',
         'fecha_inscripcion',
-        'sin_afp_afiliarme'
-    ]) !== normalizarFila($pensionNueva, [
-        'sistema_pension',
-        'afp',
-        'cuspp',
-        'tipo_comision',
-        'fecha_inscripcion',
-        'sin_afp_afiliarme'
-    ])) {
-        $resumen[] = 'Pensión';
+        'sin_afp_afiliarme',
+    ]);
+
+    if (!empty($subcambiosPension)) {
+        agregarResumenCambio($resumen, 'pension', $subcambiosPension);
     }
 
     $bancarioAntes = is_array($datosAntes['bancario'] ?? null) ? $datosAntes['bancario'] : [];
     $bancarioNuevo = is_array($datosNuevos['bancario'] ?? null) ? $datosNuevos['bancario'] : [];
 
-    if (normalizarFila($bancarioAntes, [
+    $subcambiosBancario = subCamposAsociativosCambiados($bancarioAntes, $bancarioNuevo, [
         'banco_haberes',
         'numero_cuenta',
-        'numero_cuenta_cci'
-    ]) !== normalizarFila($bancarioNuevo, [
-        'banco_haberes',
-        'numero_cuenta',
-        'numero_cuenta_cci'
-    ])) {
-        $resumen[] = 'Bancario';
-    }
+        'numero_cuenta_cci',
+    ]);
 
-    if (bloqueCambio($datosAntes, $datosNuevos, 'idiomas', [
-        'idioma',
-        'nivel'
-    ])) {
-        $resumen[] = 'Idiomas';
+    if (!empty($subcambiosBancario)) {
+        agregarResumenCambio($resumen, 'bancario', $subcambiosBancario);
     }
 
     return !empty($resumen)
-        ? implode(', ', array_unique($resumen))
+        ? implode(', ', array_values(array_unique($resumen)))
         : 'Sin cambios detectados';
+}
+
+function rrhhValE($valor): string
+{
+    return htmlspecialchars((string)$valor, ENT_QUOTES, 'UTF-8');
+}
+
+function rrhhValLabelCampo(string $campo): string
+{
+    $labels = [
+        'fecha_nacimiento'      => 'Fecha nacimiento',
+        'lugar_nacimiento'     => 'Lugar nacimiento',
+        'estado_civil'         => 'Estado civil',
+        'grupo_sanguineo'      => 'Grupo sanguíneo',
+        'talla'                => 'Talla',
+        'direccion_residencia' => 'Dirección',
+        'distrito'             => 'Distrito',
+        'celular'              => 'Celular',
+        'correo_personal'      => 'Correo personal',
+        'conyuge'              => 'Cónyuge',
+        'onomastico_conyuge'   => 'Fecha nac. cónyuge',
+        'dni_conyuge'          => 'DNI cónyuge',
+        'pension'              => 'Sistema de pensiones',
+        'bancario'             => 'Datos bancarios',
+        'contratos'            => 'Contratos',
+        'formacion'            => 'Formación',
+        'experiencia'          => 'Experiencia',
+        'hijos'                => 'Familia',
+        'idiomas'              => 'Idiomas',
+    ];
+
+    return $labels[$campo] ?? ucwords(str_replace('_', ' ', $campo));
+}
+
+function rrhhValLabelSubCampo(string $campo): string
+{
+    $labels = [
+        'sistema_pension'       => 'Sistema',
+        'afp'                   => 'AFP',
+        'cuspp'                 => 'CUSPP',
+        'tipo_comision'         => 'Tipo comisión',
+        'fecha_inscripcion'     => 'Fecha inscripción',
+        'sin_afp_afiliarme'     => 'Sin AFP / Afiliarme',
+
+        'banco_haberes'         => 'Banco',
+        'numero_cuenta'         => 'Número de cuenta',
+        'numero_cuenta_cci'     => 'CCI',
+
+        'fecha_ingreso'         => 'Fecha ingreso',
+        'fecha_cese'            => 'Fecha cese',
+        'modalidad'             => 'Modalidad',
+
+        'tipo_grado'            => 'Tipo / grado',
+        'descripcion_carrera'   => 'Carrera / descripción',
+        'institucion'           => 'Institución',
+        'anio_realizacion'      => 'Año',
+        'horas_lectivas'        => 'Horas lectivas',
+        'especialidad'          => 'Especialidad',
+        'grado_alcanzado'       => 'Grado alcanzado',
+
+        'empresa_entidad'       => 'Entidad',
+        'unidad_organica_area'  => 'Área',
+        'cargo_puesto'          => 'Cargo',
+        'fecha_inicio'          => 'Fecha inicio',
+        'fecha_fin'             => 'Fecha fin',
+        'actualmente_trabaja'   => 'Actualmente trabaja',
+        'funciones_principales' => 'Funciones',
+
+        'nombre'                => 'Nombre',
+        'nombre_completo'       => 'Nombre',
+        'parentesco'            => 'Parentesco',
+        'fecha_nacimiento'      => 'Fecha nacimiento',
+        'dni'                   => 'DNI',
+        'dni_familiar'          => 'DNI',
+
+        'idioma'                => 'Idioma',
+        'nivel'                 => 'Nivel',
+    ];
+
+    return $labels[$campo] ?? ucwords(str_replace('_', ' ', $campo));
+}
+
+function rrhhValNormalizar($valor, string $campo = ''): string
+{
+    if ($campo === 'sin_afp_afiliarme' || $campo === 'actualmente_trabaja') {
+        return !empty($valor) && (string)$valor !== '0' ? '1' : '';
+    }
+
+    if ($valor === null) {
+        return '';
+    }
+
+    if (is_bool($valor)) {
+        return $valor ? '1' : '';
+    }
+
+    if (is_array($valor)) {
+        return json_encode($valor, JSON_UNESCAPED_UNICODE);
+    }
+
+    return trim((string)$valor);
+}
+
+function rrhhValLegible($valor, string $campo = ''): string
+{
+    if ($campo === 'sin_afp_afiliarme' || $campo === 'actualmente_trabaja') {
+        return !empty($valor) && (string)$valor !== '0' ? 'Sí' : 'No';
+    }
+
+    if ($valor === null || $valor === '' || $valor === []) {
+        return 'Sin registro';
+    }
+
+    if (is_string($valor) && preg_match('/^\d{4}-\d{2}-\d{2}$/', $valor)) {
+        return date('d/m/Y', strtotime($valor));
+    }
+
+    if (is_array($valor)) {
+        return json_encode($valor, JSON_UNESCAPED_UNICODE);
+    }
+
+    return (string)$valor;
+}
+
+function rrhhValObtenerValorAnterior(array $antes, string $campo)
+{
+    if ($campo === 'hijos') {
+        $familia = $antes['familia'] ?? [];
+
+        if (!is_array($familia)) {
+            return [];
+        }
+
+        $hijos = [];
+
+        foreach ($familia as $item) {
+            if (!is_array($item)) continue;
+
+            $parentesco = strtoupper(trim($item['parentesco'] ?? ''));
+
+            if (in_array($parentesco, ['HIJO', 'HIJA'], true)) {
+                $hijos[] = [
+                    'id'               => $item['id'] ?? '',
+                    'nombre'           => $item['nombre_completo'] ?? '',
+                    'parentesco'       => $item['parentesco'] ?? '',
+                    'fecha_nacimiento' => $item['fecha_nacimiento'] ?? '',
+                    'dni'              => $item['dni_familiar'] ?? '',
+                ];
+            }
+        }
+
+        return $hijos;
+    }
+
+    return $antes[$campo] ?? null;
+}
+
+function rrhhValSubCambiosAsociativos($antes, $despues, array $campos): array
+{
+    $antes = is_array($antes) ? $antes : [];
+    $despues = is_array($despues) ? $despues : [];
+
+    $cambios = [];
+
+    foreach ($campos as $campo) {
+        $valorAntes = $antes[$campo] ?? null;
+        $valorDespues = $despues[$campo] ?? null;
+
+        if (rrhhValNormalizar($valorAntes, $campo) !== rrhhValNormalizar($valorDespues, $campo)) {
+            $cambios[] = [
+                'bloque' => '',
+                'campo' => $campo,
+                'campo_label' => rrhhValLabelSubCampo($campo),
+                'antes' => $valorAntes,
+                'despues' => $valorDespues,
+            ];
+        }
+    }
+
+    return $cambios;
+}
+
+function rrhhValPrepararLista($lista, array $campos): array
+{
+    if (!is_array($lista)) {
+        return [];
+    }
+
+    $salida = [];
+
+    foreach (array_values($lista) as $idx => $item) {
+        if (!is_array($item)) continue;
+
+        $id = trim((string)($item['id'] ?? ''));
+        $key = $id !== '' ? 'id_' . $id : 'idx_' . $idx;
+
+        $fila = [
+            '_key' => $key,
+            '_titulo' => 'Registro ' . ($idx + 1),
+        ];
+
+        foreach ($campos as $campo) {
+            $fila[$campo] = $item[$campo] ?? null;
+        }
+
+        $salida[$key] = $fila;
+    }
+
+    return $salida;
+}
+
+function rrhhValSubCambiosLista($antes, $despues, array $campos): array
+{
+    $listaAntes = rrhhValPrepararLista($antes, $campos);
+    $listaDespues = rrhhValPrepararLista($despues, $campos);
+
+    $keys = array_unique(array_merge(array_keys($listaAntes), array_keys($listaDespues)));
+    $cambios = [];
+
+    foreach ($keys as $index => $key) {
+        $filaAntes = $listaAntes[$key] ?? [];
+        $filaDespues = $listaDespues[$key] ?? [];
+
+        $titulo = $filaDespues['_titulo'] ?? $filaAntes['_titulo'] ?? ('Registro ' . ($index + 1));
+
+        foreach ($campos as $campo) {
+            $valorAntes = $filaAntes[$campo] ?? null;
+            $valorDespues = $filaDespues[$campo] ?? null;
+
+            if (rrhhValNormalizar($valorAntes, $campo) !== rrhhValNormalizar($valorDespues, $campo)) {
+                $cambios[] = [
+                    'bloque' => $titulo,
+                    'campo' => $campo,
+                    'campo_label' => rrhhValLabelSubCampo($campo),
+                    'antes' => $valorAntes,
+                    'despues' => $valorDespues,
+                ];
+            }
+        }
+    }
+
+    return $cambios;
+}
+
+function rrhhValObtenerCambiosDetalle(array $sol): array
+{
+    $despues = json_decode((string)($sol['datos_json'] ?? ''), true) ?: [];
+    $antes = json_decode((string)($sol['datos_anteriores_json'] ?? ''), true) ?: [];
+
+    $cambios = [];
+
+    $camposSimples = [
+        'fecha_nacimiento',
+        'lugar_nacimiento',
+        'estado_civil',
+        'grupo_sanguineo',
+        'talla',
+        'direccion_residencia',
+        'distrito',
+        'celular',
+        'correo_personal',
+        'conyuge',
+        'onomastico_conyuge',
+        'dni_conyuge',
+    ];
+
+    foreach ($camposSimples as $campo) {
+        if (!array_key_exists($campo, $despues)) {
+            continue;
+        }
+
+        $valorAntes = rrhhValObtenerValorAnterior($antes, $campo);
+        $valorDespues = $despues[$campo] ?? null;
+
+        if (rrhhValNormalizar($valorAntes, $campo) !== rrhhValNormalizar($valorDespues, $campo)) {
+            $cambios[] = [
+                'seccion' => rrhhValLabelCampo($campo),
+                'detalle' => '',
+                'campo' => $campo,
+                'campo_label' => rrhhValLabelCampo($campo),
+                'antes' => $valorAntes,
+                'despues' => $valorDespues,
+            ];
+        }
+    }
+
+    $bloquesAsociativos = [
+        'pension' => [
+            'sistema_pension',
+            'afp',
+            'cuspp',
+            'tipo_comision',
+            'fecha_inscripcion',
+            'sin_afp_afiliarme',
+        ],
+        'bancario' => [
+            'banco_haberes',
+            'numero_cuenta',
+            'numero_cuenta_cci',
+        ],
+    ];
+
+    foreach ($bloquesAsociativos as $bloque => $campos) {
+        if (!array_key_exists($bloque, $despues)) {
+            continue;
+        }
+
+        $subcambios = rrhhValSubCambiosAsociativos(
+            rrhhValObtenerValorAnterior($antes, $bloque),
+            $despues[$bloque] ?? [],
+            $campos
+        );
+
+        foreach ($subcambios as $sub) {
+            $cambios[] = [
+                'seccion' => rrhhValLabelCampo($bloque),
+                'detalle' => '',
+                'campo' => $sub['campo'],
+                'campo_label' => $sub['campo_label'],
+                'antes' => $sub['antes'],
+                'despues' => $sub['despues'],
+            ];
+        }
+    }
+
+    $bloquesLista = [
+        'contratos' => [
+            'fecha_ingreso',
+            'fecha_cese',
+            'modalidad',
+        ],
+        'formacion' => [
+            'tipo_grado',
+            'descripcion_carrera',
+            'institucion',
+            'anio_realizacion',
+            'horas_lectivas',
+            'especialidad',
+            'grado_alcanzado',
+        ],
+        'experiencia' => [
+            'empresa_entidad',
+            'unidad_organica_area',
+            'cargo_puesto',
+            'fecha_inicio',
+            'fecha_fin',
+            'actualmente_trabaja',
+            'funciones_principales',
+        ],
+        'hijos' => [
+            'nombre',
+            'parentesco',
+            'fecha_nacimiento',
+            'dni',
+        ],
+        'idiomas' => [
+            'idioma',
+            'nivel',
+        ],
+    ];
+
+    foreach ($bloquesLista as $bloque => $campos) {
+        if (!array_key_exists($bloque, $despues)) {
+            continue;
+        }
+
+        $subcambios = rrhhValSubCambiosLista(
+            rrhhValObtenerValorAnterior($antes, $bloque),
+            $despues[$bloque] ?? [],
+            $campos
+        );
+
+        foreach ($subcambios as $sub) {
+            $cambios[] = [
+                'seccion' => rrhhValLabelCampo($bloque),
+                'detalle' => $sub['bloque'],
+                'campo' => $sub['campo'],
+                'campo_label' => $sub['campo_label'],
+                'antes' => $sub['antes'],
+                'despues' => $sub['despues'],
+            ];
+        }
+    }
+
+    return $cambios;
+}
+
+function rrhhValRenderDetalleCambios(array $cambios): string
+{
+    if (empty($cambios)) {
+        return '
+            <div class="p-8 text-center text-slate-400">
+                <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center mb-3 font-black">—</div>
+                <p class="text-sm font-bold">No se detectaron cambios visibles.</p>
+            </div>
+        ';
+    }
+
+    $html = '<div class="space-y-4">';
+
+    foreach ($cambios as $c) {
+        $detalle = !empty($c['detalle'])
+            ? '<span class="ml-2 text-[10px] font-black text-slate-400 bg-slate-100 px-2 py-1 rounded-lg">' . rrhhValE($c['detalle']) . '</span>'
+            : '';
+
+        $html .= '
+            <div class="rounded-3xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+                <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                    <div>
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-red-900">
+                            ' . rrhhValE($c['seccion']) . '
+                        </p>
+                        <p class="text-sm font-black text-slate-800 mt-1">
+                            ' . rrhhValE($c['campo_label']) . $detalle . '
+                        </p>
+                    </div>
+
+                    <span class="text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-900 border border-red-100 rounded-xl px-3 py-1">
+                        Cambio detectado
+                    </span>
+                </div>
+
+                <div class="grid grid-cols-1 md:grid-cols-2">
+                    <div class="p-5 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                            Antes
+                        </p>
+                        <p class="text-sm font-bold text-slate-700 break-words">
+                            ' . rrhhValE(rrhhValLegible($c['antes'], $c['campo'])) . '
+                        </p>
+                    </div>
+
+                    <div class="p-5 bg-white">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-red-900 mb-2">
+                            Después
+                        </p>
+                        <p class="text-sm font-black text-slate-900 break-words">
+                            ' . rrhhValE(rrhhValLegible($c['despues'], $c['campo'])) . '
+                        </p>
+                    </div>
+                </div>
+            </div>
+        ';
+    }
+
+    $html .= '</div>';
+
+    return $html;
 }
 ?>
 
@@ -374,8 +962,10 @@ function resumenSolicitud($sol)
                                         <p class="font-bold text-slate-700">
                                             <?php echo htmlspecialchars(textoTipoSolicitud($sol['tipo_seccion'] ?? '')); ?>
                                         </p>
-                                        <p class="text-[11px] text-slate-400 mt-1 max-w-md truncate">
-                                            Cambios: <?php echo htmlspecialchars($resumen); ?>
+                                        <p class="text-[11px] text-slate-500 mt-1 max-w-xl leading-relaxed"
+                                            title="<?php echo htmlspecialchars($resumen); ?>">
+                                            <span class="font-black text-slate-400">Cambios:</span>
+                                            <?php echo htmlspecialchars($resumen); ?>
                                         </p>
                                     </td>
 
@@ -401,8 +991,16 @@ function resumenSolicitud($sol)
                                     </td>
 
                                     <td class="p-4 text-center">
-                                        <?php if ($estado === 'PENDIENTE'): ?>
-                                            <div class="flex justify-center gap-2">
+                                        <?php $modalId = 'modal-validacion-' . (int)$sol['id']; ?>
+
+                                        <div class="flex justify-center gap-2 flex-wrap">
+                                            <button type="button"
+                                                onclick="abrirDetalleValidacion('<?php echo $modalId; ?>')"
+                                                class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-slate-800 transition">
+                                                Ver detalle
+                                            </button>
+
+                                            <?php if ($estado === 'PENDIENTE'): ?>
                                                 <button onclick="aprobarSolicitud(<?php echo (int)$sol['id']; ?>)"
                                                     class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-green-700 transition">
                                                     Aprobar
@@ -412,10 +1010,12 @@ function resumenSolicitud($sol)
                                                     class="bg-red-900 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-[#4c0505] transition">
                                                     Rechazar
                                                 </button>
-                                            </div>
-                                        <?php else: ?>
-                                            <span class="text-xs text-slate-400 font-bold">Atendida</span>
-                                        <?php endif; ?>
+                                            <?php else: ?>
+                                                <span class="text-xs text-slate-400 font-bold px-3 py-2">
+                                                    Atendida
+                                                </span>
+                                            <?php endif; ?>
+                                        </div>
                                     </td>
 
                                 </tr>
@@ -458,10 +1058,161 @@ function resumenSolicitud($sol)
     </div>
 </main>
 
+<?php foreach ($solicitudes as $sol): ?>
+    <?php
+    $estadoModal = $sol['estado'] ?? 'PENDIENTE';
+    $modalId = 'modal-validacion-' . (int)$sol['id'];
+    $cambiosDetalle = rrhhValObtenerCambiosDetalle($sol);
+    $resumenModal = resumenSolicitud($sol);
+    ?>
+
+    <div id="<?php echo $modalId; ?>" class="fixed inset-0 z-[90] hidden" role="dialog" aria-modal="true">
+
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>')"></div>
+
+        <div class="absolute inset-0 flex items-center justify-center p-4">
+            <div class="relative w-full max-w-5xl max-h-[92vh] bg-white rounded-[32px] shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+
+                <div class="px-7 py-6 bg-gradient-to-r from-[#310404] to-red-900 flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-red-200 text-[10px] font-black uppercase tracking-[0.24em] mb-1">
+                            Detalle de validación
+                        </p>
+
+                        <h2 class="text-white text-2xl font-black leading-tight">
+                            Solicitud #<?php echo (int)$sol['id']; ?>
+                        </h2>
+
+                        <p class="text-red-100 text-sm font-semibold mt-2">
+                            <?php echo rrhhValE($sol['nombres_apellidos'] ?? 'Colaborador'); ?>
+                            <span class="text-red-200">• DNI:</span>
+                            <?php echo rrhhValE($sol['dni'] ?? '—'); ?>
+                        </p>
+                    </div>
+
+                    <button type="button"
+                        onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>')"
+                        class="w-10 h-10 rounded-2xl bg-white/10 text-white hover:bg-white/20 transition flex items-center justify-center">
+                        ✕
+                    </button>
+                </div>
+
+                <div class="px-7 py-4 border-b border-slate-100 bg-slate-50">
+                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                Estado
+                            </p>
+                            <span class="inline-flex text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border <?php echo badgeEstadoSolicitud($estadoModal); ?>">
+                                <?php echo rrhhValE($estadoModal); ?>
+                            </span>
+                        </div>
+
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                Fecha de solicitud
+                            </p>
+                            <p class="text-sm font-black text-slate-800">
+                                <?php echo !empty($sol['created_at']) ? date('d/m/Y H:i', strtotime($sol['created_at'])) : '—'; ?>
+                            </p>
+                        </div>
+
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                Sustento
+                            </p>
+
+                            <?php if (!empty($sol['archivo_sustento'])): ?>
+                                <a href="<?php echo BASE_URL . '/' . rrhhValE($sol['archivo_sustento']); ?>" target="_blank"
+                                    class="inline-flex text-xs font-black text-red-900 bg-red-50 border border-red-100 px-3 py-2 rounded-xl hover:bg-red-100 transition">
+                                    Ver archivo adjunto
+                                </a>
+                            <?php else: ?>
+                                <p class="text-sm font-bold text-slate-400">Sin archivo</p>
+                            <?php endif; ?>
+                        </div>
+                    </div>
+
+                    <div class="mt-4 bg-white border border-slate-200 rounded-2xl p-4">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                            Resumen
+                        </p>
+                        <p class="text-sm font-bold text-slate-700 leading-relaxed">
+                            <?php echo rrhhValE($resumenModal); ?>
+                        </p>
+                    </div>
+                </div>
+
+                <div class="flex-1 overflow-y-auto px-7 py-6 bg-slate-50">
+                    <?php echo rrhhValRenderDetalleCambios($cambiosDetalle); ?>
+                </div>
+
+                <div class="px-7 py-5 bg-white border-t border-slate-200 flex items-center justify-between gap-3">
+                    <button type="button"
+                        onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>')"
+                        class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-black hover:bg-slate-100 transition">
+                        Cerrar
+                    </button>
+
+                    <?php if ($estadoModal === 'PENDIENTE'): ?>
+                        <div class="flex items-center gap-2">
+                            <button type="button"
+                                onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>'); rechazarSolicitud(<?php echo (int)$sol['id']; ?>);"
+                                class="px-5 py-2.5 rounded-xl bg-red-900 text-white text-sm font-black hover:bg-[#4c0505] transition">
+                                Rechazar
+                            </button>
+
+                            <button type="button"
+                                onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>'); aprobarSolicitud(<?php echo (int)$sol['id']; ?>);"
+                                class="px-5 py-2.5 rounded-xl bg-green-600 text-white text-sm font-black hover:bg-green-700 transition">
+                                Aprobar
+                            </button>
+                        </div>
+                    <?php endif; ?>
+                </div>
+
+            </div>
+        </div>
+    </div>
+<?php endforeach; ?>
+
 <script>
     let estadoActual = 'PENDIENTE';
     let paginaActual = 1;
     let filasFiltradas = [];
+
+    function abrirDetalleValidacion(id) {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+
+        modal.classList.remove('hidden');
+        document.body.classList.add('overflow-hidden');
+    }
+
+    function cerrarDetalleValidacion(id) {
+        const modal = document.getElementById(id);
+        if (!modal) return;
+
+        modal.classList.add('hidden');
+
+        const hayOtroModalAbierto = document.querySelector('[id^="modal-validacion-"]:not(.hidden)');
+        if (!hayOtroModalAbierto) {
+            document.body.classList.remove('overflow-hidden');
+        }
+    }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return;
+
+        document.querySelectorAll('[id^="modal-validacion-"]').forEach(modal => {
+            if (!modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+            }
+        });
+
+        document.body.classList.remove('overflow-hidden');
+    });
 
     const inputBuscar = document.getElementById('buscarSolicitud');
     const pageSizeSelect = document.getElementById('pageSize');
