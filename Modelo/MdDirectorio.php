@@ -156,12 +156,12 @@ RESUMEN DASHBOARD DINÁMICO
     DATOS MAESTRO + LABORAL PRINCIPAL
     (Se toma el registro laboral más reciente como principal)
     =============================================*/
-public static function mdlObtenerPerfilCompleto($usuarioId)
-{
-    $pdo = Conexion::conectar();
+    public static function mdlObtenerPerfilCompleto($usuarioId)
+    {
+        $pdo = Conexion::conectar();
 
-    // 1. Datos maestro + laboral más reciente
-    $stmt = $pdo->prepare("
+        // 1. Datos maestro + laboral más reciente
+        $stmt = $pdo->prepare("
         SELECT 
             m.id,
             m.nombres_apellidos,
@@ -202,104 +202,104 @@ public static function mdlObtenerPerfilCompleto($usuarioId)
         LIMIT 1
     ");
 
-    $stmt->bindParam(':usuario_id', $usuarioId, PDO::PARAM_INT);
-    $stmt->execute();
+        $stmt->bindParam(':usuario_id', $usuarioId, PDO::PARAM_INT);
+        $stmt->execute();
 
-    $perfil = $stmt->fetch(PDO::FETCH_ASSOC);
+        $perfil = $stmt->fetch(PDO::FETCH_ASSOC);
 
-    if (!$perfil) return false;
+        if (!$perfil) return false;
 
-    $colabId = (int)$perfil['id'];
+        $colabId = (int)$perfil['id'];
 
-    // 2. CONTRATOS
-    $stmt2 = $pdo->prepare("
+        // 2. CONTRATOS
+        $stmt2 = $pdo->prepare("
         SELECT id, colab_id, fecha_ingreso, fecha_cese, modalidad
         FROM colab_contratos
         WHERE colab_id = :id
         ORDER BY fecha_ingreso ASC
     ");
-    $stmt2->execute([':id' => $colabId]);
-    $perfil['contratos'] = $stmt2->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $stmt2->execute([':id' => $colabId]);
+        $perfil['contratos'] = $stmt2->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-    // 3. FORMACIÓN
-    $stmt3 = $pdo->prepare("
+        // 3. FORMACIÓN
+        $stmt3 = $pdo->prepare("
         SELECT *
         FROM colab_formacion
         WHERE colab_id = :id
         ORDER BY id ASC
     ");
-    $stmt3->execute([':id' => $colabId]);
-    $perfil['formacion'] = $stmt3->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $stmt3->execute([':id' => $colabId]);
+        $perfil['formacion'] = $stmt3->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-    // 4. EXPERIENCIA
-    $stmt4 = $pdo->prepare("
+        // 4. EXPERIENCIA
+        $stmt4 = $pdo->prepare("
         SELECT *
         FROM colab_experiencia
         WHERE colab_id = :id
         ORDER BY fecha_inicio DESC
     ");
-    $stmt4->execute([':id' => $colabId]);
-    $perfil['experiencia'] = $stmt4->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $stmt4->execute([':id' => $colabId]);
+        $perfil['experiencia'] = $stmt4->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-    // 5. FAMILIA
-    $stmt5 = $pdo->prepare("
+        // 5. FAMILIA
+        $stmt5 = $pdo->prepare("
         SELECT *
         FROM colab_familia
         WHERE colab_id = :id
     ");
-    $stmt5->execute([':id' => $colabId]);
-    $familia = $stmt5->fetchAll(PDO::FETCH_ASSOC) ?: [];
-    $perfil['familia'] = $familia;
+        $stmt5->execute([':id' => $colabId]);
+        $familia = $stmt5->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $perfil['familia'] = $familia;
 
-    // CONYUGE
-    $conyuge = array_filter($familia, fn($f) => ($f['parentesco'] ?? '') === 'CONYUGE');
-    $conyuge = reset($conyuge);
+        // CONYUGE
+        $conyuge = array_filter($familia, fn($f) => ($f['parentesco'] ?? '') === 'CONYUGE');
+        $conyuge = reset($conyuge);
 
-    $perfil['conyuge'] = $conyuge['nombre_completo'] ?? null;
-    $perfil['onomastico_conyuge'] = $conyuge['fecha_nacimiento'] ?? null;
-    $perfil['dni_conyuge'] = $conyuge['dni_familiar'] ?? null;
+        $perfil['conyuge'] = $conyuge['nombre_completo'] ?? null;
+        $perfil['onomastico_conyuge'] = $conyuge['fecha_nacimiento'] ?? null;
+        $perfil['dni_conyuge'] = $conyuge['dni_familiar'] ?? null;
 
-    // HIJOS
-    $stmt6 = $pdo->prepare("
+        // HIJOS
+        $stmt6 = $pdo->prepare("
         SELECT COUNT(*) as total
         FROM colab_familia
         WHERE colab_id = :id
         AND parentesco IN ('HIJO','HIJA')
     ");
-    $stmt6->execute([':id' => $colabId]);
-    $perfil['n_hijos'] = (int)($stmt6->fetch()['total'] ?? 0);
+        $stmt6->execute([':id' => $colabId]);
+        $perfil['n_hijos'] = (int)($stmt6->fetch()['total'] ?? 0);
 
-    // PENSION
-    $stmt7 = $pdo->prepare("
+        // PENSION
+        $stmt7 = $pdo->prepare("
         SELECT *
         FROM colab_pension
         WHERE colab_id = :id
         LIMIT 1
     ");
-    $stmt7->execute([':id' => $colabId]);
-    $perfil['pension'] = $stmt7->fetch(PDO::FETCH_ASSOC) ?: [];
+        $stmt7->execute([':id' => $colabId]);
+        $perfil['pension'] = $stmt7->fetch(PDO::FETCH_ASSOC) ?: [];
 
-    // BANCARIO
-    $stmt8 = $pdo->prepare("
+        // BANCARIO
+        $stmt8 = $pdo->prepare("
         SELECT *
         FROM colab_bancario
         WHERE colab_id = :id
         LIMIT 1
     ");
-    $stmt8->execute([':id' => $colabId]);
-    $perfil['bancario'] = $stmt8->fetch(PDO::FETCH_ASSOC) ?: [];
+        $stmt8->execute([':id' => $colabId]);
+        $perfil['bancario'] = $stmt8->fetch(PDO::FETCH_ASSOC) ?: [];
 
-    // IDIOMAS
-    $stmt9 = $pdo->prepare("
+        // IDIOMAS
+        $stmt9 = $pdo->prepare("
         SELECT *
         FROM colab_idioma
         WHERE colab_id = :id
     ");
-    $stmt9->execute([':id' => $colabId]);
-    $perfil['idiomas'] = $stmt9->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        $stmt9->execute([':id' => $colabId]);
+        $perfil['idiomas'] = $stmt9->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-    return $perfil;
-}
+        return $perfil;
+    }
 
     public static function mdlActualizarPerfil($datos)
     {
@@ -1519,15 +1519,27 @@ public static function mdlObtenerPerfilCompleto($usuarioId)
             $passwordTemporal = password_hash($dni, PASSWORD_DEFAULT);
 
             $stmtUsuario = $pdo->prepare("
-            INSERT INTO usuarios (username, password, rol, estado)
-            VALUES (:username, :password, :rol, :estado)
-        ");
+                    INSERT INTO usuarios (
+                        username,
+                        password,
+                        rol,
+                        estado,
+                        cambiar_clave
+                    ) VALUES (
+                        :username,
+                        :password,
+                        :rol,
+                        :estado,
+                        :cambiar_clave
+                    )
+                ");
 
             $stmtUsuario->execute([
-                ':username' => $dni,
-                ':password' => $passwordTemporal,
-                ':rol'      => 'colaborador',
-                ':estado'   => 1
+                ':username'       => $dni,
+                ':password'       => $passwordTemporal,
+                ':rol'            => 'colaborador',
+                ':estado'         => 1,
+                ':cambiar_clave'  => 1
             ]);
 
             $usuarioId = (int)$pdo->lastInsertId();

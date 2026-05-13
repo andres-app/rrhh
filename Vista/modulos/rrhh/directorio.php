@@ -1,4 +1,5 @@
 <?php
+//Vista/modulos/rrhh/directorio.php
 require_once ROOT_PATH . 'Controlador/CtrDirectorio.php';
 require_once ROOT_PATH . 'Modelo/MdDirectorio.php';
 

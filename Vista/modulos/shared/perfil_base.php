@@ -2,6 +2,23 @@
 
 $rolSesion = strtolower($_SESSION['user_role'] ?? '');
 $esEditable = in_array($rolSesion, ['admin', 'rrhh', 'superadmin']);
+
+// Refuerzo: sincroniza cambiar_clave desde BD antes de pintar el perfil
+if (!empty($_SESSION['user_id'])) {
+    require_once ROOT_PATH . 'Modelo/MdUsuario.php';
+
+    $usuarioActualClave = MdUsuario::mdlMostrarUsuarios(
+        'usuarios',
+        'id',
+        (string)$_SESSION['user_id']
+    );
+
+    if (is_array($usuarioActualClave)) {
+        $_SESSION['cambiar_clave'] = (int)($usuarioActualClave['cambiar_clave'] ?? 0);
+    }
+}
+
+$debeCambiarClave = ((int)($_SESSION['cambiar_clave'] ?? 0) === 1);
 //Vista/modulos/shared/perfil_base.php
 $titulo_pagina = "Perfil: " . ($data['nombres_apellidos'] ?? 'Colaborador');
 require_once ROOT_PATH . 'Vista/includes/header.php';
@@ -2024,9 +2041,11 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
 </div><!-- /modal -->
 
 <!-- Modal Cambiar Clave -->
-<div id="modal-clave" class="fixed inset-0 z-[70] hidden" role="dialog" aria-modal="true">
+<div id="modal-clave" class="fixed inset-0 z-[70] <?php echo $debeCambiarClave ? '' : 'hidden'; ?>" role="dialog" aria-modal="true">
 
-    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm" onclick="cerrarModalClave()"></div>
+    <div class="absolute inset-0 bg-black/50 backdrop-blur-sm"
+        onclick="<?php echo $debeCambiarClave ? '' : 'cerrarModalClave()'; ?>">
+    </div>
 
     <div class="absolute inset-0 flex items-center justify-center px-4">
         <div class="relative w-full max-w-md bg-white rounded-[32px] shadow-2xl border border-slate-200 overflow-hidden animate-in">
@@ -2042,11 +2061,13 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
                         </h2>
                     </div>
 
-                    <button type="button" onclick="cerrarModalClave()" class="text-red-200 hover:text-white transition">
-                        <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                            <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
-                        </svg>
-                    </button>
+                    <?php if (!$debeCambiarClave): ?>
+                        <button type="button" onclick="cerrarModalClave()" class="text-red-200 hover:text-white transition">
+                            <svg class="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    <?php endif; ?>
                 </div>
             </div>
 
@@ -2092,10 +2113,12 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
             </div>
 
             <div class="px-7 py-5 bg-slate-50 border-t border-slate-100 flex items-center justify-end gap-3">
-                <button type="button" onclick="cerrarModalClave()"
-                    class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition-all">
-                    Cancelar
-                </button>
+                <?php if (!$debeCambiarClave): ?>
+                    <button type="button" onclick="cerrarModalClave()"
+                        class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-bold hover:bg-slate-100 transition-all">
+                        Cancelar
+                    </button>
+                <?php endif; ?>
 
                 <button type="button" id="btn-guardar-clave" onclick="guardarClavePerfil()"
                     class="px-6 py-2.5 rounded-xl bg-red-900 text-white text-sm font-bold hover:bg-[#310404] transition-all shadow-md">
@@ -3919,7 +3942,27 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
     }
 
     document.addEventListener('keydown', e => {
-        if (e.key === 'Escape') cerrarModal();
+        if (e.key !== 'Escape') return;
+
+        const modalClave = document.getElementById('modal-clave');
+        const modalClaveAbierto = modalClave && !modalClave.classList.contains('hidden');
+
+        if (modalClaveAbierto) {
+            if (DEBE_CAMBIAR_CLAVE) {
+                mostrarToast('⚠', 'Debes cambiar tu clave para continuar.', 'bg-red-800');
+                return;
+            }
+
+            cerrarModalClave();
+            return;
+        }
+
+        const modalPerfil = document.getElementById('modal-perfil');
+        const modalPerfilAbierto = modalPerfil && !modalPerfil.classList.contains('hidden');
+
+        if (modalPerfilAbierto) {
+            cerrarModal();
+        }
     });
 
     document.querySelectorAll('.idioma-row').forEach(row => {
@@ -3952,6 +3995,8 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
         sueldoVisible = !sueldoVisible;
     }
 
+    const DEBE_CAMBIAR_CLAVE = <?php echo $debeCambiarClave ? 'true' : 'false'; ?>;
+
     function abrirModalClave() {
         const modal = document.getElementById('modal-clave');
         if (!modal) return;
@@ -3968,6 +4013,11 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
     }
 
     function cerrarModalClave() {
+        if (DEBE_CAMBIAR_CLAVE) {
+            mostrarToast('⚠', 'Debes cambiar tu clave para continuar.', 'bg-red-800');
+            return;
+        }
+
         const modal = document.getElementById('modal-clave');
         if (!modal) return;
 
@@ -4035,8 +4085,11 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
                 }
 
                 if (res.success) {
-                    cerrarModalClave();
                     mostrarToast('✓', res.mensaje || 'Clave actualizada correctamente.', 'bg-green-700');
+
+                    setTimeout(() => {
+                        window.location.href = res.redirect || '<?php echo BASE_URL; ?>/perfil';
+                    }, 900);
                 } else {
                     mostrarToast('✗', res.mensaje || 'No se pudo cambiar la clave.', 'bg-red-800');
                 }
@@ -4050,6 +4103,12 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
                 btn.textContent = 'Guardar clave';
             });
     }
+
+    document.addEventListener('DOMContentLoaded', function() {
+        if (DEBE_CAMBIAR_CLAVE) {
+            abrirModalClave();
+        }
+    });
 </script>
 
 <?php require_once ROOT_PATH . 'Vista/includes/footer.php'; ?>

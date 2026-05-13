@@ -67,6 +67,29 @@ if (empty($_SESSION['user_id'])) {
     redirect(BASE_URL . '/login');
 }
 
+// ── Sincronizar cambiar_clave desde BD ────────────────────────
+$usuarioActual = MdUsuario::mdlMostrarUsuarios(
+    'usuarios',
+    'id',
+    (string)$_SESSION['user_id']
+);
+
+$_SESSION['cambiar_clave'] = (int)($usuarioActual['cambiar_clave'] ?? 0);
+
+// ── Forzar cambio de clave en primer acceso ───────────────────
+if ((int)($_SESSION['cambiar_clave'] ?? 0) === 1) {
+
+    $rutasPermitidas = [
+        'perfil',
+        'perfil/cambiar-clave',
+        'logout'
+    ];
+
+    if (!in_array($path, $rutasPermitidas, true)) {
+        redirect(BASE_URL . '/perfil');
+    }
+}
+
 
 // ══════════════════════════════════════════════════════════════
 // RUTAS AJAX 
