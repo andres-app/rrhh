@@ -1060,20 +1060,47 @@ function rrhhValRenderDetalleCambios(array $cambios): string
 
 <?php foreach ($solicitudes as $sol): ?>
     <?php
-    $estadoModal = $sol['estado'] ?? 'PENDIENTE';
-    $modalId = 'modal-validacion-' . (int)$sol['id'];
-    $cambiosDetalle = rrhhValObtenerCambiosDetalle($sol);
-    $resumenModal = resumenSolicitud($sol);
+    $nuevos = json_decode($sol['datos_json'] ?? '{}', true);
+    $anteriores = json_decode($sol['datos_anteriores_json'] ?? '{}', true);
+
+    $nuevos = is_array($nuevos) ? $nuevos : [];
+    $anteriores = is_array($anteriores) ? $anteriores : [];
+
+    $cambios = obtenerCambios($anteriores, $nuevos);
+
+    $estado = $sol['estado'] ?? 'PENDIENTE';
+    $modalId = 'modalSolicitud' . (int)$sol['id'];
+    $fechaSolicitud = !empty($sol['created_at']) ? date('d/m/Y H:i', strtotime($sol['created_at'])) : 'Sin fecha';
+    $fechaRevision = !empty($sol['fecha_validacion']) ? date('d/m/Y H:i', strtotime($sol['fecha_validacion'])) : '—';
+
+    $resumenModal = [];
+
+    foreach ($cambios as $c) {
+        $texto = $c['campo'] ?? 'Campo modificado';
+
+        if (!empty($c['subcampos']) && is_array($c['subcampos'])) {
+            $texto .= ': ' . implode(', ', $c['subcampos']);
+        }
+
+        $resumenModal[] = $texto;
+    }
+
+    $resumenModalTexto = !empty($resumenModal)
+        ? implode(', ', array_unique($resumenModal))
+        : 'Sin cambios visibles';
     ?>
 
     <div id="<?php echo $modalId; ?>" class="fixed inset-0 z-[90] hidden" role="dialog" aria-modal="true">
 
+        <!-- Backdrop -->
         <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-            onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>')"></div>
+            onclick="cerrarModal('<?php echo $modalId; ?>')"></div>
 
+        <!-- Contenedor -->
         <div class="absolute inset-0 flex items-center justify-center p-4">
             <div class="relative w-full max-w-5xl max-h-[92vh] bg-white rounded-[32px] shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
 
+                <!-- Header premium -->
                 <div class="px-7 py-6 bg-gradient-to-r from-[#310404] to-red-900 flex items-start justify-between gap-4">
                     <div>
                         <p class="text-red-200 text-[10px] font-black uppercase tracking-[0.24em] mb-1">
@@ -1085,27 +1112,29 @@ function rrhhValRenderDetalleCambios(array $cambios): string
                         </h2>
 
                         <p class="text-red-100 text-sm font-semibold mt-2">
-                            <?php echo rrhhValE($sol['nombres_apellidos'] ?? 'Colaborador'); ?>
-                            <span class="text-red-200">• DNI:</span>
-                            <?php echo rrhhValE($sol['dni'] ?? '—'); ?>
+                            Revisión de los cambios solicitados en tu perfil
                         </p>
                     </div>
 
                     <button type="button"
-                        onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>')"
-                        class="w-10 h-10 rounded-2xl bg-white/10 text-white hover:bg-white/20 transition flex items-center justify-center">
+                        onclick="cerrarModal('<?php echo $modalId; ?>')"
+                        class="w-10 h-10 rounded-2xl bg-white/10 text-white hover:bg-white/20 transition flex items-center justify-center font-black">
                         ✕
                     </button>
                 </div>
 
+                <!-- Resumen superior -->
                 <div class="px-7 py-4 border-b border-slate-100 bg-slate-50">
-                    <div class="grid grid-cols-1 lg:grid-cols-3 gap-3">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+
                         <div class="bg-white border border-slate-200 rounded-2xl p-4">
                             <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
                                 Estado
                             </p>
-                            <span class="inline-flex text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border <?php echo badgeEstadoSolicitud($estadoModal); ?>">
-                                <?php echo rrhhValE($estadoModal); ?>
+
+                            <span class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border <?php echo estadoBadge($estado); ?>">
+                                <span><?php echo estadoIcono($estado); ?></span>
+                                <?php echo e($estado); ?>
                             </span>
                         </div>
 
@@ -1113,63 +1142,114 @@ function rrhhValRenderDetalleCambios(array $cambios): string
                             <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
                                 Fecha de solicitud
                             </p>
+
                             <p class="text-sm font-black text-slate-800">
-                                <?php echo !empty($sol['created_at']) ? date('d/m/Y H:i', strtotime($sol['created_at'])) : '—'; ?>
+                                <?php echo e($fechaSolicitud); ?>
                             </p>
                         </div>
 
                         <div class="bg-white border border-slate-200 rounded-2xl p-4">
                             <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                                Sustento
+                                Fecha de revisión
                             </p>
 
-                            <?php if (!empty($sol['archivo_sustento'])): ?>
-                                <a href="<?php echo BASE_URL . '/' . rrhhValE($sol['archivo_sustento']); ?>" target="_blank"
-                                    class="inline-flex text-xs font-black text-red-900 bg-red-50 border border-red-100 px-3 py-2 rounded-xl hover:bg-red-100 transition">
-                                    Ver archivo adjunto
-                                </a>
-                            <?php else: ?>
-                                <p class="text-sm font-bold text-slate-400">Sin archivo</p>
-                            <?php endif; ?>
+                            <p class="text-sm font-black text-slate-800">
+                                <?php echo e($fechaRevision); ?>
+                            </p>
                         </div>
+
                     </div>
 
                     <div class="mt-4 bg-white border border-slate-200 rounded-2xl p-4">
                         <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
-                            Resumen
+                            Resumen de cambios
                         </p>
+
                         <p class="text-sm font-bold text-slate-700 leading-relaxed">
-                            <?php echo rrhhValE($resumenModal); ?>
+                            <?php echo e($resumenModalTexto); ?>
                         </p>
                     </div>
+
+                    <?php if (!empty($sol['observacion_rrhh']) || !empty($sol['motivo_rechazo'])): ?>
+                        <div class="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-red-700 mb-1">
+                                Observación de RR. HH.
+                            </p>
+
+                            <p class="text-sm font-semibold text-red-800 leading-relaxed">
+                                <?php echo e($sol['motivo_rechazo'] ?: $sol['observacion_rrhh']); ?>
+                            </p>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
+                <!-- Cuerpo con antes / después -->
                 <div class="flex-1 overflow-y-auto px-7 py-6 bg-slate-50">
-                    <?php echo rrhhValRenderDetalleCambios($cambiosDetalle); ?>
+                    <?php if (empty($cambios)): ?>
+                        <div class="p-8 text-center text-slate-400 bg-white border border-slate-200 rounded-3xl">
+                            <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center mb-3 font-black">
+                                —
+                            </div>
+                            <p class="text-sm font-bold">No se detectaron cambios visibles.</p>
+                        </div>
+                    <?php else: ?>
+                        <div class="space-y-4">
+                            <?php foreach ($cambios as $c): ?>
+                                <div class="rounded-3xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+
+                                    <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-red-900">
+                                                Campo modificado
+                                            </p>
+
+                                            <p class="text-sm font-black text-slate-800 mt-1">
+                                                <?php echo e($c['campo'] ?? 'Cambio'); ?>
+                                            </p>
+                                        </div>
+
+                                        <span class="text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-900 border border-red-100 rounded-xl px-3 py-1">
+                                            Cambio detectado
+                                        </span>
+                                    </div>
+
+                                    <?php if (function_exists('renderDetalleCambio')): ?>
+                                        <?php echo renderDetalleCambio($c); ?>
+                                    <?php else: ?>
+                                        <div class="grid grid-cols-1 md:grid-cols-2">
+                                            <div class="p-5 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200">
+                                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
+                                                    Antes
+                                                </p>
+                                                <?php echo renderDetalleValor($c['antes']); ?>
+                                            </div>
+
+                                            <div class="p-5 bg-white">
+                                                <p class="text-[10px] font-black uppercase tracking-widest text-red-900 mb-3">
+                                                    Después
+                                                </p>
+                                                <?php echo renderDetalleValor($c['despues']); ?>
+                                            </div>
+                                        </div>
+                                    <?php endif; ?>
+
+                                </div>
+                            <?php endforeach; ?>
+                        </div>
+                    <?php endif; ?>
                 </div>
 
-                <div class="px-7 py-5 bg-white border-t border-slate-200 flex items-center justify-between gap-3">
+                <!-- Footer -->
+                <div class="px-7 py-5 bg-white border-t border-slate-200 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div class="text-xs text-slate-400 font-bold">
+                        Esta vista muestra lo enviado para validación y la respuesta de RR. HH. cuando corresponda.
+                    </div>
+
                     <button type="button"
-                        onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>')"
+                        onclick="cerrarModal('<?php echo $modalId; ?>')"
                         class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-black hover:bg-slate-100 transition">
                         Cerrar
                     </button>
-
-                    <?php if ($estadoModal === 'PENDIENTE'): ?>
-                        <div class="flex items-center gap-2">
-                            <button type="button"
-                                onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>'); rechazarSolicitud(<?php echo (int)$sol['id']; ?>);"
-                                class="px-5 py-2.5 rounded-xl bg-red-900 text-white text-sm font-black hover:bg-[#4c0505] transition">
-                                Rechazar
-                            </button>
-
-                            <button type="button"
-                                onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>'); aprobarSolicitud(<?php echo (int)$sol['id']; ?>);"
-                                class="px-5 py-2.5 rounded-xl bg-green-600 text-white text-sm font-black hover:bg-green-700 transition">
-                                Aprobar
-                            </button>
-                        </div>
-                    <?php endif; ?>
                 </div>
 
             </div>

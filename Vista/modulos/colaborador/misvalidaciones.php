@@ -714,7 +714,6 @@ function obtenerCambios($antes, $despues): array
         </div>
     </div>
 </main>
-
 <?php foreach ($solicitudes as $sol): ?>
     <?php
     $nuevos = json_decode($sol['datos_json'] ?? '{}', true);
@@ -724,63 +723,228 @@ function obtenerCambios($antes, $despues): array
     $anteriores = is_array($anteriores) ? $anteriores : [];
 
     $cambios = obtenerCambios($anteriores, $nuevos);
+
+    $estado = $sol['estado'] ?? 'PENDIENTE';
     $modalId = 'modalSolicitud' . (int)$sol['id'];
+
+    $fechaSolicitud = !empty($sol['created_at'])
+        ? date('d/m/Y H:i', strtotime($sol['created_at']))
+        : 'Sin fecha';
+
+    $fechaRevision = !empty($sol['fecha_validacion'])
+        ? date('d/m/Y H:i', strtotime($sol['fecha_validacion']))
+        : '—';
+
+    $resumenModal = [];
+
+    foreach ($cambios as $c) {
+        $texto = $c['campo'] ?? 'Campo modificado';
+
+        if (!empty($c['subcampos']) && is_array($c['subcampos'])) {
+            $texto .= ': ' . implode(', ', $c['subcampos']);
+        }
+
+        $resumenModal[] = $texto;
+    }
+
+    $resumenModalTexto = !empty($resumenModal)
+        ? implode(', ', array_unique($resumenModal))
+        : 'Sin cambios visibles';
     ?>
 
-    <div id="<?php echo $modalId; ?>" class="fixed inset-0 z-50 hidden">
-        <div class="absolute inset-0 bg-slate-900/50 backdrop-blur-sm" onclick="cerrarModal('<?php echo $modalId; ?>')"></div>
+    <div id="<?php echo $modalId; ?>" class="fixed inset-0 z-[90] hidden" role="dialog" aria-modal="true">
 
-        <div class="absolute inset-x-4 top-6 bottom-6 md:inset-x-auto md:right-8 md:w-[900px] bg-white rounded-3xl shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
-            <div class="px-6 py-5 border-b border-slate-100 flex items-center justify-between bg-white">
-                <div>
-                    <p class="text-[10px] font-black uppercase tracking-[0.22em] text-slate-400">
-                        Detalle de validación
-                    </p>
-                    <h2 class="text-xl font-black text-slate-900">
-                        Solicitud #<?php echo (int)$sol['id']; ?>
-                    </h2>
-                </div>
+        <!-- FONDO -->
+        <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
+            onclick="cerrarModal('<?php echo $modalId; ?>')"></div>
 
-                <button type="button" onclick="cerrarModal('<?php echo $modalId; ?>')"
-                    class="w-10 h-10 rounded-xl bg-slate-100 text-slate-500 hover:bg-red-900 hover:text-white transition font-black">
-                    ×
-                </button>
-            </div>
+        <!-- CONTENEDOR -->
+        <div class="absolute inset-0 flex items-center justify-center p-4">
 
-            <div class="p-6 overflow-y-auto flex-1 bg-slate-50">
-                <?php if (!empty($sol['observacion_rrhh'])): ?>
-                    <div class="mb-5 rounded-2xl border border-red-100 bg-red-50 p-4">
-                        <p class="text-[10px] font-black uppercase tracking-widest text-red-700">
-                            Observación de RR. HH.
+            <div class="relative w-full max-w-5xl max-h-[92vh] bg-white rounded-[32px] shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+
+                <!-- HEADER -->
+                <div class="px-7 py-6 bg-gradient-to-r from-[#310404] to-red-900 flex items-start justify-between gap-4">
+                    <div>
+                        <p class="text-red-200 text-[10px] font-black uppercase tracking-[0.24em] mb-1">
+                            Detalle de validación
                         </p>
-                        <p class="text-sm font-semibold text-red-800 mt-1">
-                            <?php echo e($sol['observacion_rrhh']); ?>
+
+                        <h2 class="text-white text-2xl font-black leading-tight">
+                            Solicitud #<?php echo (int)$sol['id']; ?>
+                        </h2>
+
+                        <p class="text-red-100 text-sm font-semibold mt-2">
+                            Revisión de los cambios solicitados en tu perfil
                         </p>
                     </div>
-                <?php endif; ?>
 
-                <div class="space-y-4">
-                    <?php if (empty($cambios)): ?>
-                        <div class="bg-white border border-slate-200 rounded-2xl p-6 text-center">
-                            <p class="text-sm font-bold text-slate-400">No hay cambios visibles para mostrar.</p>
+                    <button type="button"
+                        onclick="cerrarModal('<?php echo $modalId; ?>')"
+                        class="w-10 h-10 rounded-2xl bg-white/10 text-white hover:bg-white/20 transition flex items-center justify-center font-black">
+                        ✕
+                    </button>
+                </div>
+
+                <!-- RESUMEN SUPERIOR -->
+                <div class="px-7 py-4 border-b border-slate-100 bg-slate-50">
+
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                Estado
+                            </p>
+
+                            <span class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border <?php echo estadoBadge($estado); ?>">
+                                <span><?php echo estadoIcono($estado); ?></span>
+                                <?php echo e($estado); ?>
+                            </span>
+                        </div>
+
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                Fecha de solicitud
+                            </p>
+
+                            <p class="text-sm font-black text-slate-800">
+                                <?php echo e($fechaSolicitud); ?>
+                            </p>
+                        </div>
+
+                        <div class="bg-white border border-slate-200 rounded-2xl p-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                Fecha de revisión
+                            </p>
+
+                            <p class="text-sm font-black text-slate-800">
+                                <?php echo e($fechaRevision); ?>
+                            </p>
+                        </div>
+
+                    </div>
+
+                    <div class="mt-4 bg-white border border-slate-200 rounded-2xl p-4">
+                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                            Resumen de cambios
+                        </p>
+
+                        <p class="text-sm font-bold text-slate-700 leading-relaxed">
+                            <?php echo e($resumenModalTexto); ?>
+                        </p>
+                    </div>
+
+                    <?php if (!empty($sol['observacion_rrhh']) || !empty($sol['motivo_rechazo'])): ?>
+                        <div class="mt-4 rounded-2xl border border-red-100 bg-red-50 p-4">
+                            <p class="text-[10px] font-black uppercase tracking-widest text-red-700 mb-1">
+                                Observación de RR. HH.
+                            </p>
+
+                            <p class="text-sm font-semibold text-red-800 leading-relaxed">
+                                <?php echo e($sol['motivo_rechazo'] ?: $sol['observacion_rrhh']); ?>
+                            </p>
                         </div>
                     <?php endif; ?>
 
-                    <?php foreach ($cambios as $c): ?>
-                        <div class="bg-white border border-slate-200 rounded-2xl overflow-hidden">
-                            <div class="px-5 py-3 border-b border-slate-100 bg-white">
-                                <p class="text-sm font-black text-slate-900">
-                                    <?php echo e($c['campo']); ?>
-                                </p>
+                </div>
+
+                <!-- CUERPO -->
+                <div class="flex-1 overflow-y-auto px-7 py-6 bg-slate-50">
+
+                    <?php if (empty($cambios)): ?>
+
+                        <div class="p-8 text-center text-slate-400 bg-white border border-slate-200 rounded-3xl">
+                            <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center mb-3 font-black">
+                                —
                             </div>
 
-                            <?php echo renderDetalleCambio($c); ?>
+                            <p class="text-sm font-bold">
+                                No se detectaron cambios visibles.
+                            </p>
                         </div>
-                    <?php endforeach; ?>
+
+                    <?php else: ?>
+
+                        <div class="space-y-4">
+                            <?php foreach ($cambios as $c): ?>
+
+                                <div class="rounded-3xl border border-slate-200 overflow-hidden bg-white shadow-sm">
+
+                                    <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
+                                        <div>
+                                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-red-900">
+                                                Campo modificado
+                                            </p>
+
+                                            <p class="text-sm font-black text-slate-800 mt-1">
+                                                <?php echo e($c['campo'] ?? 'Cambio'); ?>
+
+                                                <?php if (!empty($c['subcampos']) && is_array($c['subcampos'])): ?>
+                                                    <span class="ml-2 text-[10px] font-black text-slate-500 bg-slate-100 px-2 py-1 rounded-lg">
+                                                        <?php echo e(implode(', ', $c['subcampos'])); ?>
+                                                    </span>
+                                                <?php endif; ?>
+                                            </p>
+                                        </div>
+
+                                        <span class="text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-900 border border-red-100 rounded-xl px-3 py-1">
+                                            Cambio detectado
+                                        </span>
+                                    </div>
+
+                                    <?php if (function_exists('renderDetalleCambio')): ?>
+
+                                        <?php echo renderDetalleCambio($c); ?>
+
+                                    <?php else: ?>
+
+                                        <div class="grid grid-cols-1 md:grid-cols-2">
+                                            <div class="p-5 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200">
+                                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
+                                                    Antes
+                                                </p>
+
+                                                <?php echo renderDetalleValor($c['antes']); ?>
+                                            </div>
+
+                                            <div class="p-5 bg-white">
+                                                <p class="text-[10px] font-black uppercase tracking-widest text-red-900 mb-3">
+                                                    Después
+                                                </p>
+
+                                                <?php echo renderDetalleValor($c['despues']); ?>
+                                            </div>
+                                        </div>
+
+                                    <?php endif; ?>
+
+                                </div>
+
+                            <?php endforeach; ?>
+                        </div>
+
+                    <?php endif; ?>
+
                 </div>
+
+                <!-- FOOTER -->
+                <div class="px-7 py-5 bg-white border-t border-slate-200 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div class="text-xs text-slate-400 font-bold">
+                        Esta vista muestra lo enviado para validación y la respuesta de RR. HH. cuando corresponda.
+                    </div>
+
+                    <button type="button"
+                        onclick="cerrarModal('<?php echo $modalId; ?>')"
+                        class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-black hover:bg-slate-100 transition">
+                        Cerrar
+                    </button>
+                </div>
+
             </div>
+
         </div>
     </div>
+
 <?php endforeach; ?>
 
 <script>
@@ -934,12 +1098,35 @@ function obtenerCambios($antes, $despues): array
     });
 
     function abrirModal(id) {
-        document.getElementById(id)?.classList.remove('hidden');
+        const modal = document.getElementById(id);
+        if (!modal) return;
+
+        modal.classList.remove('hidden');
         document.body.classList.add('overflow-hidden');
     }
 
     function cerrarModal(id) {
-        document.getElementById(id)?.classList.add('hidden');
-        document.body.classList.remove('overflow-hidden');
+        const modal = document.getElementById(id);
+        if (!modal) return;
+
+        modal.classList.add('hidden');
+
+        const hayModalAbierto = document.querySelector('[id^="modalSolicitud"]:not(.hidden)');
+
+        if (!hayModalAbierto) {
+            document.body.classList.remove('overflow-hidden');
+        }
     }
+
+    document.addEventListener('keydown', function(e) {
+        if (e.key !== 'Escape') return;
+
+        document.querySelectorAll('[id^="modalSolicitud"]').forEach(modal => {
+            if (!modal.classList.contains('hidden')) {
+                modal.classList.add('hidden');
+            }
+        });
+
+        document.body.classList.remove('overflow-hidden');
+    });
 </script>
