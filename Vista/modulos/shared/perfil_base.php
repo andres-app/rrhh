@@ -1,8 +1,41 @@
 <?php
+//Vista/modulos/shared/perfil_base.php
+
+if (!function_exists('calcularEdad')) {
+    function calcularEdad(?string $fechaNac): string
+    {
+        if (empty($fechaNac)) {
+            return '—';
+        }
+
+        try {
+            $nac = new DateTime($fechaNac);
+            $hoy = new DateTime();
+
+            return $hoy->diff($nac)->y . ' años';
+        } catch (Throwable $e) {
+            return '—';
+        }
+    }
+}
+
+if (!function_exists('formatFecha')) {
+    function formatFecha(?string $fecha): string
+    {
+        if (empty($fecha)) {
+            return '—';
+        }
+
+        try {
+            return (new DateTime($fecha))->format('d/m/Y');
+        } catch (Throwable $e) {
+            return $fecha;
+        }
+    }
+}
 
 $rolSesion = strtolower($_SESSION['user_role'] ?? '');
-$esEditable = in_array($rolSesion, ['admin', 'rrhh', 'superadmin']);
-
+$esEditable = in_array($rolSesion, ['admin', 'rrhh', 'superadmin'], true);
 // Refuerzo: sincroniza cambiar_clave desde BD antes de pintar el perfil
 if (!empty($_SESSION['user_id'])) {
     require_once ROOT_PATH . 'Modelo/MdUsuario.php';

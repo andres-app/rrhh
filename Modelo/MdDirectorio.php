@@ -156,14 +156,20 @@ RESUMEN DASHBOARD DINÁMICO
     DATOS MAESTRO + LABORAL PRINCIPAL
     (Se toma el registro laboral más reciente como principal)
     =============================================*/
-    public static function mdlObtenerPerfilCompleto($usuarioId)
+    public static function mdlObtenerPerfilCompleto($colabId)
     {
         $pdo = Conexion::conectar();
 
-        // 1. Datos maestro + laboral más reciente
+        $colabId = (int)$colabId;
+
+        if ($colabId <= 0) {
+            return false;
+        }
+
         $stmt = $pdo->prepare("
         SELECT 
             m.id,
+            m.usuario_id,
             m.nombres_apellidos,
             m.dni,
             m.fecha_nacimiento,
@@ -187,7 +193,6 @@ RESUMEN DASHBOARD DINÁMICO
             l.modalidad_contrato AS mod_contrato,
             l.situacion
         FROM colab_maestro m
-
         LEFT JOIN (
             SELECT l1.*
             FROM colab_laboral l1   
@@ -197,31 +202,32 @@ RESUMEN DASHBOARD DINÁMICO
                 GROUP BY colab_id
             ) ult ON ult.max_id = l1.id
         ) l ON l.colab_id = m.id
-
-        WHERE m.usuario_id = :usuario_id
+        WHERE m.id = :id
         LIMIT 1
     ");
 
-        $stmt->bindParam(':usuario_id', $usuarioId, PDO::PARAM_INT);
+        $stmt->bindValue(':id', $colabId, PDO::PARAM_INT);
         $stmt->execute();
 
         $perfil = $stmt->fetch(PDO::FETCH_ASSOC);
 
-        if (!$perfil) return false;
+        if (!$perfil) {
+            return false;
+        }
 
         $colabId = (int)$perfil['id'];
 
-        // 2. CONTRATOS
+        // CONTRATOS
         $stmt2 = $pdo->prepare("
         SELECT id, colab_id, fecha_ingreso, fecha_cese, modalidad
         FROM colab_contratos
         WHERE colab_id = :id
-        ORDER BY fecha_ingreso ASC
+        ORDER BY fecha_ingreso ASC, id ASC
     ");
         $stmt2->execute([':id' => $colabId]);
         $perfil['contratos'] = $stmt2->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // 3. FORMACIÓN
+        // FORMACIÓN
         $stmt3 = $pdo->prepare("
         SELECT *
         FROM colab_formacion
@@ -231,45 +237,55 @@ RESUMEN DASHBOARD DINÁMICO
         $stmt3->execute([':id' => $colabId]);
         $perfil['formacion'] = $stmt3->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // 4. EXPERIENCIA
+        // EXPERIENCIA
         $stmt4 = $pdo->prepare("
         SELECT *
         FROM colab_experiencia
         WHERE colab_id = :id
-        ORDER BY fecha_inicio DESC
+        ORDER BY fecha_inicio DESC, id DESC
     ");
         $stmt4->execute([':id' => $colabId]);
         $perfil['experiencia'] = $stmt4->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-        // 5. FAMILIA
+        // FAMILIA
         $stmt5 = $pdo->prepare("
         SELECT *
         FROM colab_familia
         WHERE colab_id = :id
+        ORDER BY 
+            CASE parentesco
+                WHEN 'CONYUGE' THEN 1
+                WHEN 'HIJO' THEN 2
+                WHEN 'HIJA' THEN 3
+                ELSE 4
+            END,
+            id ASC
     ");
         $stmt5->execute([':id' => $colabId]);
         $familia = $stmt5->fetchAll(PDO::FETCH_ASSOC) ?: [];
+
         $perfil['familia'] = $familia;
 
-        // CONYUGE
-        $conyuge = array_filter($familia, fn($f) => ($f['parentesco'] ?? '') === 'CONYUGE');
-        $conyuge = reset($conyuge);
+        $conyuge = array_values(array_filter($familia, function ($f) {
+            return ($f['parentesco'] ?? '') === 'CONYUGE';
+        }));
+
+        $conyuge = $conyuge[0] ?? [];
 
         $perfil['conyuge'] = $conyuge['nombre_completo'] ?? null;
         $perfil['onomastico_conyuge'] = $conyuge['fecha_nacimiento'] ?? null;
         $perfil['dni_conyuge'] = $conyuge['dni_familiar'] ?? null;
 
-        // HIJOS
         $stmt6 = $pdo->prepare("
-        SELECT COUNT(*) as total
+        SELECT COUNT(*) AS total
         FROM colab_familia
         WHERE colab_id = :id
-        AND parentesco IN ('HIJO','HIJA')
+          AND parentesco IN ('HIJO','HIJA')
     ");
         $stmt6->execute([':id' => $colabId]);
-        $perfil['n_hijos'] = (int)($stmt6->fetch()['total'] ?? 0);
+        $perfil['n_hijos'] = (int)($stmt6->fetch(PDO::FETCH_ASSOC)['total'] ?? 0);
 
-        // PENSION
+        // PENSIÓN
         $stmt7 = $pdo->prepare("
         SELECT *
         FROM colab_pension
@@ -294,6 +310,7 @@ RESUMEN DASHBOARD DINÁMICO
         SELECT *
         FROM colab_idioma
         WHERE colab_id = :id
+        ORDER BY id ASC
     ");
         $stmt9->execute([':id' => $colabId]);
         $perfil['idiomas'] = $stmt9->fetchAll(PDO::FETCH_ASSOC) ?: [];
@@ -301,13 +318,62 @@ RESUMEN DASHBOARD DINÁMICO
         return $perfil;
     }
 
+    public static function mdlObtenerPerfilPorUsuario(int $usuarioId)
+    {
+        $pdo = Conexion::conectar();
+
+        $usuarioId = (int)$usuarioId;
+
+        if ($usuarioId <= 0) {
+            return false;
+        }
+
+        $stmt = $pdo->prepare("
+        SELECT id
+        FROM colab_maestro
+        WHERE usuario_id = :usuario_id
+        LIMIT 1
+    ");
+
+        $stmt->bindValue(':usuario_id', $usuarioId, PDO::PARAM_INT);
+        $stmt->execute();
+
+        $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if (!$row) {
+            return false;
+        }
+
+        return self::mdlObtenerPerfilCompleto((int)$row['id']);
+    }
+
     public static function mdlActualizarPerfil($datos)
     {
         $pdo = Conexion::conectar();
 
-        // ── CONTROL DE PERMISOS POR ROL (SEGURIDAD BACKEND) ──
         $rolSesion = strtolower(trim($_SESSION['user_role'] ?? ''));
+        $colabId = (int)($datos['id'] ?? 0);
 
+        if ($colabId <= 0) {
+            return [
+                'success' => false,
+                'mensaje' => 'ID de colaborador inválido'
+            ];
+        }
+
+        $perfilExiste = self::mdlObtenerPerfilCompleto($colabId);
+
+        if (!$perfilExiste) {
+            return [
+                'success' => false,
+                'mensaje' => 'No se encontró el perfil del colaborador'
+            ];
+        }
+
+        /*
+     * Seguridad backend:
+     * Si no es RRHH/Admin/Superadmin, no puede modificar datos sensibles.
+     */
         if (!in_array($rolSesion, ['rrhh', 'admin', 'superadmin'], true)) {
             unset($datos['nombres_apellidos']);
             unset($datos['dni']);
@@ -325,7 +391,9 @@ RESUMEN DASHBOARD DINÁMICO
         try {
             $pdo->beginTransaction();
 
-            // ── 1. Actualizar tabla maestro ──────────────────────────
+            // ─────────────────────────────────────────────
+            // 1. TABLA MAESTRO
+            // ─────────────────────────────────────────────
             $stmt = $pdo->prepare("
             UPDATE colab_maestro SET
                 fecha_nacimiento     = :fecha_nacimiento,
@@ -342,29 +410,27 @@ RESUMEN DASHBOARD DINÁMICO
 
             $stmt->execute([
                 ':fecha_nacimiento'     => !empty($datos['fecha_nacimiento']) ? $datos['fecha_nacimiento'] : null,
-                ':lugar_nacimiento'     => $datos['lugar_nacimiento'] ?? null,
-                ':estado_civil'         => $datos['estado_civil'] ?? null,
-                ':grupo_sanguineo'      => $datos['grupo_sanguineo'] ?? null,
-                ':talla'                => $datos['talla'] ?? null,
-                ':celular'              => $datos['celular'] ?? null,
-                ':correo_personal'      => $datos['correo_personal'] ?? null,
-                ':direccion_residencia' => $datos['direccion_residencia'] ?? null,
-                ':distrito'             => $datos['distrito'] ?? null,
-                ':id'                   => (int)$datos['id'],
+                ':lugar_nacimiento'     => self::nullify($datos['lugar_nacimiento'] ?? null),
+                ':estado_civil'         => self::nullify($datos['estado_civil'] ?? null),
+                ':grupo_sanguineo'      => self::nullify($datos['grupo_sanguineo'] ?? null),
+                ':talla'                => self::nullify($datos['talla'] ?? null),
+                ':celular'              => self::nullify($datos['celular'] ?? null),
+                ':correo_personal'      => self::nullify($datos['correo_personal'] ?? null),
+                ':direccion_residencia' => self::nullify($datos['direccion_residencia'] ?? null),
+                ':distrito'             => self::nullify($datos['distrito'] ?? null),
+                ':id'                   => $colabId,
             ]);
 
-            // ── 1.1 Actualizar campos sensibles en maestro (solo RRHH/Admin) ──
+            // Campos sensibles de maestro
             if (in_array($rolSesion, ['rrhh', 'admin', 'superadmin'], true)) {
-                $stmtActualMaestro = $pdo->prepare("
-        SELECT nombres_apellidos, dni
-        FROM colab_maestro
-        WHERE id = :id
-        LIMIT 1
-      ");
-                $stmtActualMaestro->execute([
-                    ':id' => (int)$datos['id'],
-                ]);
 
+                $stmtActualMaestro = $pdo->prepare("
+                SELECT nombres_apellidos, dni
+                FROM colab_maestro
+                WHERE id = :id
+                LIMIT 1
+            ");
+                $stmtActualMaestro->execute([':id' => $colabId]);
                 $maestroActual = $stmtActualMaestro->fetch(PDO::FETCH_ASSOC) ?: [];
 
                 $nombresFinal = array_key_exists('nombres_apellidos', $datos) && trim((string)$datos['nombres_apellidos']) !== ''
@@ -376,42 +442,42 @@ RESUMEN DASHBOARD DINÁMICO
                     : ($maestroActual['dni'] ?? null);
 
                 $stmtExtraMaestro = $pdo->prepare("
-                        UPDATE colab_maestro SET
-                            nombres_apellidos = :nombres_apellidos,
-                            dni               = :dni
-                        WHERE id = :id
-                    ");
+                UPDATE colab_maestro SET
+                    nombres_apellidos = :nombres_apellidos,
+                    dni               = :dni
+                WHERE id = :id
+            ");
 
                 $stmtExtraMaestro->execute([
                     ':nombres_apellidos' => $nombresFinal,
                     ':dni'               => $dniFinal,
-                    ':id'                => (int)$datos['id'],
+                    ':id'                => $colabId,
                 ]);
             }
 
-            // ── 1.2 Actualizar tabla laboral (registro más reciente) ──
+            // ─────────────────────────────────────────────
+            // 2. TABLA LABORAL
+            // ─────────────────────────────────────────────
             if (in_array($rolSesion, ['rrhh', 'admin', 'superadmin'], true)) {
 
                 $stmtActualLaboral = $pdo->prepare("
-                    SELECT
-                        correo_institucional,
-                        situacion,
-                        sueldo,
-                        modalidad_contrato,
-                        puesto_cas,
-                        tipo_puesto,
-                        area,
-                        procedencia,
-                        nsa_cip
-                    FROM colab_laboral
-                    WHERE colab_id = :id
-                    ORDER BY fecha_ingreso DESC, id DESC
-                    LIMIT 1
-                ");
-                $stmtActualLaboral->execute([
-                    ':id' => (int)$datos['id'],
-                ]);
-
+                SELECT
+                    id,
+                    correo_institucional,
+                    situacion,
+                    sueldo,
+                    modalidad_contrato,
+                    puesto_cas,
+                    tipo_puesto,
+                    area,
+                    procedencia,
+                    nsa_cip
+                FROM colab_laboral
+                WHERE colab_id = :id
+                ORDER BY fecha_ingreso DESC, id DESC
+                LIMIT 1
+            ");
+                $stmtActualLaboral->execute([':id' => $colabId]);
                 $laboralActual = $stmtActualLaboral->fetch(PDO::FETCH_ASSOC) ?: [];
 
                 $correoInstitucional = array_key_exists('correo_institucional', $datos) && trim((string)$datos['correo_institucional']) !== ''
@@ -450,185 +516,265 @@ RESUMEN DASHBOARD DINÁMICO
                     ? trim((string)$datos['nsa_cip'])
                     : ($laboralActual['nsa_cip'] ?? null);
 
-                $stmtLaboral = $pdo->prepare("
-                        UPDATE colab_laboral
-                        SET
-                            correo_institucional = :correo_institucional,
-                            situacion            = :situacion,
-                            sueldo               = :sueldo,
-                            modalidad_contrato   = :mod_contrato,
-                            puesto_cas           = :puesto_cas,
-                            tipo_puesto          = :tipo_puesto,
-                            area                 = :area,
-                            procedencia          = :procedencia,
-                            nsa_cip              = :nsa_cip
-                        WHERE colab_id = :id
-                        ORDER BY fecha_ingreso DESC, id DESC
-                        LIMIT 1
-                    ");
+                if (!empty($laboralActual['id'])) {
+                    $stmtLaboral = $pdo->prepare("
+                    UPDATE colab_laboral
+                    SET
+                        correo_institucional = :correo_institucional,
+                        situacion            = :situacion,
+                        sueldo               = :sueldo,
+                        modalidad_contrato   = :mod_contrato,
+                        puesto_cas           = :puesto_cas,
+                        tipo_puesto          = :tipo_puesto,
+                        area                 = :area,
+                        procedencia          = :procedencia,
+                        nsa_cip              = :nsa_cip
+                    WHERE id = :laboral_id
+                      AND colab_id = :colab_id
+                ");
 
-                $stmtLaboral->execute([
-                    ':correo_institucional' => $correoInstitucional,
-                    ':situacion'            => $situacion,
-                    ':sueldo'               => $sueldo,
-                    ':mod_contrato'         => $modContrato,
-                    ':puesto_cas'           => $puestoCas,
-                    ':tipo_puesto'          => $tipoPuesto,
-                    ':area'                 => $area,
-                    ':procedencia'          => $procedencia,
-                    ':nsa_cip'              => $nsaCip,
-                    ':id'                   => (int)$datos['id'],
-                ]);
+                    $stmtLaboral->execute([
+                        ':correo_institucional' => $correoInstitucional,
+                        ':situacion'            => $situacion,
+                        ':sueldo'               => $sueldo,
+                        ':mod_contrato'         => $modContrato,
+                        ':puesto_cas'           => $puestoCas,
+                        ':tipo_puesto'          => $tipoPuesto,
+                        ':area'                 => $area,
+                        ':procedencia'          => $procedencia,
+                        ':nsa_cip'              => $nsaCip,
+                        ':laboral_id'           => (int)$laboralActual['id'],
+                        ':colab_id'             => $colabId,
+                    ]);
+                } else {
+                    $stmtLaboral = $pdo->prepare("
+                    INSERT INTO colab_laboral (
+                        colab_id,
+                        correo_institucional,
+                        situacion,
+                        sueldo,
+                        modalidad_contrato,
+                        puesto_cas,
+                        tipo_puesto,
+                        area,
+                        procedencia,
+                        nsa_cip
+                    ) VALUES (
+                        :colab_id,
+                        :correo_institucional,
+                        :situacion,
+                        :sueldo,
+                        :mod_contrato,
+                        :puesto_cas,
+                        :tipo_puesto,
+                        :area,
+                        :procedencia,
+                        :nsa_cip
+                    )
+                ");
+
+                    $stmtLaboral->execute([
+                        ':colab_id'             => $colabId,
+                        ':correo_institucional' => $correoInstitucional,
+                        ':situacion'            => $situacion ?: 'ACTIVO',
+                        ':sueldo'               => $sueldo,
+                        ':mod_contrato'         => $modContrato,
+                        ':puesto_cas'           => $puestoCas,
+                        ':tipo_puesto'          => $tipoPuesto,
+                        ':area'                 => $area,
+                        ':procedencia'          => $procedencia,
+                        ':nsa_cip'              => $nsaCip,
+                    ]);
+                }
             }
-            // ── 2. Actualizar / insertar cónyuge ─────────────────────
-            $nombreConyuge = trim($datos['conyuge'] ?? '');
+
+            // ─────────────────────────────────────────────
+            // 3. CÓNYUGE
+            // ─────────────────────────────────────────────
+            $nombreConyuge = trim((string)($datos['conyuge'] ?? ''));
             $fechaConyuge  = !empty($datos['onomastico_conyuge']) ? $datos['onomastico_conyuge'] : null;
-            $dniConyuge    = trim($datos['dni_conyuge'] ?? '');
+            $dniConyuge    = trim((string)($datos['dni_conyuge'] ?? ''));
 
             $chk = $pdo->prepare("
-                SELECT id
-                FROM colab_familia
-                WHERE colab_id = :id AND parentesco = 'CONYUGE'
-                LIMIT 1
-            ");
-            $chk->execute([':id' => (int)$datos['id']]);
-            $conyugeExistente = $chk->fetchColumn();
+            SELECT id
+            FROM colab_familia
+            WHERE colab_id = :id
+              AND parentesco = 'CONYUGE'
+            LIMIT 1
+        ");
+            $chk->execute([':id' => $colabId]);
+            $conyugeExistente = (int)($chk->fetchColumn() ?: 0);
 
-            if ($conyugeExistente) {
+            if ($conyugeExistente > 0) {
                 if ($nombreConyuge === '' && $fechaConyuge === null && $dniConyuge === '') {
                     $pdo->prepare("
-                        DELETE FROM colab_familia
-                        WHERE id = :fid
-                    ")->execute([
-                        ':fid' => $conyugeExistente
+                    DELETE FROM colab_familia
+                    WHERE id = :fid
+                      AND colab_id = :colab_id
+                ")->execute([
+                        ':fid'      => $conyugeExistente,
+                        ':colab_id' => $colabId,
                     ]);
                 } else {
                     $pdo->prepare("
-                        UPDATE colab_familia SET
-                            nombre_completo  = :nombre,
-                            fecha_nacimiento = :fecha,
-                            dni_familiar     = :dni
-                        WHERE id = :fid
-                    ")->execute([
-                        ':nombre' => $nombreConyuge !== '' ? $nombreConyuge : null,
-                        ':fecha'  => $fechaConyuge,
-                        ':dni'    => $dniConyuge !== '' ? $dniConyuge : null,
-                        ':fid'    => $conyugeExistente,
+                    UPDATE colab_familia SET
+                        nombre_completo  = :nombre,
+                        fecha_nacimiento = :fecha,
+                        dni_familiar     = :dni
+                    WHERE id = :fid
+                      AND colab_id = :colab_id
+                ")->execute([
+                        ':nombre'   => $nombreConyuge !== '' ? $nombreConyuge : null,
+                        ':fecha'    => $fechaConyuge,
+                        ':dni'      => $dniConyuge !== '' ? $dniConyuge : null,
+                        ':fid'      => $conyugeExistente,
+                        ':colab_id' => $colabId,
                     ]);
                 }
             } elseif ($nombreConyuge !== '' || $fechaConyuge !== null || $dniConyuge !== '') {
                 $pdo->prepare("
-                    INSERT INTO colab_familia (
-                        colab_id,
-                        parentesco,
-                        nombre_completo,
-                        fecha_nacimiento,
-                        dni_familiar
-                    )
-                    VALUES (
-                        :colab_id,
-                        'CONYUGE',
-                        :nombre,
-                        :fecha,
-                        :dni
-                    )
-                ")->execute([
-                    ':colab_id' => (int)$datos['id'],
+                INSERT INTO colab_familia (
+                    colab_id,
+                    parentesco,
+                    nombre_completo,
+                    fecha_nacimiento,
+                    dni_familiar
+                ) VALUES (
+                    :colab_id,
+                    'CONYUGE',
+                    :nombre,
+                    :fecha,
+                    :dni
+                )
+            ")->execute([
+                    ':colab_id' => $colabId,
                     ':nombre'   => $nombreConyuge !== '' ? $nombreConyuge : null,
                     ':fecha'    => $fechaConyuge,
                     ':dni'      => $dniConyuge !== '' ? $dniConyuge : null,
                 ]);
             }
 
-            // ── 3. Sincronizar hijos ─────────────────────────────────
-            $stmtIds = $pdo->prepare("
-            SELECT id
-            FROM colab_familia
-            WHERE colab_id = :id AND parentesco IN ('HIJO','HIJA')
-        ");
-            $stmtIds->execute([':id' => (int)$datos['id']]);
-            $idsEnBD = $stmtIds->fetchAll(PDO::FETCH_COLUMN);
-            $idsRecibidos = [];
+            // ─────────────────────────────────────────────
+            // 4. HIJOS
+            // Solo sincroniza si llegaron registros.
+            // Si viene [], no borra nada accidentalmente.
+            // ─────────────────────────────────────────────
+            $hijos = $datos['hijos'] ?? null;
 
-            $hijos = $datos['hijos'] ?? [];
-            foreach ($hijos as $hijo) {
-                $nombre = trim($hijo['nombre'] ?? '');
-                if ($nombre === '') {
-                    continue;
+            if (is_array($hijos) && count($hijos) > 0) {
+
+                $stmtIds = $pdo->prepare("
+                SELECT id
+                FROM colab_familia
+                WHERE colab_id = :id
+                  AND parentesco IN ('HIJO','HIJA')
+            ");
+                $stmtIds->execute([':id' => $colabId]);
+
+                $idsEnBD = array_map('intval', $stmtIds->fetchAll(PDO::FETCH_COLUMN));
+                $idsRecibidos = [];
+
+                foreach ($hijos as $hijo) {
+                    $nombre = trim((string)($hijo['nombre'] ?? ''));
+
+                    if ($nombre === '') {
+                        continue;
+                    }
+
+                    $hijoId = (int)($hijo['id'] ?? 0);
+                    $parentesco = in_array(($hijo['parentesco'] ?? ''), ['HIJO', 'HIJA'], true)
+                        ? $hijo['parentesco']
+                        : 'HIJO';
+
+                    $fechaNac = !empty($hijo['fecha_nacimiento']) ? $hijo['fecha_nacimiento'] : null;
+                    $dni = self::nullify($hijo['dni'] ?? null);
+
+                    if ($hijoId > 0 && in_array($hijoId, $idsEnBD, true)) {
+                        $pdo->prepare("
+                        UPDATE colab_familia SET
+                            nombre_completo  = :nombre,
+                            parentesco       = :parentesco,
+                            fecha_nacimiento = :fecha,
+                            dni_familiar     = :dni
+                        WHERE id = :fid
+                          AND colab_id = :colab_id
+                    ")->execute([
+                            ':nombre'     => $nombre,
+                            ':parentesco' => $parentesco,
+                            ':fecha'      => $fechaNac,
+                            ':dni'        => $dni,
+                            ':fid'        => $hijoId,
+                            ':colab_id'   => $colabId,
+                        ]);
+
+                        $idsRecibidos[] = $hijoId;
+                    } else {
+                        $ins = $pdo->prepare("
+                        INSERT INTO colab_familia (
+                            colab_id,
+                            parentesco,
+                            nombre_completo,
+                            fecha_nacimiento,
+                            dni_familiar
+                        ) VALUES (
+                            :colab_id,
+                            :parentesco,
+                            :nombre,
+                            :fecha,
+                            :dni
+                        )
+                    ");
+
+                        $ins->execute([
+                            ':colab_id'   => $colabId,
+                            ':parentesco' => $parentesco,
+                            ':nombre'     => $nombre,
+                            ':fecha'      => $fechaNac,
+                            ':dni'        => $dni,
+                        ]);
+
+                        $idsRecibidos[] = (int)$pdo->lastInsertId();
+                    }
                 }
 
-                $hijoId      = (int)($hijo['id'] ?? 0);
-                $parentesco  = in_array(($hijo['parentesco'] ?? ''), ['HIJO', 'HIJA'], true) ? $hijo['parentesco'] : 'HIJO';
-                $fechaNac    = !empty($hijo['fecha_nacimiento']) ? $hijo['fecha_nacimiento'] : null;
-                $dni         = $hijo['dni'] ?? null;
+                $aEliminar = array_diff($idsEnBD, $idsRecibidos);
 
-                if ($hijoId > 0 && in_array($hijoId, $idsEnBD)) {
-                    $pdo->prepare("
-                    UPDATE colab_familia SET
-                        nombre_completo  = :nombre,
-                        parentesco       = :parentesco,
-                        fecha_nacimiento = :fecha,
-                        dni_familiar     = :dni
-                    WHERE id = :fid AND colab_id = :colab_id
-                ")->execute([
-                        ':nombre'     => $nombre,
-                        ':parentesco' => $parentesco,
-                        ':fecha'      => $fechaNac,
-                        ':dni'        => $dni,
-                        ':fid'        => $hijoId,
-                        ':colab_id'   => (int)$datos['id'],
-                    ]);
-                    $idsRecibidos[] = $hijoId;
-                } else {
-                    $ins = $pdo->prepare("
-                    INSERT INTO colab_familia (colab_id, parentesco, nombre_completo, fecha_nacimiento, dni_familiar)
-                    VALUES (:colab_id, :parentesco, :nombre, :fecha, :dni)
-                ");
-                    $ins->execute([
-                        ':colab_id'   => (int)$datos['id'],
-                        ':parentesco' => $parentesco,
-                        ':nombre'     => $nombre,
-                        ':fecha'      => $fechaNac,
-                        ':dni'        => $dni,
-                    ]);
-                    $idsRecibidos[] = (int)$pdo->lastInsertId();
+                if (!empty($aEliminar)) {
+                    $placeholders = implode(',', array_fill(0, count($aEliminar), '?'));
+                    $pdo->prepare("DELETE FROM colab_familia WHERE id IN ($placeholders)")
+                        ->execute(array_values($aEliminar));
                 }
             }
 
-            $aEliminar = array_diff($idsEnBD, $idsRecibidos);
-            if (!empty($aEliminar)) {
-                $placeholders = implode(',', array_fill(0, count($aEliminar), '?'));
-                $pdo->prepare("DELETE FROM colab_familia WHERE id IN ($placeholders)")
-                    ->execute(array_values($aEliminar));
-            }
+            // ─────────────────────────────────────────────
+            // 5. CONTRATOS
+            // ─────────────────────────────────────────────
+            $contratos = $datos['contratos'] ?? null;
 
-            // ── 3.1. Sincronizar contratos ─────────────────────────────
-            $stmtContratoIds = $pdo->prepare("
+            if (is_array($contratos) && count($contratos) > 0) {
+
+                $stmtContratoIds = $pdo->prepare("
                 SELECT id
                 FROM colab_contratos
                 WHERE colab_id = :id
             ");
-            $stmtContratoIds->execute([
-                ':id' => (int)$datos['id']
-            ]);
-            $idsContratosEnBD = array_map('intval', $stmtContratoIds->fetchAll(PDO::FETCH_COLUMN));
-            $idsContratosRecibidos = [];
+                $stmtContratoIds->execute([':id' => $colabId]);
 
-            $contratos = $datos['contratos'] ?? [];
+                $idsContratosEnBD = array_map('intval', $stmtContratoIds->fetchAll(PDO::FETCH_COLUMN));
+                $idsContratosRecibidos = [];
 
-            foreach ($contratos as $contrato) {
-                $contratoId   = (int)($contrato['id'] ?? 0);
-                $fechaIngreso = !empty($contrato['fecha_ingreso']) ? $contrato['fecha_ingreso'] : null;
-                $fechaCese    = !empty($contrato['fecha_cese']) ? $contrato['fecha_cese'] : null;
-                $modalidad    = trim((string)($contrato['modalidad'] ?? ''));
+                foreach ($contratos as $contrato) {
+                    $contratoId   = (int)($contrato['id'] ?? 0);
+                    $fechaIngreso = !empty($contrato['fecha_ingreso']) ? $contrato['fecha_ingreso'] : null;
+                    $fechaCese    = !empty($contrato['fecha_cese']) ? $contrato['fecha_cese'] : null;
+                    $modalidad    = trim((string)($contrato['modalidad'] ?? ''));
 
-                // Si la fila viene vacía, no se procesa
-                if ($fechaIngreso === null && $fechaCese === null && $modalidad === '') {
-                    continue;
-                }
+                    if ($fechaIngreso === null && $fechaCese === null && $modalidad === '') {
+                        continue;
+                    }
 
-                if ($contratoId > 0 && in_array($contratoId, $idsContratosEnBD, true)) {
-                    $stmtUpdateContrato = $pdo->prepare("
+                    if ($contratoId > 0 && in_array($contratoId, $idsContratosEnBD, true)) {
+                        $stmtUpdateContrato = $pdo->prepare("
                         UPDATE colab_contratos SET
                             fecha_ingreso = :fecha_ingreso,
                             fecha_cese    = :fecha_cese,
@@ -637,17 +783,17 @@ RESUMEN DASHBOARD DINÁMICO
                           AND colab_id = :colab_id
                     ");
 
-                    $stmtUpdateContrato->execute([
-                        ':fecha_ingreso' => $fechaIngreso,
-                        ':fecha_cese'    => $fechaCese,
-                        ':modalidad'     => $modalidad !== '' ? $modalidad : null,
-                        ':id'            => $contratoId,
-                        ':colab_id'      => (int)$datos['id'],
-                    ]);
+                        $stmtUpdateContrato->execute([
+                            ':fecha_ingreso' => $fechaIngreso,
+                            ':fecha_cese'    => $fechaCese,
+                            ':modalidad'     => $modalidad !== '' ? $modalidad : null,
+                            ':id'            => $contratoId,
+                            ':colab_id'      => $colabId,
+                        ]);
 
-                    $idsContratosRecibidos[] = $contratoId;
-                } else {
-                    $stmtInsertContrato = $pdo->prepare("
+                        $idsContratosRecibidos[] = $contratoId;
+                    } else {
+                        $stmtInsertContrato = $pdo->prepare("
                         INSERT INTO colab_contratos (
                             colab_id,
                             fecha_ingreso,
@@ -661,69 +807,78 @@ RESUMEN DASHBOARD DINÁMICO
                         )
                     ");
 
-                    $stmtInsertContrato->execute([
-                        ':colab_id'      => (int)$datos['id'],
-                        ':fecha_ingreso' => $fechaIngreso,
-                        ':fecha_cese'    => $fechaCese,
-                        ':modalidad'     => $modalidad !== '' ? $modalidad : null,
-                    ]);
+                        $stmtInsertContrato->execute([
+                            ':colab_id'      => $colabId,
+                            ':fecha_ingreso' => $fechaIngreso,
+                            ':fecha_cese'    => $fechaCese,
+                            ':modalidad'     => $modalidad !== '' ? $modalidad : null,
+                        ]);
 
-                    $idsContratosRecibidos[] = (int)$pdo->lastInsertId();
+                        $idsContratosRecibidos[] = (int)$pdo->lastInsertId();
+                    }
                 }
-            }
 
-            $aEliminarContratos = array_diff($idsContratosEnBD, $idsContratosRecibidos);
+                $aEliminarContratos = array_diff($idsContratosEnBD, $idsContratosRecibidos);
 
-            if (!empty($aEliminarContratos)) {
-                $placeholders = implode(',', array_fill(0, count($aEliminarContratos), '?'));
-                $stmtDeleteContratos = $pdo->prepare("
+                if (!empty($aEliminarContratos)) {
+                    $placeholders = implode(',', array_fill(0, count($aEliminarContratos), '?'));
+                    $stmtDeleteContratos = $pdo->prepare("
                     DELETE FROM colab_contratos
                     WHERE id IN ($placeholders)
                 ");
-                $stmtDeleteContratos->execute(array_values($aEliminarContratos));
+                    $stmtDeleteContratos->execute(array_values($aEliminarContratos));
+                }
             }
 
-            // ── 4. Sincronizar formación académica ───────────────────
-            $stmtFormIds = $pdo->prepare("
+            // ─────────────────────────────────────────────
+            // 6. FORMACIÓN
+            // ─────────────────────────────────────────────
+            $formacion = $datos['formacion'] ?? null;
+
+            if (is_array($formacion) && count($formacion) > 0) {
+
+                $stmtFormIds = $pdo->prepare("
                 SELECT id
                 FROM colab_formacion
                 WHERE colab_id = :id
             ");
-            $stmtFormIds->execute([':id' => (int)$datos['id']]);
-            $idsFormEnBD = array_map('intval', $stmtFormIds->fetchAll(PDO::FETCH_COLUMN));
-            $idsFormRecibidos = [];
+                $stmtFormIds->execute([':id' => $colabId]);
 
-            $formacion = $datos['formacion'] ?? [];
+                $idsFormEnBD = array_map('intval', $stmtFormIds->fetchAll(PDO::FETCH_COLUMN));
+                $idsFormRecibidos = [];
 
-            foreach ($formacion as $form) {
-                $formId           = (int)($form['id'] ?? 0);
-                $tipoGrado        = trim($form['tipo_grado'] ?? 'BACHILLER');
-                $carrera          = trim($form['descripcion_carrera'] ?? '');
-                $institucion      = trim($form['institucion'] ?? '');
-                $anioRealizacion  = isset($form['anio_realizacion']) && $form['anio_realizacion'] !== ''
-                    ? (int)$form['anio_realizacion']
-                    : null;
-                $horasLectivas    = isset($form['horas_lectivas']) && $form['horas_lectivas'] !== ''
-                    ? (int)$form['horas_lectivas']
-                    : null;
-                $especialidad     = trim($form['especialidad'] ?? '');
-                $gradoAlcanzado   = trim($form['grado_alcanzado'] ?? '');
+                foreach ($formacion as $form) {
+                    $formId = (int)($form['id'] ?? 0);
 
-                // Si la fila viene totalmente vacía, no se procesa
-                if (
-                    $tipoGrado === '' &&
-                    $carrera === '' &&
-                    $institucion === '' &&
-                    $anioRealizacion === null &&
-                    $horasLectivas === null &&
-                    $especialidad === '' &&
-                    $gradoAlcanzado === ''
-                ) {
-                    continue;
-                }
+                    $tipoGrado = trim((string)($form['tipo_grado'] ?? ''));
+                    $carrera = trim((string)($form['descripcion_carrera'] ?? ''));
+                    $institucion = trim((string)($form['institucion'] ?? ''));
 
-                if ($formId > 0 && in_array($formId, $idsFormEnBD, true)) {
-                    $stmtUpdateForm = $pdo->prepare("
+                    $anioRealizacion = isset($form['anio_realizacion']) && $form['anio_realizacion'] !== ''
+                        ? (int)$form['anio_realizacion']
+                        : null;
+
+                    $horasLectivas = isset($form['horas_lectivas']) && $form['horas_lectivas'] !== ''
+                        ? (int)$form['horas_lectivas']
+                        : null;
+
+                    $especialidad = trim((string)($form['especialidad'] ?? ''));
+                    $gradoAlcanzado = trim((string)($form['grado_alcanzado'] ?? ''));
+
+                    if (
+                        $tipoGrado === '' &&
+                        $carrera === '' &&
+                        $institucion === '' &&
+                        $anioRealizacion === null &&
+                        $horasLectivas === null &&
+                        $especialidad === '' &&
+                        $gradoAlcanzado === ''
+                    ) {
+                        continue;
+                    }
+
+                    if ($formId > 0 && in_array($formId, $idsFormEnBD, true)) {
+                        $stmtUpdateForm = $pdo->prepare("
                         UPDATE colab_formacion SET
                             tipo_grado          = :tipo_grado,
                             descripcion_carrera = :descripcion_carrera,
@@ -737,21 +892,21 @@ RESUMEN DASHBOARD DINÁMICO
                           AND colab_id = :colab_id
                     ");
 
-                    $stmtUpdateForm->execute([
-                        ':tipo_grado'          => $tipoGrado !== '' ? $tipoGrado : null,
-                        ':descripcion_carrera' => $carrera !== '' ? $carrera : null,
-                        ':institucion'         => $institucion !== '' ? $institucion : null,
-                        ':anio_realizacion'    => $anioRealizacion,
-                        ':horas_lectivas'      => $horasLectivas,
-                        ':especialidad'        => $especialidad !== '' ? $especialidad : null,
-                        ':grado_alcanzado'     => $gradoAlcanzado !== '' ? $gradoAlcanzado : null,
-                        ':id'                  => $formId,
-                        ':colab_id'            => (int)$datos['id'],
-                    ]);
+                        $stmtUpdateForm->execute([
+                            ':tipo_grado'          => $tipoGrado !== '' ? $tipoGrado : null,
+                            ':descripcion_carrera' => $carrera !== '' ? $carrera : null,
+                            ':institucion'         => $institucion !== '' ? $institucion : null,
+                            ':anio_realizacion'    => $anioRealizacion,
+                            ':horas_lectivas'      => $horasLectivas,
+                            ':especialidad'        => $especialidad !== '' ? $especialidad : null,
+                            ':grado_alcanzado'     => $gradoAlcanzado !== '' ? $gradoAlcanzado : null,
+                            ':id'                  => $formId,
+                            ':colab_id'            => $colabId,
+                        ]);
 
-                    $idsFormRecibidos[] = $formId;
-                } else {
-                    $stmtInsertForm = $pdo->prepare("
+                        $idsFormRecibidos[] = $formId;
+                    } else {
+                        $stmtInsertForm = $pdo->prepare("
                         INSERT INTO colab_formacion (
                             colab_id,
                             tipo_grado,
@@ -775,249 +930,292 @@ RESUMEN DASHBOARD DINÁMICO
                         )
                     ");
 
-                    $stmtInsertForm->execute([
-                        ':colab_id'            => (int)$datos['id'],
-                        ':tipo_grado'          => $tipoGrado !== '' ? $tipoGrado : null,
-                        ':descripcion_carrera' => $carrera !== '' ? $carrera : null,
-                        ':institucion'         => $institucion !== '' ? $institucion : null,
-                        ':anio_realizacion'    => $anioRealizacion,
-                        ':horas_lectivas'      => $horasLectivas,
-                        ':especialidad'        => $especialidad !== '' ? $especialidad : null,
-                        ':grado_alcanzado'     => $gradoAlcanzado !== '' ? $gradoAlcanzado : null,
-                    ]);
+                        $stmtInsertForm->execute([
+                            ':colab_id'            => $colabId,
+                            ':tipo_grado'          => $tipoGrado !== '' ? $tipoGrado : null,
+                            ':descripcion_carrera' => $carrera !== '' ? $carrera : null,
+                            ':institucion'         => $institucion !== '' ? $institucion : null,
+                            ':anio_realizacion'    => $anioRealizacion,
+                            ':horas_lectivas'      => $horasLectivas,
+                            ':especialidad'        => $especialidad !== '' ? $especialidad : null,
+                            ':grado_alcanzado'     => $gradoAlcanzado !== '' ? $gradoAlcanzado : null,
+                        ]);
 
-                    $idsFormRecibidos[] = (int)$pdo->lastInsertId();
+                        $idsFormRecibidos[] = (int)$pdo->lastInsertId();
+                    }
                 }
-            }
 
-            $aEliminarForm = array_diff($idsFormEnBD, $idsFormRecibidos);
+                $aEliminarForm = array_diff($idsFormEnBD, $idsFormRecibidos);
 
-            if (!empty($aEliminarForm)) {
-                $placeholders = implode(',', array_fill(0, count($aEliminarForm), '?'));
-                $stmtDeleteForm = $pdo->prepare("
+                if (!empty($aEliminarForm)) {
+                    $placeholders = implode(',', array_fill(0, count($aEliminarForm), '?'));
+                    $stmtDeleteForm = $pdo->prepare("
                     DELETE FROM colab_formacion
                     WHERE id IN ($placeholders)
                 ");
-                $stmtDeleteForm->execute(array_values($aEliminarForm));
-            }
-
-            // ── 5. Sincronizar experiencia laboral ───────────────────
-            $stmtExpIds = $pdo->prepare("
-            SELECT id
-            FROM colab_experiencia
-            WHERE colab_id = :id
-        ");
-            $stmtExpIds->execute([':id' => (int)$datos['id']]);
-            $idsExpEnBD = $stmtExpIds->fetchAll(PDO::FETCH_COLUMN);
-            $idsExpRecibidos = [];
-
-            $experiencia = $datos['experiencia'] ?? [];
-            foreach ($experiencia as $exp) {
-                $empresa  = trim($exp['empresa_entidad'] ?? '');
-                $cargo    = trim($exp['cargo_puesto'] ?? '');
-                $area     = trim($exp['unidad_organica_area'] ?? '');
-                $funciones = trim($exp['funciones_principales'] ?? '');
-
-                if ($empresa === '' && $cargo === '' && $area === '' && $funciones === '') {
-                    continue;
-                }
-
-                $expId = (int)($exp['id'] ?? 0);
-                $fechaInicio = !empty($exp['fecha_inicio']) ? $exp['fecha_inicio'] : null;
-                $fechaFin = !empty($exp['fecha_fin']) ? $exp['fecha_fin'] : null;
-                $actualmenteTrabaja = !empty($exp['actualmente_trabaja']) ? 1 : 0;
-
-                if ($actualmenteTrabaja === 1) {
-                    $fechaFin = null;
-                }
-
-                if ($expId > 0 && in_array($expId, $idsExpEnBD)) {
-                    $pdo->prepare("
-                    UPDATE colab_experiencia SET
-                        empresa_entidad       = :empresa,
-                        unidad_organica_area  = :area,
-                        cargo_puesto          = :cargo,
-                        fecha_inicio          = :fecha_inicio,
-                        fecha_fin             = :fecha_fin,
-                        actualmente_trabaja   = :actualmente_trabaja,
-                        funciones_principales = :funciones,
-                        estado_validacion     = 'PENDIENTE'
-                    WHERE id = :eid AND colab_id = :colab_id
-                ")->execute([
-                        ':empresa'             => $empresa,
-                        ':area'                => $area !== '' ? $area : null,
-                        ':cargo'               => $cargo,
-                        ':fecha_inicio'        => $fechaInicio,
-                        ':fecha_fin'           => $fechaFin,
-                        ':actualmente_trabaja' => $actualmenteTrabaja,
-                        ':funciones'           => $funciones !== '' ? $funciones : null,
-                        ':eid'                 => $expId,
-                        ':colab_id'            => (int)$datos['id'],
-                    ]);
-                    $idsExpRecibidos[] = $expId;
-                } else {
-                    $pdo->prepare("
-                    INSERT INTO colab_experiencia (
-                        colab_id,
-                        empresa_entidad,
-                        unidad_organica_area,
-                        cargo_puesto,
-                        fecha_inicio,
-                        fecha_fin,
-                        actualmente_trabaja,
-                        funciones_principales,
-                        estado_validacion
-                    ) VALUES (
-                        :colab_id,
-                        :empresa,
-                        :area,
-                        :cargo,
-                        :fecha_inicio,
-                        :fecha_fin,
-                        :actualmente_trabaja,
-                        :funciones,
-                        'PENDIENTE'
-                    )
-                ")->execute([
-                        ':colab_id'            => (int)$datos['id'],
-                        ':empresa'             => $empresa,
-                        ':area'                => $area !== '' ? $area : null,
-                        ':cargo'               => $cargo,
-                        ':fecha_inicio'        => $fechaInicio,
-                        ':fecha_fin'           => $fechaFin,
-                        ':actualmente_trabaja' => $actualmenteTrabaja,
-                        ':funciones'           => $funciones !== '' ? $funciones : null,
-                    ]);
-                    $idsExpRecibidos[] = (int)$pdo->lastInsertId();
+                    $stmtDeleteForm->execute(array_values($aEliminarForm));
                 }
             }
 
-            $aEliminarExp = array_diff($idsExpEnBD, $idsExpRecibidos);
-            if (!empty($aEliminarExp)) {
-                $placeholders = implode(',', array_fill(0, count($aEliminarExp), '?'));
-                $pdo->prepare("DELETE FROM colab_experiencia WHERE id IN ($placeholders)")
-                    ->execute(array_values($aEliminarExp));
+            // ─────────────────────────────────────────────
+            // 7. EXPERIENCIA
+            // ─────────────────────────────────────────────
+            $experiencia = $datos['experiencia'] ?? null;
+
+            if (is_array($experiencia) && count($experiencia) > 0) {
+
+                $stmtExpIds = $pdo->prepare("
+                SELECT id
+                FROM colab_experiencia
+                WHERE colab_id = :id
+            ");
+                $stmtExpIds->execute([':id' => $colabId]);
+
+                $idsExpEnBD = array_map('intval', $stmtExpIds->fetchAll(PDO::FETCH_COLUMN));
+                $idsExpRecibidos = [];
+
+                foreach ($experiencia as $exp) {
+                    $expId = (int)($exp['id'] ?? 0);
+
+                    $empresa = trim((string)($exp['empresa_entidad'] ?? ''));
+                    $cargo = trim((string)($exp['cargo_puesto'] ?? ''));
+                    $area = trim((string)($exp['unidad_organica_area'] ?? ''));
+                    $funciones = trim((string)($exp['funciones_principales'] ?? ''));
+
+                    $fechaInicio = !empty($exp['fecha_inicio']) ? $exp['fecha_inicio'] : null;
+                    $fechaFin = !empty($exp['fecha_fin']) ? $exp['fecha_fin'] : null;
+                    $actualmenteTrabaja = !empty($exp['actualmente_trabaja']) ? 1 : 0;
+
+                    if ($actualmenteTrabaja === 1) {
+                        $fechaFin = null;
+                    }
+
+                    if (
+                        $empresa === '' &&
+                        $cargo === '' &&
+                        $area === '' &&
+                        $funciones === '' &&
+                        $fechaInicio === null &&
+                        $fechaFin === null &&
+                        $actualmenteTrabaja === 0
+                    ) {
+                        continue;
+                    }
+
+                    if ($expId > 0 && in_array($expId, $idsExpEnBD, true)) {
+                        $pdo->prepare("
+                        UPDATE colab_experiencia SET
+                            empresa_entidad       = :empresa,
+                            unidad_organica_area  = :area,
+                            cargo_puesto          = :cargo,
+                            fecha_inicio          = :fecha_inicio,
+                            fecha_fin             = :fecha_fin,
+                            actualmente_trabaja   = :actualmente_trabaja,
+                            funciones_principales = :funciones,
+                            estado_validacion     = 'PENDIENTE'
+                        WHERE id = :eid
+                          AND colab_id = :colab_id
+                    ")->execute([
+                            ':empresa'             => $empresa !== '' ? $empresa : null,
+                            ':area'                => $area !== '' ? $area : null,
+                            ':cargo'               => $cargo !== '' ? $cargo : null,
+                            ':fecha_inicio'        => $fechaInicio,
+                            ':fecha_fin'           => $fechaFin,
+                            ':actualmente_trabaja' => $actualmenteTrabaja,
+                            ':funciones'           => $funciones !== '' ? $funciones : null,
+                            ':eid'                 => $expId,
+                            ':colab_id'            => $colabId,
+                        ]);
+
+                        $idsExpRecibidos[] = $expId;
+                    } else {
+                        $pdo->prepare("
+                        INSERT INTO colab_experiencia (
+                            colab_id,
+                            empresa_entidad,
+                            unidad_organica_area,
+                            cargo_puesto,
+                            fecha_inicio,
+                            fecha_fin,
+                            actualmente_trabaja,
+                            funciones_principales,
+                            estado_validacion
+                        ) VALUES (
+                            :colab_id,
+                            :empresa,
+                            :area,
+                            :cargo,
+                            :fecha_inicio,
+                            :fecha_fin,
+                            :actualmente_trabaja,
+                            :funciones,
+                            'PENDIENTE'
+                        )
+                    ")->execute([
+                            ':colab_id'            => $colabId,
+                            ':empresa'             => $empresa !== '' ? $empresa : null,
+                            ':area'                => $area !== '' ? $area : null,
+                            ':cargo'               => $cargo !== '' ? $cargo : null,
+                            ':fecha_inicio'        => $fechaInicio,
+                            ':fecha_fin'           => $fechaFin,
+                            ':actualmente_trabaja' => $actualmenteTrabaja,
+                            ':funciones'           => $funciones !== '' ? $funciones : null,
+                        ]);
+
+                        $idsExpRecibidos[] = (int)$pdo->lastInsertId();
+                    }
+                }
+
+                $aEliminarExp = array_diff($idsExpEnBD, $idsExpRecibidos);
+
+                if (!empty($aEliminarExp)) {
+                    $placeholders = implode(',', array_fill(0, count($aEliminarExp), '?'));
+                    $pdo->prepare("DELETE FROM colab_experiencia WHERE id IN ($placeholders)")
+                        ->execute(array_values($aEliminarExp));
+                }
             }
 
-            // ── 6. Sincronizar pensión ───────────────────────────
+            // ─────────────────────────────────────────────
+            // 8. PENSIÓN
+            // ─────────────────────────────────────────────
             $pension = $datos['pension'] ?? null;
 
             if (is_array($pension)) {
 
-                $stmtPen = $pdo->prepare("
-        SELECT id
-        FROM colab_pension
-        WHERE colab_id = :id
-        LIMIT 1
-        ");
-                $stmtPen->execute([
-                    ':id' => (int)$datos['id'],
-                ]);
+                $tieneDatoPension =
+                    !empty($pension['sistema_pension']) ||
+                    !empty($pension['afp']) ||
+                    !empty($pension['cuspp']) ||
+                    !empty($pension['tipo_comision']) ||
+                    !empty($pension['fecha_inscripcion']) ||
+                    !empty($pension['sin_afp_afiliarme']);
 
-                $pensionId = (int)($stmtPen->fetchColumn() ?: 0);
+                if ($tieneDatoPension) {
+                    $stmtPen = $pdo->prepare("
+                    SELECT id
+                    FROM colab_pension
+                    WHERE colab_id = :id
+                    LIMIT 1
+                ");
+                    $stmtPen->execute([':id' => $colabId]);
 
-                $payloadPension = [
-                    ':colab_id'          => (int)$datos['id'],
-                    ':sistema_pension'   => !empty($pension['sistema_pension']) ? $pension['sistema_pension'] : null,
-                    ':afp'               => !empty($pension['afp']) ? $pension['afp'] : null,
-                    ':cuspp'             => !empty($pension['cuspp']) ? trim((string)$pension['cuspp']) : null,
-                    ':tipo_comision'     => !empty($pension['tipo_comision']) ? $pension['tipo_comision'] : null,
-                    ':fecha_inscripcion' => !empty($pension['fecha_inscripcion']) ? $pension['fecha_inscripcion'] : null,
-                    ':sin_afp_afiliarme' => !empty($pension['sin_afp_afiliarme']) ? 1 : 0,
-                ];
+                    $pensionId = (int)($stmtPen->fetchColumn() ?: 0);
 
-                if ($pensionId > 0) {
-                    $pdo->prepare("
-            UPDATE colab_pension SET
-                sistema_pension   = :sistema_pension,
-                afp               = :afp,
-                cuspp             = :cuspp,
-                tipo_comision     = :tipo_comision,
-                fecha_inscripcion = :fecha_inscripcion,
-                sin_afp_afiliarme = :sin_afp_afiliarme
-            WHERE colab_id = :colab_id
-        ")->execute($payloadPension);
-                } else {
-                    $pdo->prepare("
-            INSERT INTO colab_pension (
-                colab_id,
-                sistema_pension,
-                afp,
-                cuspp,
-                tipo_comision,
-                fecha_inscripcion,
-                sin_afp_afiliarme
-            ) VALUES (
-                :colab_id,
-                :sistema_pension,
-                :afp,
-                :cuspp,
-                :tipo_comision,
-                :fecha_inscripcion,
-                :sin_afp_afiliarme
-            )
-        ")->execute($payloadPension);
+                    $payloadPension = [
+                        ':colab_id'          => $colabId,
+                        ':sistema_pension'   => self::nullify($pension['sistema_pension'] ?? null),
+                        ':afp'               => self::nullify($pension['afp'] ?? null),
+                        ':cuspp'             => self::nullify($pension['cuspp'] ?? null),
+                        ':tipo_comision'     => self::nullify($pension['tipo_comision'] ?? null),
+                        ':fecha_inscripcion' => !empty($pension['fecha_inscripcion']) ? $pension['fecha_inscripcion'] : null,
+                        ':sin_afp_afiliarme' => !empty($pension['sin_afp_afiliarme']) ? 1 : 0,
+                    ];
+
+                    if ($pensionId > 0) {
+                        $pdo->prepare("
+                        UPDATE colab_pension SET
+                            sistema_pension   = :sistema_pension,
+                            afp               = :afp,
+                            cuspp             = :cuspp,
+                            tipo_comision     = :tipo_comision,
+                            fecha_inscripcion = :fecha_inscripcion,
+                            sin_afp_afiliarme = :sin_afp_afiliarme
+                        WHERE colab_id = :colab_id
+                    ")->execute($payloadPension);
+                    } else {
+                        $pdo->prepare("
+                        INSERT INTO colab_pension (
+                            colab_id,
+                            sistema_pension,
+                            afp,
+                            cuspp,
+                            tipo_comision,
+                            fecha_inscripcion,
+                            sin_afp_afiliarme
+                        ) VALUES (
+                            :colab_id,
+                            :sistema_pension,
+                            :afp,
+                            :cuspp,
+                            :tipo_comision,
+                            :fecha_inscripcion,
+                            :sin_afp_afiliarme
+                        )
+                    ")->execute($payloadPension);
+                    }
                 }
             }
-            // ── 7. Sincronizar datos bancarios ───────────────────
+
+            // ─────────────────────────────────────────────
+            // 9. BANCARIO
+            // ─────────────────────────────────────────────
             $bancario = $datos['bancario'] ?? null;
 
             if (is_array($bancario)) {
 
-                $stmtBan = $pdo->prepare("
-        SELECT id
-        FROM colab_bancario
-        WHERE colab_id = :id
-        LIMIT 1
-     ");
-                $stmtBan->execute([
-                    ':id' => (int)$datos['id'],
-                ]);
+                $tieneDatoBancario =
+                    !empty($bancario['banco_haberes']) ||
+                    !empty($bancario['numero_cuenta']) ||
+                    !empty($bancario['numero_cuenta_cci']);
 
-                $bancarioId = (int)($stmtBan->fetchColumn() ?: 0);
+                if ($tieneDatoBancario) {
+                    $stmtBan = $pdo->prepare("
+                    SELECT id
+                    FROM colab_bancario
+                    WHERE colab_id = :id
+                    LIMIT 1
+                ");
+                    $stmtBan->execute([':id' => $colabId]);
 
-                $payloadBancario = [
-                    ':colab_id'          => (int)$datos['id'],
-                    ':banco_haberes'     => !empty($bancario['banco_haberes']) ? trim((string)$bancario['banco_haberes']) : null,
-                    ':numero_cuenta'     => !empty($bancario['numero_cuenta']) ? trim((string)$bancario['numero_cuenta']) : null,
-                    ':numero_cuenta_cci' => !empty($bancario['numero_cuenta_cci']) ? trim((string)$bancario['numero_cuenta_cci']) : null,
-                ];
+                    $bancarioId = (int)($stmtBan->fetchColumn() ?: 0);
 
-                if ($bancarioId > 0) {
-                    $pdo->prepare("
-            UPDATE colab_bancario SET
-                banco_haberes     = :banco_haberes,
-                numero_cuenta     = :numero_cuenta,
-                numero_cuenta_cci = :numero_cuenta_cci
-            WHERE colab_id = :colab_id
-        ")->execute($payloadBancario);
-                } else {
-                    $pdo->prepare("
-            INSERT INTO colab_bancario (
-                colab_id,
-                banco_haberes,
-                numero_cuenta,
-                numero_cuenta_cci
-            ) VALUES (
-                :colab_id,
-                :banco_haberes,
-                :numero_cuenta,
-                :numero_cuenta_cci
-            )
-        ")->execute($payloadBancario);
+                    $payloadBancario = [
+                        ':colab_id'          => $colabId,
+                        ':banco_haberes'     => self::nullify($bancario['banco_haberes'] ?? null),
+                        ':numero_cuenta'     => self::nullify($bancario['numero_cuenta'] ?? null),
+                        ':numero_cuenta_cci' => self::nullify($bancario['numero_cuenta_cci'] ?? null),
+                    ];
+
+                    if ($bancarioId > 0) {
+                        $pdo->prepare("
+                        UPDATE colab_bancario SET
+                            banco_haberes     = :banco_haberes,
+                            numero_cuenta     = :numero_cuenta,
+                            numero_cuenta_cci = :numero_cuenta_cci
+                        WHERE colab_id = :colab_id
+                    ")->execute($payloadBancario);
+                    } else {
+                        $pdo->prepare("
+                        INSERT INTO colab_bancario (
+                            colab_id,
+                            banco_haberes,
+                            numero_cuenta,
+                            numero_cuenta_cci
+                        ) VALUES (
+                            :colab_id,
+                            :banco_haberes,
+                            :numero_cuenta,
+                            :numero_cuenta_cci
+                        )
+                    ")->execute($payloadBancario);
+                    }
                 }
             }
 
-            // ── 8. Sincronizar idiomas ───────────────────────────
+            // ─────────────────────────────────────────────
+            // 10. IDIOMAS
+            // Solo sincroniza si llegaron registros.
+            // Si viene [], no elimina idiomas por accidente.
+            // ─────────────────────────────────────────────
             $idiomas = $datos['idiomas'] ?? null;
 
-            if (is_array($idiomas)) {
+            if (is_array($idiomas) && count($idiomas) > 0) {
 
                 $pdo->prepare("
-        DELETE FROM colab_idioma
-        WHERE colab_id = :id
-        ")->execute([
-                    ':id' => (int)$datos['id'],
+                DELETE FROM colab_idioma
+                WHERE colab_id = :id
+            ")->execute([
+                    ':id' => $colabId,
                 ]);
 
                 foreach ($idiomas as $idioma) {
@@ -1033,17 +1231,17 @@ RESUMEN DASHBOARD DINÁMICO
                     }
 
                     $pdo->prepare("
-            INSERT INTO colab_idioma (
-                colab_id,
-                idioma,
-                nivel
-            ) VALUES (
-                :colab_id,
-                :idioma,
-                :nivel
-            )
-        ")->execute([
-                        ':colab_id' => (int)$datos['id'],
+                    INSERT INTO colab_idioma (
+                        colab_id,
+                        idioma,
+                        nivel
+                    ) VALUES (
+                        :colab_id,
+                        :idioma,
+                        :nivel
+                    )
+                ")->execute([
+                        ':colab_id' => $colabId,
                         ':idioma'   => $nombreIdioma,
                         ':nivel'    => $nivelIdioma,
                     ]);
@@ -1056,7 +1254,7 @@ RESUMEN DASHBOARD DINÁMICO
                 'success' => true,
                 'mensaje' => 'Perfil actualizado correctamente'
             ];
-        } catch (Exception $e) {
+        } catch (Throwable $e) {
             if ($pdo->inTransaction()) {
                 $pdo->rollBack();
             }

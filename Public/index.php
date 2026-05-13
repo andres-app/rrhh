@@ -1,6 +1,7 @@
 <?php
-//Public/index.php
+// Public/index.php
 declare(strict_types=1);
+
 ob_start();
 ini_set('display_errors', '0');
 error_reporting(E_ALL);
@@ -18,56 +19,101 @@ require_once __DIR__ . '/../Modelo/MdPermisos.php';
 require_once __DIR__ . '/../Controlador/CtrUsuario.php';
 require_once __DIR__ . '/../Controlador/CtrPermisos.php';
 
-/* HELPERS */
+/* ============================================================
+   HELPERS
+============================================================ */
+
 function redirect(string $to)
 {
     header('Location: ' . $to);
     exit;
 }
 
+function home_by_role(string $role): string
+{
+    $role = strtolower(trim($role));
+
+    if (in_array($role, ['superadmin', 'admin', 'rrhh'], true)) {
+        return BASE_URL . '/rrhh/dashboard';
+    }
+
+    return BASE_URL . '/perfil';
+}
+
 function check_access(string $module_path, string $role): array
 {
     $db = Conexion::conectar();
-    $stmt = $db->prepare("SELECT p.can_view, p.can_edit 
-                          FROM permisos p 
-                          INNER JOIN modulos m ON p.modulo_id = m.id 
-                          WHERE m.ruta_base = :module AND p.rol = :rol LIMIT 1");
-    $stmt->execute(['module' => $module_path, 'rol' => $role]);
-    return $stmt->fetch(PDO::FETCH_ASSOC) ?: ['can_view' => 0, 'can_edit' => 0];
+
+    $stmt = $db->prepare("
+        SELECT p.can_view, p.can_edit 
+        FROM permisos p 
+        INNER JOIN modulos m ON p.modulo_id = m.id 
+        WHERE m.ruta_base = :module 
+          AND p.rol = :rol 
+        LIMIT 1
+    ");
+
+    $stmt->execute([
+        ':module' => $module_path,
+        ':rol'    => $role
+    ]);
+
+    return $stmt->fetch(PDO::FETCH_ASSOC) ?: [
+        'can_view' => 0,
+        'can_edit' => 0
+    ];
 }
 
-/* ROUTER LOGIC */
+function user_is_admin_role(): bool
+{
+    $rol = strtolower(trim($_SESSION['user_role'] ?? ''));
+
+    return in_array($rol, ['superadmin', 'admin', 'rrhh'], true);
+}
+
+/* ============================================================
+   ROUTER BASE
+============================================================ */
+
 $path   = trim((string)($_GET['url'] ?? 'login'), '/');
-$parts  = explode('/', $path);
-$module = $parts[0] ?: 'login';
+$parts  = $path !== '' ? explode('/', $path) : [];
+$module = $parts[0] ?? 'login';
 
-// ── REDIRECCIÓN INTELIGENTE POR ROL (ANTES DE PERMISOS) ──
-if (!empty($_SESSION['user_id'])) {
-
-    $rol = strtolower($_SESSION['user_role'] ?? '');
-
-    // Si es colaborador y entra a RRHH → lo mandas a su perfil
-    if ($rol === 'colaborador' && $module === 'rrhh') {
-        redirect(BASE_URL . '/perfil');
-    }
+if ($module === '') {
+    $module = 'login';
 }
 
-// ── Rutas públicas ────────────────────────────────────────────
+/* ============================================================
+   RUTAS PÚBLICAS
+============================================================ */
+
 if ($module === 'login' || $module === 'logout') {
+
     if ($module === 'logout') {
         session_destroy();
         redirect(BASE_URL . '/login');
     }
+
+    if (!empty($_SESSION['user_id'])) {
+        redirect(home_by_role($_SESSION['user_role'] ?? ''));
+    }
+
     require_once __DIR__ . '/../Vista/modulos/login.php';
     exit;
 }
 
-// ── Validación de sesión ──────────────────────────────────────
+/* ============================================================
+   VALIDACIÓN DE SESIÓN
+============================================================ */
+
 if (empty($_SESSION['user_id'])) {
     redirect(BASE_URL . '/login');
 }
 
-// ── Sincronizar cambiar_clave desde BD ────────────────────────
+/* ============================================================
+   SINCRONIZAR CAMBIAR_CLAVE DESDE BD
+============================================================ */
+
 $usuarioActual = MdUsuario::mdlMostrarUsuarios(
     'usuarios',
     'id',
@@ -76,24 +122,46 @@ $usuarioActual = MdUsuario::mdlMostrarUsuarios(
 
 $_SESSION['cambiar_clave'] = (int)($usuarioActual['cambiar_clave'] ?? 0);
 
-// ── Forzar cambio de clave en primer acceso ───────────────────
+/* ============================================================
+   BLOQUEO POR PRIMER CAMBIO DE CLAVE
+   IMPORTANTE:
+   - Solo bloqueamos rutas críticas si el usuario es colaborador.
+   - Para admin/rrhh/superadmin no bloqueamos Directorio, Validaciones
+     ni Contratos desde aquí, porque eso debe manejarlo permisos.
+============================================================ */
+
 if ((int)($_SESSION['cambiar_clave'] ?? 0) === 1) {
 
-    $rutasPermitidas = [
-        'perfil',
-        'perfil/cambiar-clave',
-        'logout'
-    ];
+    $rolActual = strtolower(trim($_SESSION['user_role'] ?? ''));
 
-    if (!in_array($path, $rutasPermitidas, true)) {
-        redirect(BASE_URL . '/perfil');
+    if ($rolActual === 'colaborador') {
+
+        $rutasPermitidasCambioClave = [
+            'perfil',
+            'perfil/cambiar-clave',
+            'logout'
+        ];
+
+        if (!in_array($path, $rutasPermitidasCambioClave, true)) {
+            redirect(BASE_URL . '/perfil');
+        }
     }
 }
 
+/* ============================================================
+   RESTRICCIÓN GENERAL:
+   COLABORADOR NO ENTRA A RRHH
+============================================================ */
 
-// ══════════════════════════════════════════════════════════════
-// RUTAS AJAX 
-// ══════════════════════════════════════════════════════════════
+$rolSesion = strtolower(trim($_SESSION['user_role'] ?? ''));
+
+if ($rolSesion === 'colaborador' && $module === 'rrhh') {
+    redirect(BASE_URL . '/perfil');
+}
+
+/* ============================================================
+   RUTAS AJAX
+============================================================ */
 
 if ($module === 'perfil' && ($parts[1] ?? '') === 'actualizar') {
 
@@ -110,6 +178,7 @@ if ($module === 'perfil' && ($parts[1] ?? '') === 'actualizar') {
         $ctrl = new CtrDirectorio();
 
         $body = [];
+
         if (!empty($_POST['payload'])) {
             $body = json_decode((string)$_POST['payload'], true);
         }
@@ -128,6 +197,7 @@ if ($module === 'perfil' && ($parts[1] ?? '') === 'actualizar') {
 
         echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
         exit;
+
     } catch (Throwable $e) {
         echo json_encode([
             'success' => false,
@@ -150,6 +220,7 @@ if ($module === 'perfil' && ($parts[1] ?? '') === 'cambiar-clave') {
 
         echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
         exit;
+
     } catch (Throwable $e) {
         echo json_encode([
             'success' => false,
@@ -160,6 +231,15 @@ if ($module === 'perfil' && ($parts[1] ?? '') === 'cambiar-clave') {
 }
 
 if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? '') === 'aprobar') {
+
+    if (!user_is_admin_role()) {
+        echo json_encode([
+            'success' => false,
+            'mensaje' => 'No tienes permiso para aprobar solicitudes'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     require_once __DIR__ . '/../Modelo/MdDirectorio.php';
     require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
 
@@ -171,11 +251,13 @@ if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? 
 
     try {
         $idSolicitud = (int)($parts[3] ?? 0);
+
         $ctrl = new CtrDirectorio();
         $respuesta = $ctrl->ctrAprobarSolicitudCambio($idSolicitud);
 
         echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
         exit;
+
     } catch (Throwable $e) {
         echo json_encode([
             'success' => false,
@@ -186,6 +268,15 @@ if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? 
 }
 
 if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? '') === 'rechazar') {
+
+    if (!user_is_admin_role()) {
+        echo json_encode([
+            'success' => false,
+            'mensaje' => 'No tienes permiso para rechazar solicitudes'
+        ], JSON_UNESCAPED_UNICODE);
+        exit;
+    }
+
     require_once __DIR__ . '/../Modelo/MdDirectorio.php';
     require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
 
@@ -197,8 +288,10 @@ if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? 
 
     try {
         $idSolicitud = (int)($parts[3] ?? 0);
+
         $raw = file_get_contents('php://input');
         $body = json_decode($raw, true);
+
         $motivo = trim((string)($body['motivo'] ?? ''));
 
         $ctrl = new CtrDirectorio();
@@ -206,6 +299,7 @@ if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? 
 
         echo json_encode($respuesta, JSON_UNESCAPED_UNICODE);
         exit;
+
     } catch (Throwable $e) {
         echo json_encode([
             'success' => false,
@@ -215,16 +309,14 @@ if ($module === 'rrhh' && ($parts[1] ?? '') === 'validaciones' && ($parts[2] ?? 
     }
 }
 
-// ══════════════════════════════════════════════════════════════
-// EXPORTAR EXCEL - DIRECTORIO RRHH
-// URL: /rrhh/directorio/excel
-// ══════════════════════════════════════════════════════════════
+/* ============================================================
+   EXPORTAR EXCEL DIRECTORIO
+   URL: /rrhh/directorio/xlsx
+============================================================ */
 
 if ($module === 'rrhh' && ($parts[1] ?? '') === 'directorio' && ($parts[2] ?? '') === 'xlsx') {
 
-    $rolActual = strtolower(trim($_SESSION['user_role'] ?? ''));
-
-    if (!in_array($rolActual, ['superadmin', 'admin', 'rrhh'], true)) {
+    if (!user_is_admin_role()) {
         die("No tienes permiso para exportar este reporte.");
     }
 
@@ -233,18 +325,127 @@ if ($module === 'rrhh' && ($parts[1] ?? '') === 'directorio' && ($parts[2] ?? ''
     require_once __DIR__ . '/../Vista/modulos/rrhh/RptExcelDirectorioXlsx.php';
     exit;
 }
+
+/* ============================================================
+   PERFIL PROPIO
+   URL: /perfil
+============================================================ */
+
+if ($module === 'perfil' && empty($parts[1])) {
+
+    require_once __DIR__ . '/../Modelo/MdDirectorio.php';
+    require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
+
+    $ctrl = new CtrDirectorio();
+    $data = $ctrl->ctrVerPerfil(null);
+
+    if (!$data) {
+
+        if (user_is_admin_role()) {
+            redirect(BASE_URL . '/rrhh/dashboard');
+        }
+
+        echo "404 - No se encontró el perfil asociado a este usuario.";
+        exit;
+    }
+
+    require_once __DIR__ . '/../Vista/modulos/shared/perfil_base.php';
+    exit;
+}
+
+/* ============================================================
+   PERFIL DETALLE RRHH
+   URL recomendada: /rrhh/perfil_detalle/{id}
+============================================================ */
+
+if ($module === 'rrhh' && ($parts[1] ?? '') === 'perfil_detalle') {
+
+    if (!user_is_admin_role()) {
+        die("No tienes permiso para acceder a este módulo.");
+    }
+
+    require_once __DIR__ . '/../Modelo/MdDirectorio.php';
+    require_once __DIR__ . '/../Controlador/CtrDirectorio.php';
+
+    $idColaborador = (int)($parts[2] ?? 0);
+
+    if ($idColaborador <= 0) {
+        echo "404 - Colaborador inválido.";
+        exit;
+    }
+
+    $ctrl = new CtrDirectorio();
+    $data = $ctrl->ctrVerPerfil($idColaborador);
+
+    if (!$data) {
+        echo "404 - No se encontró el perfil del colaborador.";
+        exit;
+    }
+
+    require_once __DIR__ . '/../Vista/modulos/shared/perfil_base.php';
+    exit;
+}
+
+/* ============================================================
+   PERMISOS
+   AQUÍ ESTABA EL PROBLEMA:
+   Antes validabas solo $module.
+   Ahora validamos la ruta real.
+============================================================ */
+
 // ── Permisos ──────────────────────────────────────────────────
-$user_role = $_SESSION['user_role'];
-$permisos  = check_access($module, $user_role);
+$user_role = strtolower(trim($_SESSION['user_role'] ?? ''));
+
+/*
+ * IMPORTANTE:
+ * Según tu tabla modulos, las rutas registradas son:
+ *
+ * rrhh
+ * configuracion
+ * perfil
+ * documentos
+ * misvalidaciones
+ * contratos
+ * usuarios
+ *
+ * Por eso:
+ * /rrhh/dashboard    usa permiso rrhh
+ * /rrhh/directorio   usa permiso rrhh
+ * /rrhh/validaciones usa permiso rrhh
+ * /rrhh/contratos    usa permiso contratos
+ */
+$modulePermission = $module;
+
+if ($module === 'rrhh') {
+    $sub = $parts[1] ?? 'dashboard';
+
+    if ($sub === 'contratos') {
+        $modulePermission = 'contratos';
+    } else {
+        $modulePermission = 'rrhh';
+    }
+}
+
+if ($module === 'configuracion') {
+    $modulePermission = 'configuracion';
+}
+
+$permisos = check_access($modulePermission, $user_role);
 
 if (!$permisos['can_view']) {
-    die("No tienes permiso para acceder a este módulo.");
+    die("No tienes permiso para acceder a este módulo: " . htmlspecialchars($modulePermission));
 }
 
 $_SESSION['current_module_can_edit'] = (bool)$permisos['can_edit'];
 
-/* CARGA DE MÓDULOS */
+/* ============================================================
+   CARGA DE MÓDULOS
+============================================================ */
+
+$file = '';
+
 switch ($module) {
+
     case 'documentos':
         $file = __DIR__ . "/../Vista/modulos/colaborador/documentos.php";
         break;
@@ -256,29 +457,27 @@ switch ($module) {
     case 'rrhh':
         $sub = $parts[1] ?? 'dashboard';
 
-        // Restricción específica para submódulo contratos
-        if ($sub === 'contratos') {
-            $rolActual = strtolower(trim($_SESSION['user_role'] ?? ''));
+        if (!user_is_admin_role()) {
+            die("No tienes permiso para acceder a este módulo.");
+        }
 
-            if (!in_array($rolActual, ['superadmin', 'admin', 'rrhh'], true)) {
-                die("No tienes permiso para acceder a este módulo.");
-            }
+        $subPermitidos = [
+            'dashboard',
+            'directorio',
+            'validaciones',
+            'contratos'
+        ];
+
+        if (!in_array($sub, $subPermitidos, true)) {
+            echo "404 - Submódulo RRHH no encontrado.";
+            exit;
         }
 
         $file = __DIR__ . "/../Vista/modulos/rrhh/{$sub}.php";
-
-        if ($sub === 'perfil') {
-            $id_colaborador = $parts[2] ?? null;
-            $file = __DIR__ . "/../Vista/modulos/rrhh/perfil_detalle.php";
-        }
         break;
 
     case 'configuracion':
         $file = __DIR__ . "/../Vista/modulos/configuracion/permisos.php";
-        break;
-
-    case 'perfil':
-        $file = __DIR__ . "/../Vista/modulos/colaborador/perfil.php";
         break;
 
     default:
@@ -286,8 +485,10 @@ switch ($module) {
         break;
 }
 
-if (file_exists($file)) {
+if ($file && file_exists($file)) {
     require_once $file;
-} else {
-    echo "404 - El archivo del módulo no existe.";
+    exit;
 }
+
+echo "404 - El archivo del módulo no existe.";
+exit;

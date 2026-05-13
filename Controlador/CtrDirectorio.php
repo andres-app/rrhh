@@ -18,9 +18,35 @@ class CtrDirectorio
         return MdDirectorio::mdlObtenerResumenDashboard();
     }
 
-    public function ctrVerPerfil($id)
+    public function ctrVerPerfil($id = null)
     {
-        if (!$id || !is_numeric($id)) {
+        $rolSesion = strtolower(trim($_SESSION['user_role'] ?? ''));
+        $userId    = (int)($_SESSION['user_id'] ?? 0);
+
+        if ($userId <= 0) {
+            return false;
+        }
+
+        /*
+     * CASO 1:
+     * /perfil
+     * Cualquier usuario logueado puede ver SU PROPIO perfil,
+     * siempre que tenga un registro asociado en colab_maestro.usuario_id.
+     */
+        if ($id === null || $id === '' || $id === false) {
+            return MdDirectorio::mdlObtenerPerfilPorUsuario($userId);
+        }
+
+        /*
+     * CASO 2:
+     * /rrhh/perfil_detalle/{id}
+     * Solo RRHH/Admin/Superadmin pueden ver perfiles de otros colaboradores.
+     */
+        if (!in_array($rolSesion, ['superadmin', 'admin', 'rrhh'], true)) {
+            return false;
+        }
+
+        if (!is_numeric($id) || (int)$id <= 0) {
             return false;
         }
 
@@ -29,19 +55,42 @@ class CtrDirectorio
 
     public function ctrActualizarPerfil(array $body, ?array $archivo = null): array
     {
-        if (!$body || empty($body['id'])) {
-            return ['success' => false, 'mensaje' => 'Datos inválidos o incompletos'];
+        if (!$body) {
+            return [
+                'success' => false,
+                'mensaje' => 'Datos inválidos o incompletos'
+            ];
         }
 
-        $idObjetivo = (int)$body['id'];
-        $rolSesion  = strtolower(trim($_SESSION['user_role'] ?? ''));
-        $userId     = (int)($_SESSION['user_id'] ?? 0);
+        $rolSesion = strtolower(trim($_SESSION['user_role'] ?? ''));
+        $userId    = (int)($_SESSION['user_id'] ?? 0);
 
-        if ($idObjetivo <= 0 || $userId <= 0) {
-            return ['success' => false, 'mensaje' => 'Sesión o colaborador inválido'];
+        if ($userId <= 0) {
+            return [
+                'success' => false,
+                'mensaje' => 'Sesión inválida'
+            ];
         }
 
+        /*
+         * COLABORADOR:
+         * Ignoramos el ID que venga del payload por seguridad.
+         * El perfil objetivo siempre será el vinculado al usuario logueado.
+         */
         if ($rolSesion === 'colaborador') {
+
+            $perfilSesion = MdDirectorio::mdlObtenerPerfilPorUsuario($userId);
+
+            if (!$perfilSesion || empty($perfilSesion['id'])) {
+                return [
+                    'success' => false,
+                    'mensaje' => 'No se encontró el perfil del colaborador'
+                ];
+            }
+
+            $idObjetivo = (int)$perfilSesion['id'];
+
+            $body['id'] = $idObjetivo;
 
             if (!$archivo || empty($archivo['tmp_name'])) {
                 return [
@@ -53,11 +102,35 @@ class CtrDirectorio
             return MdDirectorio::mdlCrearSolicitudCambio($idObjetivo, $userId, $body, $archivo);
         }
 
+        /*
+         * ADMIN / RRHH / SUPERADMIN:
+         * El ID del payload sí es válido porque corresponde a colab_maestro.id.
+         */
         if (in_array($rolSesion, ['superadmin', 'admin', 'rrhh'], true)) {
+
+            if (empty($body['id']) || (int)$body['id'] <= 0) {
+                return [
+                    'success' => false,
+                    'mensaje' => 'Colaborador inválido'
+                ];
+            }
+
+            $perfil = MdDirectorio::mdlObtenerPerfilCompleto((int)$body['id']);
+
+            if (!$perfil) {
+                return [
+                    'success' => false,
+                    'mensaje' => 'No se encontró el perfil del colaborador'
+                ];
+            }
+
             return MdDirectorio::mdlActualizarPerfil($body);
         }
 
-        return ['success' => false, 'mensaje' => 'No tienes permisos para realizar esta acción'];
+        return [
+            'success' => false,
+            'mensaje' => 'No tienes permisos para realizar esta acción'
+        ];
     }
 
     public function ctrAprobarSolicitudCambio(int $solicitudId): array
@@ -102,6 +175,7 @@ class CtrDirectorio
         }
 
         $motivo = trim($motivo);
+
         if ($motivo === '') {
             return [
                 'success' => false,
