@@ -3237,12 +3237,22 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
         irPaso(1);
     }
 
-    function cerrarModal() {
-        if (confirm('¿Deseas salir sin guardar los cambios?')) {
-            const m = document.getElementById('modal-perfil');
-            m.classList.remove('modal-open');
-            setTimeout(() => m.classList.add('hidden'), 350);
+    function cerrarModal(confirmar = true) {
+        if (confirmar && !confirm('¿Deseas salir sin guardar los cambios?')) {
+            return;
         }
+
+        const m = document.getElementById('modal-perfil');
+
+        if (!m) {
+            return;
+        }
+
+        m.classList.remove('modal-open');
+
+        setTimeout(() => {
+            m.classList.add('hidden');
+        }, 350);
     }
 
     function irPaso(n) {
@@ -3994,7 +4004,7 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
                 const res = JSON.parse(raw.trim());
 
                 if (res.success) {
-                    cerrarModal();
+                    cerrarModal(false);
                     mostrarToast('✓', res.mensaje || 'Operación realizada correctamente', 'bg-green-700');
                     setTimeout(() => location.reload(), 900);
                 } else {
