@@ -927,95 +927,91 @@ function rrhhValRenderDetalleCambios(array $cambios): string
 
                             <?php foreach ($solicitudes as $sol): ?>
                                 <?php
-                                $estado = $sol['estado'] ?? 'PENDIENTE';
+                                $estado = strtoupper(trim((string)($sol['estado'] ?? 'PENDIENTE')));
+                                $modalId = 'modal-validacion-' . (int)($sol['id'] ?? 0);
+
+                                $fechaSolicitud = !empty($sol['created_at'])
+                                    ? date('d/m/Y H:i', strtotime($sol['created_at']))
+                                    : 'Sin fecha';
+
+                                $colaborador = $sol['nombres_apellidos']
+                                    ?? $sol['colaborador']
+                                    ?? $sol['nombre_colaborador']
+                                    ?? 'Colaborador';
+
+                                $dni = $sol['dni'] ?? '—';
+
+                                $tipo = textoTipoSolicitud($sol['tipo_solicitud'] ?? 'perfil_completo');
                                 $resumen = resumenSolicitud($sol);
-                                $busqueda = strtolower(
-                                    ($sol['nombres_apellidos'] ?? '') . ' ' .
-                                        ($sol['dni'] ?? '') . ' ' .
-                                        textoTipoSolicitud($sol['tipo_seccion'] ?? '') . ' ' .
-                                        $resumen . ' ' .
-                                        $estado
+
+                                $busqueda = mb_strtolower(
+                                    trim($colaborador . ' ' . $dni . ' ' . $tipo . ' ' . $estado . ' ' . $resumen),
+                                    'UTF-8'
                                 );
+
+                                $archivoSustento = $sol['archivo_sustento'] ?? '';
                                 ?>
 
-                                <tr class="fila-solicitud hover:bg-slate-50 transition"
-                                    data-estado="<?php echo htmlspecialchars($estado); ?>"
-                                    data-busqueda="<?php echo htmlspecialchars($busqueda); ?>">
+                                <tr class="fila-solicitud hover:bg-red-50/30 transition-all"
+                                    data-estado="<?php echo rrhhValE($estado); ?>"
+                                    data-busqueda="<?php echo rrhhValE($busqueda); ?>">
 
                                     <td class="p-4">
                                         <div class="flex items-center gap-3">
-                                            <img src="https://ui-avatars.com/api/?name=<?php echo urlencode($sol['nombres_apellidos'] ?? 'Colaborador'); ?>&background=7f1d1d&color=fff&size=64"
-                                                class="w-10 h-10 rounded-2xl shadow-sm">
+                                            <div class="w-11 h-11 rounded-2xl bg-red-900 text-white flex items-center justify-center font-black shadow-sm">
+                                                <?php echo rrhhValE(mb_substr($colaborador, 0, 1, 'UTF-8')); ?>
+                                            </div>
 
-                                            <div>
-                                                <p class="font-black text-slate-800 leading-tight">
-                                                    <?php echo htmlspecialchars($sol['nombres_apellidos'] ?? '—'); ?>
+                                            <div class="min-w-0">
+                                                <p class="font-black text-slate-800 truncate">
+                                                    <?php echo rrhhValE($colaborador); ?>
                                                 </p>
-                                                <p class="text-[11px] text-slate-400 mt-1">
-                                                    DNI: <?php echo htmlspecialchars($sol['dni'] ?? '—'); ?>
+                                                <p class="text-xs text-slate-400 font-bold">
+                                                    DNI: <?php echo rrhhValE($dni); ?>
                                                 </p>
                                             </div>
                                         </div>
                                     </td>
 
                                     <td class="p-4">
-                                        <p class="font-bold text-slate-700">
-                                            <?php echo htmlspecialchars(textoTipoSolicitud($sol['tipo_seccion'] ?? '')); ?>
+                                        <p class="font-black text-slate-700">
+                                            <?php echo rrhhValE($tipo); ?>
                                         </p>
-                                        <p class="text-[11px] text-slate-500 mt-1 max-w-xl leading-relaxed"
-                                            title="<?php echo htmlspecialchars($resumen); ?>">
-                                            <span class="font-black text-slate-400">Cambios:</span>
-                                            <?php echo htmlspecialchars($resumen); ?>
+                                        <p class="text-xs text-slate-400 mt-1 line-clamp-2 max-w-xl">
+                                            <?php echo rrhhValE($resumen); ?>
                                         </p>
                                     </td>
 
                                     <td class="p-4">
-                                        <span class="text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border <?php echo badgeEstadoSolicitud($estado); ?>">
-                                            <?php echo htmlspecialchars($estado); ?>
+                                        <span class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border <?php echo badgeEstadoSolicitud($estado); ?>">
+                                            <?php echo rrhhValE($estado); ?>
                                         </span>
                                     </td>
 
-                                    <td class="p-4 text-slate-500 whitespace-nowrap">
-                                        <?php echo !empty($sol['created_at']) ? date('d/m/Y H:i', strtotime($sol['created_at'])) : '—'; ?>
+                                    <td class="p-4">
+                                        <p class="text-sm font-bold text-slate-700">
+                                            <?php echo rrhhValE($fechaSolicitud); ?>
+                                        </p>
                                     </td>
 
                                     <td class="p-4">
-                                        <?php if (!empty($sol['archivo_sustento'])): ?>
-                                            <a href="<?php echo BASE_URL . '/' . htmlspecialchars($sol['archivo_sustento']); ?>" target="_blank"
-                                                class="text-xs font-black text-red-900 bg-red-50 border border-red-100 px-3 py-2 rounded-xl inline-flex hover:bg-red-100 transition">
+                                        <?php if (!empty($archivoSustento)): ?>
+                                            <a href="<?php echo BASE_URL . '/' . ltrim($archivoSustento, '/'); ?>"
+                                                target="_blank"
+                                                class="inline-flex items-center justify-center px-3 py-2 rounded-xl bg-slate-100 text-slate-700 text-xs font-black hover:bg-red-900 hover:text-white transition">
                                                 Ver archivo
                                             </a>
                                         <?php else: ?>
-                                            <span class="text-xs text-slate-400">Sin archivo</span>
+                                            <span class="text-xs text-slate-400 font-bold">Sin sustento</span>
                                         <?php endif; ?>
                                     </td>
 
                                     <td class="p-4 text-center">
-                                        <?php $modalId = 'modal-validacion-' . (int)$sol['id']; ?>
-
-                                        <div class="flex justify-center gap-2 flex-wrap">
-                                            <button type="button"
-                                                onclick="abrirDetalleValidacion('<?php echo $modalId; ?>')"
-                                                class="bg-slate-900 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-slate-800 transition">
-                                                Ver detalle
-                                            </button>
-
-                                            <?php if ($estado === 'PENDIENTE'): ?>
-                                                <button onclick="aprobarSolicitud(<?php echo (int)$sol['id']; ?>)"
-                                                    class="bg-green-600 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-green-700 transition">
-                                                    Aprobar
-                                                </button>
-
-                                                <button onclick="rechazarSolicitud(<?php echo (int)$sol['id']; ?>)"
-                                                    class="bg-red-900 text-white px-4 py-2 rounded-xl text-xs font-black hover:bg-[#4c0505] transition">
-                                                    Rechazar
-                                                </button>
-                                            <?php else: ?>
-                                                <span class="text-xs text-slate-400 font-bold px-3 py-2">
-                                                    Atendida
-                                                </span>
-                                            <?php endif; ?>
-                                        </div>
+                                        <button type="button"
+                                            onclick="abrirDetalleValidacion('<?php echo $modalId; ?>')"
+                                            class="inline-flex items-center justify-center px-4 py-2.5 rounded-xl bg-red-900 text-white text-xs font-black hover:bg-[#310404] transition shadow-sm">
+                                            Ver detalle
+                                        </button>
                                     </td>
 
                                 </tr>
@@ -1060,47 +1056,51 @@ function rrhhValRenderDetalleCambios(array $cambios): string
 
 <?php foreach ($solicitudes as $sol): ?>
     <?php
-    $nuevos = json_decode($sol['datos_json'] ?? '{}', true);
-    $anteriores = json_decode($sol['datos_anteriores_json'] ?? '{}', true);
+    $estado = strtoupper(trim((string)($sol['estado'] ?? 'PENDIENTE')));
+    $modalId = 'modal-validacion-' . (int)($sol['id'] ?? 0);
 
-    $nuevos = is_array($nuevos) ? $nuevos : [];
-    $anteriores = is_array($anteriores) ? $anteriores : [];
+    $fechaSolicitud = !empty($sol['created_at'])
+        ? date('d/m/Y H:i', strtotime($sol['created_at']))
+        : 'Sin fecha';
 
-    $cambios = obtenerCambios($anteriores, $nuevos);
+    $fechaRevision = !empty($sol['fecha_validacion'])
+        ? date('d/m/Y H:i', strtotime($sol['fecha_validacion']))
+        : '—';
 
-    $estado = $sol['estado'] ?? 'PENDIENTE';
-    $modalId = 'modalSolicitud' . (int)$sol['id'];
-    $fechaSolicitud = !empty($sol['created_at']) ? date('d/m/Y H:i', strtotime($sol['created_at'])) : 'Sin fecha';
-    $fechaRevision = !empty($sol['fecha_validacion']) ? date('d/m/Y H:i', strtotime($sol['fecha_validacion'])) : '—';
+    $cambios = rrhhValObtenerCambiosDetalle($sol);
 
     $resumenModal = [];
 
     foreach ($cambios as $c) {
-        $texto = $c['campo'] ?? 'Campo modificado';
+        $texto = trim(
+            (string)($c['seccion'] ?? 'Cambio') .
+                ' - ' .
+                (string)($c['campo_label'] ?? 'Campo')
+        );
 
-        if (!empty($c['subcampos']) && is_array($c['subcampos'])) {
-            $texto .= ': ' . implode(', ', $c['subcampos']);
+        if (!empty($c['detalle'])) {
+            $texto .= ' (' . $c['detalle'] . ')';
         }
 
         $resumenModal[] = $texto;
     }
 
     $resumenModalTexto = !empty($resumenModal)
-        ? implode(', ', array_unique($resumenModal))
+        ? implode(', ', array_values(array_unique($resumenModal)))
         : 'Sin cambios visibles';
     ?>
 
-    <div id="<?php echo $modalId; ?>" class="fixed inset-0 z-[90] hidden" role="dialog" aria-modal="true">
+    <div id="<?php echo $modalId; ?>"
+        class="fixed inset-0 z-[90] hidden"
+        role="dialog"
+        aria-modal="true">
 
-        <!-- Backdrop -->
         <div class="absolute inset-0 bg-slate-950/60 backdrop-blur-sm"
-            onclick="cerrarModal('<?php echo $modalId; ?>')"></div>
+            onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>')"></div>
 
-        <!-- Contenedor -->
         <div class="absolute inset-0 flex items-center justify-center p-4">
             <div class="relative w-full max-w-5xl max-h-[92vh] bg-white rounded-[32px] shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
 
-                <!-- Header premium -->
                 <div class="px-7 py-6 bg-gradient-to-r from-[#310404] to-red-900 flex items-start justify-between gap-4">
                     <div>
                         <p class="text-red-200 text-[10px] font-black uppercase tracking-[0.24em] mb-1">
@@ -1108,22 +1108,21 @@ function rrhhValRenderDetalleCambios(array $cambios): string
                         </p>
 
                         <h2 class="text-white text-2xl font-black leading-tight">
-                            Solicitud #<?php echo (int)$sol['id']; ?>
+                            Solicitud #<?php echo (int)($sol['id'] ?? 0); ?>
                         </h2>
 
                         <p class="text-red-100 text-sm font-semibold mt-2">
-                            Revisión de los cambios solicitados en tu perfil
+                            Revisión de los cambios solicitados en el perfil del colaborador
                         </p>
                     </div>
 
                     <button type="button"
-                        onclick="cerrarModal('<?php echo $modalId; ?>')"
+                        onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>')"
                         class="w-10 h-10 rounded-2xl bg-white/10 text-white hover:bg-white/20 transition flex items-center justify-center font-black">
                         ✕
                     </button>
                 </div>
 
-                <!-- Resumen superior -->
                 <div class="px-7 py-4 border-b border-slate-100 bg-slate-50">
                     <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
 
@@ -1132,9 +1131,8 @@ function rrhhValRenderDetalleCambios(array $cambios): string
                                 Estado
                             </p>
 
-                            <span class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border <?php echo estadoBadge($estado); ?>">
-                                <span><?php echo estadoIcono($estado); ?></span>
-                                <?php echo e($estado); ?>
+                            <span class="inline-flex items-center gap-2 text-[10px] font-black uppercase tracking-widest px-3 py-1.5 rounded-xl border <?php echo badgeEstadoSolicitud($estado); ?>">
+                                <?php echo rrhhValE($estado); ?>
                             </span>
                         </div>
 
@@ -1144,7 +1142,7 @@ function rrhhValRenderDetalleCambios(array $cambios): string
                             </p>
 
                             <p class="text-sm font-black text-slate-800">
-                                <?php echo e($fechaSolicitud); ?>
+                                <?php echo rrhhValE($fechaSolicitud); ?>
                             </p>
                         </div>
 
@@ -1154,7 +1152,7 @@ function rrhhValRenderDetalleCambios(array $cambios): string
                             </p>
 
                             <p class="text-sm font-black text-slate-800">
-                                <?php echo e($fechaRevision); ?>
+                                <?php echo rrhhValE($fechaRevision); ?>
                             </p>
                         </div>
 
@@ -1166,7 +1164,7 @@ function rrhhValRenderDetalleCambios(array $cambios): string
                         </p>
 
                         <p class="text-sm font-bold text-slate-700 leading-relaxed">
-                            <?php echo e($resumenModalTexto); ?>
+                            <?php echo rrhhValE($resumenModalTexto); ?>
                         </p>
                     </div>
 
@@ -1177,79 +1175,42 @@ function rrhhValRenderDetalleCambios(array $cambios): string
                             </p>
 
                             <p class="text-sm font-semibold text-red-800 leading-relaxed">
-                                <?php echo e($sol['motivo_rechazo'] ?: $sol['observacion_rrhh']); ?>
+                                <?php echo rrhhValE($sol['motivo_rechazo'] ?: $sol['observacion_rrhh']); ?>
                             </p>
                         </div>
                     <?php endif; ?>
                 </div>
 
-                <!-- Cuerpo con antes / después -->
                 <div class="flex-1 overflow-y-auto px-7 py-6 bg-slate-50">
-                    <?php if (empty($cambios)): ?>
-                        <div class="p-8 text-center text-slate-400 bg-white border border-slate-200 rounded-3xl">
-                            <div class="w-14 h-14 mx-auto rounded-2xl bg-slate-100 flex items-center justify-center mb-3 font-black">
-                                —
-                            </div>
-                            <p class="text-sm font-bold">No se detectaron cambios visibles.</p>
-                        </div>
-                    <?php else: ?>
-                        <div class="space-y-4">
-                            <?php foreach ($cambios as $c): ?>
-                                <div class="rounded-3xl border border-slate-200 overflow-hidden bg-white shadow-sm">
-
-                                    <div class="px-5 py-4 bg-slate-50 border-b border-slate-200 flex flex-wrap items-center justify-between gap-3">
-                                        <div>
-                                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-red-900">
-                                                Campo modificado
-                                            </p>
-
-                                            <p class="text-sm font-black text-slate-800 mt-1">
-                                                <?php echo e($c['campo'] ?? 'Cambio'); ?>
-                                            </p>
-                                        </div>
-
-                                        <span class="text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-900 border border-red-100 rounded-xl px-3 py-1">
-                                            Cambio detectado
-                                        </span>
-                                    </div>
-
-                                    <?php if (function_exists('renderDetalleCambio')): ?>
-                                        <?php echo renderDetalleCambio($c); ?>
-                                    <?php else: ?>
-                                        <div class="grid grid-cols-1 md:grid-cols-2">
-                                            <div class="p-5 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200">
-                                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-3">
-                                                    Antes
-                                                </p>
-                                                <?php echo renderDetalleValor($c['antes']); ?>
-                                            </div>
-
-                                            <div class="p-5 bg-white">
-                                                <p class="text-[10px] font-black uppercase tracking-widest text-red-900 mb-3">
-                                                    Después
-                                                </p>
-                                                <?php echo renderDetalleValor($c['despues']); ?>
-                                            </div>
-                                        </div>
-                                    <?php endif; ?>
-
-                                </div>
-                            <?php endforeach; ?>
-                        </div>
-                    <?php endif; ?>
+                    <?php echo rrhhValRenderDetalleCambios($cambios); ?>
                 </div>
 
-                <!-- Footer -->
                 <div class="px-7 py-5 bg-white border-t border-slate-200 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
                     <div class="text-xs text-slate-400 font-bold">
                         Esta vista muestra lo enviado para validación y la respuesta de RR. HH. cuando corresponda.
                     </div>
 
-                    <button type="button"
-                        onclick="cerrarModal('<?php echo $modalId; ?>')"
-                        class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-black hover:bg-slate-100 transition">
-                        Cerrar
-                    </button>
+                    <div class="flex items-center gap-2">
+                        <?php if ($estado === 'PENDIENTE'): ?>
+                            <button type="button"
+                                onclick="aprobarSolicitud(<?php echo (int)($sol['id'] ?? 0); ?>)"
+                                class="px-5 py-2.5 rounded-xl bg-green-600 text-white text-sm font-black hover:bg-green-700 transition">
+                                Aprobar
+                            </button>
+
+                            <button type="button"
+                                onclick="rechazarSolicitud(<?php echo (int)($sol['id'] ?? 0); ?>)"
+                                class="px-5 py-2.5 rounded-xl bg-red-900 text-white text-sm font-black hover:bg-[#4c0505] transition">
+                                Rechazar
+                            </button>
+                        <?php endif; ?>
+
+                        <button type="button"
+                            onclick="cerrarDetalleValidacion('<?php echo $modalId; ?>')"
+                            class="px-5 py-2.5 rounded-xl border border-slate-200 text-slate-600 text-sm font-black hover:bg-slate-100 transition">
+                            Cerrar
+                        </button>
+                    </div>
                 </div>
 
             </div>
@@ -1257,14 +1218,23 @@ function rrhhValRenderDetalleCambios(array $cambios): string
     </div>
 <?php endforeach; ?>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+
 <script>
     let estadoActual = 'PENDIENTE';
     let paginaActual = 1;
     let filasFiltradas = [];
 
+    const BASE_URL_RRHH = <?php echo json_encode(rtrim(BASE_URL, '/')); ?>;
+
     function abrirDetalleValidacion(id) {
         const modal = document.getElementById(id);
-        if (!modal) return;
+
+        if (!modal) {
+            console.error('No existe el modal con ID:', id);
+            alert('No se encontró el detalle de esta solicitud.');
+            return;
+        }
 
         modal.classList.remove('hidden');
         document.body.classList.add('overflow-hidden');
@@ -1272,12 +1242,14 @@ function rrhhValRenderDetalleCambios(array $cambios): string
 
     function cerrarDetalleValidacion(id) {
         const modal = document.getElementById(id);
+
         if (!modal) return;
 
         modal.classList.add('hidden');
 
-        const hayOtroModalAbierto = document.querySelector('[id^="modal-validacion-"]:not(.hidden)');
-        if (!hayOtroModalAbierto) {
+        const abierto = document.querySelector('[id^="modal-validacion-"]:not(.hidden)');
+
+        if (!abierto) {
             document.body.classList.remove('overflow-hidden');
         }
     }
@@ -1286,9 +1258,7 @@ function rrhhValRenderDetalleCambios(array $cambios): string
         if (e.key !== 'Escape') return;
 
         document.querySelectorAll('[id^="modal-validacion-"]').forEach(modal => {
-            if (!modal.classList.contains('hidden')) {
-                modal.classList.add('hidden');
-            }
+            modal.classList.add('hidden');
         });
 
         document.body.classList.remove('overflow-hidden');
@@ -1327,7 +1297,9 @@ function rrhhValRenderDetalleCambios(array $cambios): string
             btn.className = 'filtro-estado bg-slate-100 text-slate-600 px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest';
         });
 
-        boton.className = 'filtro-estado bg-red-900 text-white px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest';
+        if (boton) {
+            boton.className = 'filtro-estado bg-red-900 text-white px-4 py-3 rounded-2xl text-xs font-black uppercase tracking-widest';
+        }
 
         aplicarFiltros();
     }
@@ -1449,120 +1421,163 @@ function rrhhValRenderDetalleCambios(array $cambios): string
 
     aplicarFiltros();
 
+    function swalDisponible() {
+        return typeof Swal !== 'undefined' && typeof Swal.fire === 'function';
+    }
+
+    function alertaBasica(titulo, texto, tipo = 'info') {
+        if (swalDisponible()) {
+            return Swal.fire({
+                title: titulo,
+                text: texto,
+                icon: tipo,
+                confirmButtonColor: '#7f1d1d',
+                customClass: {
+                    popup: 'rounded-3xl',
+                    confirmButton: 'rounded-xl px-5 py-2.5 font-bold'
+                }
+            });
+        }
+
+        alert(titulo + '\n' + texto);
+        return Promise.resolve();
+    }
+
+    async function postValidacion(url, payload) {
+        const response = await fetch(url, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+                'X-Requested-With': 'XMLHttpRequest'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const raw = await response.text();
+
+        try {
+            return JSON.parse(raw.trim());
+        } catch (e) {
+            console.error('Respuesta no JSON:', raw);
+            return {
+                success: false,
+                mensaje: 'El servidor no devolvió una respuesta válida.'
+            };
+        }
+    }
+
     function aprobarSolicitud(id) {
-        Swal.fire({
-            title: '¿Aprobar solicitud?',
-            text: 'Se aplicarán los cambios al perfil del colaborador.',
-            icon: 'question',
-            showCancelButton: true,
-            confirmButtonText: 'Sí, aprobar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#166534',
-            cancelButtonColor: '#7f1d1d',
-            reverseButtons: true,
-            customClass: {
-                popup: 'rounded-3xl',
-                confirmButton: 'rounded-xl px-5 py-2.5 font-bold',
-                cancelButton: 'rounded-xl px-5 py-2.5 font-bold'
-            }
-        }).then((result) => {
+        if (!id || id <= 0) {
+            alertaBasica('Error', 'ID de solicitud inválido.', 'error');
+            return;
+        }
+
+        const confirmar = swalDisponible() ?
+            Swal.fire({
+                title: '¿Aprobar solicitud?',
+                text: 'Se aplicarán los cambios al perfil del colaborador.',
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonText: 'Sí, aprobar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#166534',
+                cancelButtonColor: '#7f1d1d',
+                reverseButtons: true,
+                customClass: {
+                    popup: 'rounded-3xl',
+                    confirmButton: 'rounded-xl px-5 py-2.5 font-bold',
+                    cancelButton: 'rounded-xl px-5 py-2.5 font-bold'
+                }
+            }) :
+            Promise.resolve({
+                isConfirmed: confirm('¿Aprobar esta solicitud? Se aplicarán los cambios al perfil.')
+            });
+
+        confirmar.then(async result => {
             if (!result.isConfirmed) return;
 
-            fetch('<?php echo BASE_URL; ?>/rrhh/validaciones/aprobar/' + id, {
-                    method: 'POST',
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
-                .then(r => r.json())
-                .then(res => {
-                    Swal.fire({
-                        title: res.success ? 'Solicitud aprobada' : 'No se pudo aprobar',
-                        text: res.mensaje || 'Solicitud procesada.',
-                        icon: res.success ? 'success' : 'error',
-                        confirmButtonColor: '#7f1d1d',
-                        customClass: {
-                            popup: 'rounded-3xl',
-                            confirmButton: 'rounded-xl px-5 py-2.5 font-bold'
-                        }
-                    }).then(() => {
-                        if (res.success) location.reload();
-                    });
-                })
-                .catch(() => {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'No se pudo procesar la aprobación.',
-                        icon: 'error',
-                        confirmButtonColor: '#7f1d1d'
-                    });
-                });
+            const res = await postValidacion(BASE_URL_RRHH + '/rrhh/validaciones/aprobar/' + encodeURIComponent(id), {});
+
+            await alertaBasica(
+                res.success ? 'Solicitud aprobada' : 'No se pudo aprobar',
+                res.mensaje || 'Solicitud procesada.',
+                res.success ? 'success' : 'error'
+            );
+
+            if (res.success) {
+                location.reload();
+            }
+        }).catch(error => {
+            console.error(error);
+            alertaBasica('Error', 'No se pudo procesar la aprobación.', 'error');
         });
     }
 
     function rechazarSolicitud(id) {
-        Swal.fire({
-            title: 'Rechazar solicitud',
-            text: 'Indica el motivo del rechazo.',
-            input: 'textarea',
-            inputPlaceholder: 'Escribe el motivo...',
-            inputAttributes: {
-                maxlength: 500
-            },
-            icon: 'warning',
-            showCancelButton: true,
-            confirmButtonText: 'Rechazar',
-            cancelButtonText: 'Cancelar',
-            confirmButtonColor: '#7f1d1d',
-            cancelButtonColor: '#64748b',
-            reverseButtons: true,
-            inputValidator: (value) => {
-                if (!value || !value.trim()) {
-                    return 'Debes ingresar el motivo del rechazo.';
+        if (!id || id <= 0) {
+            alertaBasica('Error', 'ID de solicitud inválido.', 'error');
+            return;
+        }
+
+        const pedirMotivo = swalDisponible() ?
+            Swal.fire({
+                title: 'Rechazar solicitud',
+                text: 'Indica el motivo del rechazo.',
+                input: 'textarea',
+                inputPlaceholder: 'Escribe el motivo...',
+                inputAttributes: {
+                    maxlength: 500
+                },
+                icon: 'warning',
+                showCancelButton: true,
+                confirmButtonText: 'Rechazar',
+                cancelButtonText: 'Cancelar',
+                confirmButtonColor: '#7f1d1d',
+                cancelButtonColor: '#64748b',
+                reverseButtons: true,
+                inputValidator: value => {
+                    if (!value || !value.trim()) {
+                        return 'Debes ingresar el motivo del rechazo.';
+                    }
+                },
+                customClass: {
+                    popup: 'rounded-3xl',
+                    input: 'rounded-2xl border-slate-200',
+                    confirmButton: 'rounded-xl px-5 py-2.5 font-bold',
+                    cancelButton: 'rounded-xl px-5 py-2.5 font-bold'
                 }
-            },
-            customClass: {
-                popup: 'rounded-3xl',
-                input: 'rounded-2xl border-slate-200',
-                confirmButton: 'rounded-xl px-5 py-2.5 font-bold',
-                cancelButton: 'rounded-xl px-5 py-2.5 font-bold'
-            }
-        }).then((result) => {
+            }) :
+            Promise.resolve({
+                isConfirmed: true,
+                value: prompt('Escribe el motivo del rechazo:')
+            });
+
+        pedirMotivo.then(async result => {
             if (!result.isConfirmed) return;
 
-            fetch('<?php echo BASE_URL; ?>/rrhh/validaciones/rechazar/' + id, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                        'X-Requested-With': 'XMLHttpRequest'
-                    },
-                    body: JSON.stringify({
-                        motivo: result.value.trim()
-                    })
-                })
-                .then(r => r.json())
-                .then(res => {
-                    Swal.fire({
-                        title: res.success ? 'Solicitud rechazada' : 'No se pudo rechazar',
-                        text: res.mensaje || 'Solicitud procesada.',
-                        icon: res.success ? 'success' : 'error',
-                        confirmButtonColor: '#7f1d1d',
-                        customClass: {
-                            popup: 'rounded-3xl',
-                            confirmButton: 'rounded-xl px-5 py-2.5 font-bold'
-                        }
-                    }).then(() => {
-                        if (res.success) location.reload();
-                    });
-                })
-                .catch(() => {
-                    Swal.fire({
-                        title: 'Error',
-                        text: 'No se pudo procesar el rechazo.',
-                        icon: 'error',
-                        confirmButtonColor: '#7f1d1d'
-                    });
-                });
+            const motivo = (result.value || '').trim();
+
+            if (!motivo) {
+                alertaBasica('Falta motivo', 'Debes ingresar el motivo del rechazo.', 'warning');
+                return;
+            }
+
+            const res = await postValidacion(BASE_URL_RRHH + '/rrhh/validaciones/rechazar/' + encodeURIComponent(id), {
+                motivo: motivo
+            });
+
+            await alertaBasica(
+                res.success ? 'Solicitud rechazada' : 'No se pudo rechazar',
+                res.mensaje || 'Solicitud procesada.',
+                res.success ? 'success' : 'error'
+            );
+
+            if (res.success) {
+                location.reload();
+            }
+        }).catch(error => {
+            console.error(error);
+            alertaBasica('Error', 'No se pudo procesar el rechazo.', 'error');
         });
     }
 </script>
