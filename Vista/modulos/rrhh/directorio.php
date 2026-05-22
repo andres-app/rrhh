@@ -225,7 +225,7 @@ $totalEmpleados = count($empleados);
 
                                 <td class="px-4 md:px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
                                     <div class="flex justify-end gap-2">
-                                        <a href="perfil/<?php echo (int)$row['id']; ?>"
+                                        <a href="<?php echo BASE_URL; ?>/rrhh/perfil/<?php echo (int)$row['id']; ?>"
                                             class="p-2.5 bg-red-50 text-red-900 rounded-xl hover:bg-red-900 hover:text-white transition-all shadow-sm border border-red-100"
                                             title="Ver Perfil">
                                             <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">

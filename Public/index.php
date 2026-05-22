@@ -355,10 +355,15 @@ if ($module === 'perfil' && empty($parts[1])) {
 
 /* ============================================================
    PERFIL DETALLE RRHH
-   URL recomendada: /rrhh/perfil_detalle/{id}
+   URLS SOPORTADAS:
+   - /rrhh/perfil/{id}
+   - /rrhh/perfil_detalle/{id}
 ============================================================ */
 
-if ($module === 'rrhh' && ($parts[1] ?? '') === 'perfil_detalle') {
+if (
+    $module === 'rrhh' &&
+    in_array(($parts[1] ?? ''), ['perfil', 'perfil_detalle'], true)
+) {
 
     if (!user_is_admin_role()) {
         die("No tienes permiso para acceder a este módulo.");
@@ -370,8 +375,7 @@ if ($module === 'rrhh' && ($parts[1] ?? '') === 'perfil_detalle') {
     $idColaborador = (int)($parts[2] ?? 0);
 
     if ($idColaborador <= 0) {
-        echo "404 - Colaborador inválido.";
-        exit;
+        redirect(BASE_URL . '/rrhh/directorio');
     }
 
     $ctrl = new CtrDirectorio();
