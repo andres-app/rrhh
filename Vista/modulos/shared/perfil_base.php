@@ -1298,7 +1298,7 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
                                     <label class="field-label">Situación</label>
                                     <select name="situacion" class="field-input">
                                         <option value="">Seleccionar</option>
-                                        <?php foreach (['ACTIVO', 'INACTIVO', 'SUSPENDIDO', 'CESADO'] as $opt): ?>
+                                        <?php foreach (['ACTIVO', 'CESADO'] as $opt): ?>
                                             <option value="<?php echo $opt; ?>"
                                                 <?php echo (($perfil['situacion'] ?? '') === $opt) ? 'selected' : ''; ?>>
                                                 <?php echo $opt; ?>

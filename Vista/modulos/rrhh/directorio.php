@@ -529,7 +529,6 @@ $totalEmpleados = count($empleados);
                                 <label class="text-xs font-bold text-slate-500">Situación</label>
                                 <select name="situacion" class="mt-1 w-full rounded-2xl border-slate-200 bg-slate-50 px-4 py-3 text-sm">
                                     <option value="ACTIVO">ACTIVO</option>
-                                    <option value="INACTIVO">INACTIVO</option>
                                     <option value="CESADO">CESADO</option>
                                 </select>
                             </div>
