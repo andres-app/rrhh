@@ -29,6 +29,26 @@
     require_once ROOT_PATH . 'Vista/includes/sidebar.php';
 
     $totalEmpleados = count($empleados);
+
+    $areasFiltro = [];
+    $totalActivos = 0;
+
+    foreach ($empleados as $emp) {
+        $areaTmp = trim((string)($emp['area'] ?? ''));
+
+        if ($areaTmp !== '') {
+            $areasFiltro[] = $areaTmp;
+        }
+
+        $situacionTmp = strtoupper(trim((string)($emp['situacion'] ?? 'ACTIVO')));
+
+        if ($situacionTmp === '' || $situacionTmp === 'ACTIVO') {
+            $totalActivos++;
+        }
+    }
+
+    $areasFiltro = array_values(array_unique($areasFiltro));
+    sort($areasFiltro, SORT_NATURAL | SORT_FLAG_CASE);
     ?>
 
     <main class="flex-1 flex flex-col h-screen overflow-hidden bg-[#f8fafc]">
@@ -105,36 +125,68 @@
 
             <div class="bg-white rounded-[2rem] shadow-xl shadow-slate-200/60 border border-slate-200 overflow-hidden">
 
-                <div class="px-5 md:px-6 py-4 border-b border-slate-100 flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
-                    <div>
-                        <h2 class="text-sm font-black text-slate-800 uppercase tracking-wide">
-                            Lista de colaboradores
-                        </h2>
-                        <p class="text-xs text-slate-400 font-medium">
-                            Mostrando
-                            <span id="rangeInfo" class="font-black text-red-900">0</span>
-                            de
-                            <span id="resultCount" class="font-black text-slate-700"><?php echo $totalEmpleados; ?></span>
-                            colaboradores
-                        </p>
-                    </div>
+                <div class="px-5 md:px-6 py-5 border-b border-slate-100 bg-white">
+                    <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
 
-                    <div class="flex items-center gap-3">
-                        <label class="text-xs font-black text-slate-400 uppercase tracking-widest">
-                            Ver
-                        </label>
+                        <!-- Título compacto -->
+                        <div class="min-w-[220px]">
+                            <div class="flex items-center gap-2">
+                                <h2 class="text-sm font-black text-slate-800 uppercase tracking-wide">
+                                    Colaboradores
+                                </h2>
+                            </div>
 
-                        <select id="pageSize"
-                            class="rounded-xl border border-slate-200 bg-slate-50 px-3 py-2 text-xs font-black text-slate-700 outline-none focus:border-red-900 focus:ring-4 focus:ring-red-900/10">
-                            <option value="10">10</option>
-                            <option value="25" selected>25</option>
-                            <option value="50">50</option>
-                            <option value="100">100</option>
-                        </select>
+                            <p class="text-xs text-slate-400 font-semibold mt-1">
+                                <span id="rangeInfo" class="font-black text-red-900">0</span>
+                                de
+                                <span id="resultCount" class="font-black text-slate-700"><?php echo $totalActivos; ?></span>
+                                registros
+                            </p>
+                        </div>
 
-                        <span class="hidden md:inline-flex px-3 py-1 rounded-full bg-red-50 text-red-900 text-[10px] font-black uppercase tracking-widest border border-red-100">
-                            RRHH
-                        </span>
+                        <!-- Filtros compactos -->
+                        <div class="flex flex-col lg:flex-row lg:items-center gap-2 w-full xl:w-auto">
+
+                            <select id="filterTipoPersonal"
+                                class="w-full lg:w-[145px] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-black text-slate-700 outline-none focus:bg-white focus:border-red-900 focus:ring-4 focus:ring-red-900/10 transition-all">
+                                <option value="">Tipo: todos</option>
+                                <option value="CAS">CAS</option>
+                                <option value="MILITAR">MILITAR</option>
+                                <option value="PAC">PAC</option>
+                            </select>
+
+                            <select id="filterSituacion"
+                                class="w-full lg:w-[150px] rounded-2xl border border-green-200 bg-green-50 px-4 py-2.5 text-xs font-black text-green-700 outline-none focus:bg-white focus:border-green-700 focus:ring-4 focus:ring-green-700/10 transition-all">
+                                <option value="">Situación: todos</option>
+                                <option value="ACTIVO" selected>Activos</option>
+                                <option value="CESADO">Cesados</option>
+                            </select>
+
+                            <select id="filterArea"
+                                class="w-full lg:w-[180px] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-black text-slate-700 outline-none focus:bg-white focus:border-red-900 focus:ring-4 focus:ring-red-900/10 transition-all">
+                                <option value="">Área: todas</option>
+                                <?php foreach ($areasFiltro as $areaFiltro): ?>
+                                    <option value="<?php echo htmlspecialchars(mb_strtolower(trim($areaFiltro), 'UTF-8'), ENT_QUOTES, 'UTF-8'); ?>">
+                                        <?php echo htmlspecialchars($areaFiltro); ?>
+                                    </option>
+                                <?php endforeach; ?>
+                            </select>
+
+                            <select id="pageSize"
+                                class="w-full lg:w-[105px] rounded-2xl border border-slate-200 bg-white px-4 py-2.5 text-xs font-black text-slate-700 outline-none focus:border-red-900 focus:ring-4 focus:ring-red-900/10">
+                                <option value="10">Ver 10</option>
+                                <option value="25" selected>Ver 25</option>
+                                <option value="50">Ver 50</option>
+                                <option value="100">Ver 100</option>
+                            </select>
+
+                            <button type="button" id="btnClearFilters"
+                                class="inline-flex items-center justify-center px-4 py-2.5 rounded-2xl border border-slate-200 bg-white text-xs font-black text-slate-500 hover:bg-red-50 hover:text-red-900 hover:border-red-100 transition-all">
+                                Limpiar
+                            </button>
+
+                        </div>
+
                     </div>
                 </div>
 
@@ -143,9 +195,9 @@
                         <thead class="bg-slate-50">
                             <tr>
                                 <th class="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Colaborador</th>
-                                <th class="hidden sm:table-cell px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Puesto / Área</th>
+                                <th class="hidden sm:table-cell px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Puesto / Área / Tipo</th>
                                 <th class="hidden lg:table-cell px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Contacto</th>
-                                <th class="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Estado</th>
+                                <th class="px-6 py-4 text-left text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Situación</th>
                                 <th class="px-6 py-4 text-right text-[10px] font-black text-slate-400 uppercase tracking-[0.2em]">Acciones</th>
                             </tr>
                         </thead>
@@ -159,18 +211,97 @@
                                 $area = $row['area'] ?? '';
                                 $correo = $row['correo_institucional'] ?? '';
                                 $celular = $row['celular'] ?? '';
-                                $situacion = $row['situacion'] ?? 'Activo';
 
-                                $searchData = mb_strtolower(trim($nombre . ' ' . $dni . ' ' . $puesto . ' ' . $area . ' ' . $correo . ' ' . $celular . ' ' . $situacion), 'UTF-8');
-                                $isBaja = mb_strtolower($situacion, 'UTF-8') === 'baja';
+                                $situacionRaw = strtoupper(trim((string)($row['situacion'] ?? 'ACTIVO')));
+                                $situacion = $situacionRaw !== '' ? $situacionRaw : 'ACTIVO';
 
-                                $color = $isBaja
+                                if (in_array($situacion, ['BAJA', 'INACTIVO'], true)) {
+                                    $situacion = 'CESADO';
+                                }
+
+                                $modalidadPrincipal = strtoupper(trim((string)(
+                                    $row['modalidad_contrato']
+                                    ?? $row['mod_contrato']
+                                    ?? $row['modalidad']
+                                    ?? $row['tipo_personal']
+                                    ?? ''
+                                )));
+
+                                $tipoPersonal = 'SIN TIPO';
+
+                                if (in_array($modalidadPrincipal, ['CAS', 'MILITAR', 'PAC'], true)) {
+                                    $tipoPersonal = $modalidadPrincipal;
+                                } else {
+                                    $tipoPersonalFuente = strtoupper(trim(implode(' ', array_filter([
+                                        $row['modalidad_contrato'] ?? '',
+                                        $row['mod_contrato'] ?? '',
+                                        $row['modalidad'] ?? '',
+                                        $row['tipo_personal'] ?? '',
+                                        $row['tipo_puesto'] ?? '',
+                                        $row['grado_militar'] ?? '',
+                                        $row['procedencia'] ?? '',
+                                        $row['puesto_cas'] ?? '',
+                                    ]))));
+
+                                    if (
+                                        str_contains($tipoPersonalFuente, 'MILITAR') ||
+                                        str_contains($tipoPersonalFuente, 'FFAA') ||
+                                        str_contains($tipoPersonalFuente, 'FAP') ||
+                                        str_contains($tipoPersonalFuente, 'EP') ||
+                                        str_contains($tipoPersonalFuente, 'MGP') ||
+                                        str_contains($tipoPersonalFuente, 'EJERCITO') ||
+                                        str_contains($tipoPersonalFuente, 'EJÉRCITO') ||
+                                        str_contains($tipoPersonalFuente, 'MARINA') ||
+                                        str_contains($tipoPersonalFuente, 'FUERZA AEREA') ||
+                                        str_contains($tipoPersonalFuente, 'FUERZA AÉREA')
+                                    ) {
+                                        $tipoPersonal = 'MILITAR';
+                                    } elseif (
+                                        str_contains($tipoPersonalFuente, 'PAC')
+                                    ) {
+                                        $tipoPersonal = 'PAC';
+                                    } elseif (
+                                        str_contains($tipoPersonalFuente, 'CAS') ||
+                                        str_contains($tipoPersonalFuente, '1057') ||
+                                        str_contains($tipoPersonalFuente, 'D.L. 1057') ||
+                                        str_contains($tipoPersonalFuente, 'DL 1057')
+                                    ) {
+                                        $tipoPersonal = 'CAS';
+                                    }
+                                }
+
+                                $areaFiltroValor = mb_strtolower(trim($area), 'UTF-8');
+
+                                $searchData = mb_strtolower(trim(
+                                    $nombre . ' ' .
+                                        $dni . ' ' .
+                                        $puesto . ' ' .
+                                        $area . ' ' .
+                                        $correo . ' ' .
+                                        $celular . ' ' .
+                                        $situacion . ' ' .
+                                        $tipoPersonal
+                                ), 'UTF-8');
+
+                                $isCesado = $situacion === 'CESADO';
+
+                                $colorSituacion = $isCesado
                                     ? 'bg-slate-100 text-slate-500 border-slate-200'
                                     : 'bg-green-50 text-green-700 border-green-100';
+
+                                $tipoColor = match ($tipoPersonal) {
+                                    'CAS'     => 'bg-red-50 text-red-900 border-red-100',
+                                    'MILITAR' => 'bg-indigo-50 text-indigo-700 border-indigo-100',
+                                    'PAC'     => 'bg-amber-50 text-amber-700 border-amber-100',
+                                    default   => 'bg-slate-50 text-slate-500 border-slate-200',
+                                };
                                 ?>
 
-                                <tr class="directorio-row hover:bg-red-50/30 transition-all group"
-                                    data-search="<?php echo htmlspecialchars($searchData, ENT_QUOTES, 'UTF-8'); ?>">
+                                <tr class="directorio-row transition-all group border-b border-slate-100/80"
+                                    data-search="<?php echo htmlspecialchars($searchData, ENT_QUOTES, 'UTF-8'); ?>"
+                                    data-tipo-personal="<?php echo htmlspecialchars($tipoPersonal, ENT_QUOTES, 'UTF-8'); ?>"
+                                    data-situacion="<?php echo htmlspecialchars($situacion, ENT_QUOTES, 'UTF-8'); ?>"
+                                    data-area="<?php echo htmlspecialchars($areaFiltroValor, ENT_QUOTES, 'UTF-8'); ?>">
 
                                     <td class="px-4 md:px-6 py-4 whitespace-nowrap">
                                         <div class="flex items-center">
@@ -187,8 +318,13 @@
                                                     DNI: <?php echo htmlspecialchars($dni ?: 'No registrado'); ?>
                                                 </div>
 
-                                                <div class="sm:hidden text-[10px] text-red-800 font-black mt-1 uppercase truncate max-w-[180px]">
-                                                    <?php echo htmlspecialchars($puesto ?: 'Sin puesto'); ?>
+                                                <div class="sm:hidden mt-1 flex flex-wrap items-center gap-1.5">
+                                                    <span class="inline-flex px-2 py-0.5 rounded-lg text-[9px] font-black uppercase tracking-wider border <?php echo $tipoColor; ?>">
+                                                        <?php echo htmlspecialchars($tipoPersonal); ?>
+                                                    </span>
+                                                    <span class="text-[10px] text-red-800 font-black uppercase truncate max-w-[150px]">
+                                                        <?php echo htmlspecialchars($puesto ?: 'Sin puesto'); ?>
+                                                    </span>
                                                 </div>
                                             </div>
                                         </div>
@@ -198,8 +334,15 @@
                                         <div class="text-sm text-slate-700 font-black">
                                             <?php echo htmlspecialchars($puesto ?: 'Sin puesto'); ?>
                                         </div>
+
                                         <div class="text-xs text-slate-400 font-semibold">
                                             <?php echo htmlspecialchars($area ?: 'Sin área'); ?>
+                                        </div>
+
+                                        <div class="mt-2">
+                                            <span class="inline-flex px-2.5 py-1 rounded-xl text-[10px] font-black uppercase tracking-wider border <?php echo $tipoColor; ?>">
+                                                <?php echo htmlspecialchars($tipoPersonal); ?>
+                                            </span>
                                         </div>
                                     </td>
 
@@ -218,8 +361,8 @@
                                     </td>
 
                                     <td class="px-4 md:px-6 py-4 whitespace-nowrap text-sm">
-                                        <span class="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border <?php echo $color; ?>">
-                                            <?php echo htmlspecialchars($situacion ?: 'Activo'); ?>
+                                        <span class="px-3 py-1.5 rounded-xl text-[10px] font-black uppercase tracking-wider border <?php echo $colorSituacion; ?>">
+                                            <?php echo htmlspecialchars($situacion); ?>
                                         </span>
                                     </td>
 
@@ -254,7 +397,7 @@
                                     </h3>
 
                                     <p class="text-sm text-slate-400 mt-1">
-                                        Intenta buscar por nombre, DNI, puesto, área, correo o celular.
+                                        Ajusta la búsqueda, el tipo de personal, la situación o el área seleccionada.
                                     </p>
                                 </td>
                             </tr>
@@ -292,6 +435,64 @@
         </div>
 
         <style>
+            /* ===== TABLA PREMIUM TIPO DATATABLE ===== */
+
+            #directorioTable {
+                border-collapse: separate;
+                border-spacing: 0;
+            }
+
+            #directorioTable thead th {
+                position: sticky;
+                top: 0;
+                z-index: 5;
+                background: #f8fafc;
+                border-bottom: 1px solid #e2e8f0;
+            }
+
+            #directorioTable tbody tr.directorio-row td {
+                transition: background-color .18s ease, box-shadow .18s ease, transform .18s ease;
+            }
+
+            /* Fila blanca */
+            #directorioTable tbody tr.row-clear td {
+                background: #ffffff;
+            }
+
+            /* Fila sombreada suave */
+            #directorioTable tbody tr.row-soft td {
+                background: #f8fafc;
+            }
+
+            /* Hover premium */
+            /* Hover premium sin líneas verticales entre columnas */
+            #directorioTable tbody tr.directorio-row:hover td {
+                background: #fff7f7;
+                box-shadow: none;
+            }
+
+            /* Línea guinda solo al inicio de la fila */
+            #directorioTable tbody tr.directorio-row:hover td:first-child {
+                box-shadow: inset 3px 0 0 #7f1d1d;
+                color: #7f1d1d;
+            }
+
+            /* Separación visual elegante entre registros */
+            #directorioTable tbody tr.directorio-row td {
+                border-bottom: 1px solid rgba(226, 232, 240, 0.75);
+            }
+
+            /* Redondeo visual suave en hover */
+            #directorioTable tbody tr.directorio-row td:first-child {
+                border-top-left-radius: 0.75rem;
+                border-bottom-left-radius: 0.75rem;
+            }
+
+            #directorioTable tbody tr.directorio-row td:last-child {
+                border-top-right-radius: 0.75rem;
+                border-bottom-right-radius: 0.75rem;
+            }
+
             /* LABELS — más livianos y modernos */
             #drawerNuevoColaborador label {
                 display: block;
@@ -406,6 +607,7 @@
             body.drawer-nuevo-open {
                 overflow: hidden;
             }
+
             /* Oscurece visualmente el sidebar, pero más suave */
             body.drawer-nuevo-open aside:not(.drawer-panel) {
                 filter: brightness(0.85) saturate(0.85);
@@ -724,50 +926,110 @@
             document.addEventListener('DOMContentLoaded', function() {
                 const input = document.getElementById('searchInput');
                 const clearBtn = document.getElementById('clearSearch');
+
+                const filterTipoPersonal = document.getElementById('filterTipoPersonal');
+                const filterSituacion = document.getElementById('filterSituacion');
+                const filterArea = document.getElementById('filterArea');
+                const btnClearFilters = document.getElementById('btnClearFilters');
+                const activeFilterSummary = document.getElementById('activeFilterSummary');
+
+                const pageSizeSelect = document.getElementById('pageSize');
                 const rows = Array.from(document.querySelectorAll('.directorio-row'));
                 const emptyState = document.getElementById('emptyState');
+
                 const resultCount = document.getElementById('resultCount');
                 const rangeInfo = document.getElementById('rangeInfo');
-                const pageSizeSelect = document.getElementById('pageSize');
-                const prevBtn = document.getElementById('prevPage');
-                const nextBtn = document.getElementById('nextPage');
-                const paginationNumbers = document.getElementById('paginationNumbers');
                 const currentPageLabel = document.getElementById('currentPageLabel');
                 const totalPagesLabel = document.getElementById('totalPagesLabel');
 
+                const prevBtn = document.getElementById('prevPage');
+                const nextBtn = document.getElementById('nextPage');
+                const paginationNumbers = document.getElementById('paginationNumbers');
+
+                const btnExportExcel = document.getElementById('btnExportExcel');
+
+                let filteredRows = [...rows];
                 let currentPage = 1;
-                let filteredRows = rows;
 
-                function normalizeText(text) {
-                    return (text || '')
-                        .toString()
-                        .toLowerCase()
-                        .normalize('NFD')
-                        .replace(/[\u0300-\u036f]/g, '')
-                        .trim();
+                const DEFAULT_SITUACION = 'ACTIVO';
+
+                function normalizar(valor) {
+                    return (valor || '').toString().trim().toLowerCase();
                 }
 
-                function getPageSize() {
-                    return parseInt(pageSizeSelect.value, 10) || 25;
+                function obtenerPageSize() {
+                    const size = parseInt(pageSizeSelect?.value || '25', 10);
+                    return Number.isNaN(size) ? 25 : size;
                 }
 
-                function applyFilter() {
-                    const query = normalizeText(input.value);
+                function obtenerFiltros() {
+                    return {
+                        q: normalizar(input?.value || ''),
+                        tipo: (filterTipoPersonal?.value || '').trim().toUpperCase(),
+                        situacion: (filterSituacion?.value || '').trim().toUpperCase(),
+                        area: normalizar(filterArea?.value || '')
+                    };
+                }
+
+                function aplicarFiltro() {
+                    const filtros = obtenerFiltros();
+
+                    if (clearBtn) {
+                        clearBtn.classList.toggle('hidden', filtros.q.length === 0);
+                        clearBtn.classList.toggle('flex', filtros.q.length > 0);
+                    }
 
                     filteredRows = rows.filter(row => {
-                        const data = normalizeText(row.dataset.search);
-                        return query === '' || data.includes(query);
+                        const search = row.dataset.search || '';
+                        const tipo = (row.dataset.tipoPersonal || '').toUpperCase();
+                        const situacion = (row.dataset.situacion || '').toUpperCase();
+                        const area = normalizar(row.dataset.area || '');
+
+                        const coincideBusqueda = !filtros.q || search.includes(filtros.q);
+                        const coincideTipo = !filtros.tipo || tipo === filtros.tipo;
+                        const coincideSituacion = !filtros.situacion || situacion === filtros.situacion;
+                        const coincideArea = !filtros.area || area === filtros.area;
+
+                        return coincideBusqueda && coincideTipo && coincideSituacion && coincideArea;
                     });
 
                     currentPage = 1;
+                    actualizarResumenFiltros();
                     renderTable();
+                }
 
-                    clearBtn.classList.toggle('hidden', query.length === 0);
-                    clearBtn.classList.toggle('flex', query.length > 0);
+                function actualizarResumenFiltros() {
+                    if (!activeFilterSummary) return;
+
+                    const filtros = obtenerFiltros();
+                    const partes = [];
+
+                    if (filtros.q) {
+                        partes.push(`Búsqueda: "${input.value.trim()}"`);
+                    }
+
+                    if (filtros.tipo) {
+                        partes.push(`Tipo: ${filtros.tipo}`);
+                    }
+
+                    if (filtros.situacion) {
+                        partes.push(`Situación: ${filtros.situacion}`);
+                    } else {
+                        partes.push('Situación: todos');
+                    }
+
+                    if (filterArea && filterArea.value) {
+                        const areaTexto = filterArea.options[filterArea.selectedIndex]?.textContent?.trim() || 'Área seleccionada';
+                        partes.push(`Área: ${areaTexto}`);
+                    }
+
+                    activeFilterSummary.textContent = partes.length ?
+                        partes.join(' • ') :
+                        'Vista inicial: personal activo.';
                 }
 
                 function renderTable() {
-                    const pageSize = getPageSize();
+                    const pageSize = obtenerPageSize();
                     const totalResults = filteredRows.length;
                     const totalPages = Math.max(1, Math.ceil(totalResults / pageSize));
 
@@ -776,29 +1038,58 @@
                     }
 
                     const start = (currentPage - 1) * pageSize;
-                    const end = start + pageSize;
-                    const visibleRows = filteredRows.slice(start, end);
+                    const end = Math.min(start + pageSize, totalResults);
 
-                    rows.forEach(row => row.classList.add('hidden'));
-                    visibleRows.forEach(row => row.classList.remove('hidden'));
+                    rows.forEach(row => {
+                        row.classList.add('hidden');
+                    });
 
-                    const showingFrom = totalResults === 0 ? 0 : start + 1;
-                    const showingTo = Math.min(end, totalResults);
+                    filteredRows.slice(start, end).forEach((row, index) => {
+                        row.classList.remove('hidden');
 
-                    if (resultCount) resultCount.textContent = totalResults;
-                    if (rangeInfo) rangeInfo.textContent = totalResults === 0 ? '0' : `${showingFrom}-${showingTo}`;
-                    if (emptyState) emptyState.classList.toggle('hidden', totalResults !== 0);
+                        row.classList.remove('row-clear', 'row-soft');
 
-                    currentPageLabel.textContent = totalResults === 0 ? '0' : currentPage;
-                    totalPagesLabel.textContent = totalResults === 0 ? '0' : totalPages;
+                        if (index % 2 === 0) {
+                            row.classList.add('row-clear');
+                        } else {
+                            row.classList.add('row-soft');
+                        }
+                    });
 
-                    prevBtn.disabled = currentPage <= 1;
-                    nextBtn.disabled = currentPage >= totalPages || totalResults === 0;
+                    if (emptyState) {
+                        emptyState.classList.toggle('hidden', totalResults !== 0);
+                    }
+
+                    if (resultCount) {
+                        resultCount.textContent = totalResults;
+                    }
+
+                    if (rangeInfo) {
+                        rangeInfo.textContent = totalResults === 0 ? '0' : `${start + 1}-${end}`;
+                    }
+
+                    if (currentPageLabel) {
+                        currentPageLabel.textContent = totalResults === 0 ? '0' : currentPage;
+                    }
+
+                    if (totalPagesLabel) {
+                        totalPagesLabel.textContent = totalResults === 0 ? '0' : totalPages;
+                    }
+
+                    if (prevBtn) {
+                        prevBtn.disabled = currentPage <= 1 || totalResults === 0;
+                    }
+
+                    if (nextBtn) {
+                        nextBtn.disabled = currentPage >= totalPages || totalResults === 0;
+                    }
 
                     renderPaginationNumbers(totalPages, totalResults);
                 }
 
                 function renderPaginationNumbers(totalPages, totalResults) {
+                    if (!paginationNumbers) return;
+
                     paginationNumbers.innerHTML = '';
 
                     if (totalResults === 0) return;
@@ -829,28 +1120,46 @@
                     }
                 }
 
-                input.addEventListener('input', applyFilter);
+                function limpiarFiltrosADefault() {
+                    if (input) input.value = '';
+                    if (filterTipoPersonal) filterTipoPersonal.value = '';
+                    if (filterSituacion) filterSituacion.value = DEFAULT_SITUACION;
+                    if (filterArea) filterArea.value = '';
 
-                clearBtn.addEventListener('click', function() {
+                    aplicarFiltro();
+
+                    if (input) input.focus();
+                }
+
+                input?.addEventListener('input', aplicarFiltro);
+                filterTipoPersonal?.addEventListener('change', aplicarFiltro);
+                filterSituacion?.addEventListener('change', aplicarFiltro);
+                filterArea?.addEventListener('change', aplicarFiltro);
+
+                clearBtn?.addEventListener('click', function() {
+                    if (!input) return;
+
                     input.value = '';
                     input.focus();
-                    applyFilter();
+                    aplicarFiltro();
                 });
 
-                pageSizeSelect.addEventListener('change', function() {
+                btnClearFilters?.addEventListener('click', limpiarFiltrosADefault);
+
+                pageSizeSelect?.addEventListener('change', function() {
                     currentPage = 1;
                     renderTable();
                 });
 
-                prevBtn.addEventListener('click', function() {
+                prevBtn?.addEventListener('click', function() {
                     if (currentPage > 1) {
                         currentPage--;
                         renderTable();
                     }
                 });
 
-                nextBtn.addEventListener('click', function() {
-                    const totalPages = Math.ceil(filteredRows.length / getPageSize());
+                nextBtn?.addEventListener('click', function() {
+                    const totalPages = Math.ceil(filteredRows.length / obtenerPageSize());
 
                     if (currentPage < totalPages) {
                         currentPage++;
@@ -858,7 +1167,33 @@
                     }
                 });
 
-                applyFilter();
+                if (btnExportExcel) {
+                    btnExportExcel.addEventListener('click', function() {
+                        const filtros = obtenerFiltros();
+                        const params = new URLSearchParams();
+
+                        if (input?.value?.trim()) {
+                            params.set('q', input.value.trim());
+                        }
+
+                        if (filtros.tipo) {
+                            params.set('tipo_personal', filtros.tipo);
+                        }
+
+                        if (filtros.situacion) {
+                            params.set('situacion', filtros.situacion);
+                        }
+
+                        if (filtros.area) {
+                            params.set('area', filtros.area);
+                        }
+
+                        const query = params.toString();
+                        this.href = `<?= BASE_URL ?>/rrhh/directorio/xlsx${query ? '?' + query : ''}`;
+                    });
+                }
+
+                aplicarFiltro();
             });
 
             function abrirDrawerNuevoColaborador() {
@@ -883,14 +1218,5 @@
                     drawer.classList.add('hidden');
                     document.body.classList.remove('drawer-nuevo-open');
                 }, 300);
-            }
-
-            const btnExportExcel = document.getElementById('btnExportExcel');
-
-            if (btnExportExcel) {
-                btnExportExcel.addEventListener('click', function() {
-                    const q = document.getElementById('searchInput')?.value || '';
-                    this.href = `<?= BASE_URL ?>/rrhh/directorio/xlsx?q=${encodeURIComponent(q)}`;
-                });
             }
         </script>

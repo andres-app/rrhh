@@ -9,29 +9,60 @@ class MdDirectorio
     /*=============================================
     MODELO PARA LA TABLA PRINCIPAL (DIRECTORIO)
     =============================================*/
-    public static function mdlMostrarDirectorio()
-    {
-        try {
-            $stmt = Conexion::conectar()->prepare("
-                SELECT 
-                    m.id, 
-                    m.nombres_apellidos, 
-                    m.dni, 
-                    m.celular,
-                    l.puesto_cas, 
-                    l.area, 
-                    l.correo_institucional,
-                    l.situacion
-                FROM colab_maestro m
-                LEFT JOIN colab_laboral l ON m.id = l.colab_id
-                ORDER BY m.nombres_apellidos ASC
-            ");
-            $stmt->execute();
-            return $stmt->fetchAll(PDO::FETCH_ASSOC);
-        } catch (Exception $e) {
-            return [];
-        }
+public static function mdlMostrarDirectorio()
+{
+    try {
+        $stmt = Conexion::conectar()->prepare("
+            SELECT 
+                m.id, 
+                m.nombres_apellidos, 
+                m.dni, 
+                m.celular,
+                m.grado_militar,
+
+                l.puesto_cas, 
+                l.tipo_puesto,
+                l.area, 
+                l.correo_institucional,
+                COALESCE(NULLIF(TRIM(l.situacion), ''), 'ACTIVO') AS situacion,
+
+                COALESCE(
+                    NULLIF(TRIM(l.modalidad_contrato), ''),
+                    NULLIF(TRIM(ct.modalidad), '')
+                ) AS modalidad_contrato
+
+            FROM colab_maestro m
+
+            LEFT JOIN (
+                SELECT l1.*
+                FROM colab_laboral l1
+                INNER JOIN (
+                    SELECT colab_id, MAX(id) AS max_id
+                    FROM colab_laboral
+                    GROUP BY colab_id
+                ) ult ON ult.max_id = l1.id
+            ) l ON l.colab_id = m.id
+
+            LEFT JOIN (
+                SELECT c1.*
+                FROM colab_contratos c1
+                INNER JOIN (
+                    SELECT colab_id, MAX(id) AS max_id
+                    FROM colab_contratos
+                    GROUP BY colab_id
+                ) uc ON uc.max_id = c1.id
+            ) ct ON ct.colab_id = m.id
+
+            ORDER BY m.nombres_apellidos ASC
+        ");
+
+        $stmt->execute();
+
+        return $stmt->fetchAll(PDO::FETCH_ASSOC);
+    } catch (Throwable $e) {
+        return [];
     }
+}
 
     private static function nullify($valor)
     {
