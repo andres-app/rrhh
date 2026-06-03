@@ -1260,8 +1260,17 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
 
                                 <div class="field-group">
                                     <label class="field-label">Contrato</label>
-                                    <input type="text" name="mod_contrato" class="field-input"
-                                        value="<?php echo htmlspecialchars($perfil['mod_contrato'] ?? ''); ?>">
+                                    <select name="mod_contrato" class="field-input">
+                                        <option value="">Seleccionar</option>
+                                        <?php
+                                        $contratoActual = strtoupper(trim($perfil['mod_contrato'] ?? ''));
+                                        foreach (['CAS', 'MILITAR', 'PAC'] as $opt):
+                                        ?>
+                                            <option value="<?php echo $opt; ?>" <?php echo ($contratoActual === $opt) ? 'selected' : ''; ?>>
+                                                <?php echo $opt; ?>
+                                            </option>
+                                        <?php endforeach; ?>
+                                    </select>
                                 </div>
 
                                 <div class="field-group">
@@ -1388,11 +1397,19 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
 
                                                     <div class="field-group span-full">
                                                         <label class="field-label">Modalidad</label>
-                                                        <input type="text"
+                                                        <select
                                                             name="contratos[<?php echo $ci; ?>][modalidad]"
-                                                            class="field-input input-modalidad"
-                                                            value="<?php echo htmlspecialchars($contrato['modalidad'] ?? ''); ?>"
-                                                            placeholder="Ej: CAS">
+                                                            class="field-input input-modalidad">
+                                                            <option value="">Seleccionar</option>
+                                                            <?php
+                                                            $modalidadActual = strtoupper(trim($contrato['modalidad'] ?? ''));
+                                                            foreach (['CAS', 'MILITAR', 'PAC'] as $opt):
+                                                            ?>
+                                                                <option value="<?php echo $opt; ?>" <?php echo ($modalidadActual === $opt) ? 'selected' : ''; ?>>
+                                                                    <?php echo $opt; ?>
+                                                                </option>
+                                                            <?php endforeach; ?>
+                                                        </select>
                                                     </div>
 
                                                     <input type="hidden" name="contratos[<?php echo $ci; ?>][id]" value="<?php echo $contrato['id'] ?? ''; ?>">
@@ -2734,7 +2751,12 @@ $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($p
 
                     <div class="field-group span-full">
                         <label class="field-label">Modalidad</label>
-                        <input type="text" name="contratos[${idx}][modalidad]" class="field-input input-modalidad" placeholder="Ej: CAS">
+                        <select name="contratos[${idx}][modalidad]" class="field-input input-modalidad">
+                            <option value="">Seleccionar</option>
+                            <option value="CAS">CAS</option>
+                            <option value="MILITAR">MILITAR</option>
+                            <option value="PAC">PAC</option>
+                        </select>
                     </div>
 
                     <input type="hidden" name="contratos[${idx}][id]" value="">
