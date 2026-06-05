@@ -9,10 +9,10 @@ class MdDirectorio
     /*=============================================
     MODELO PARA LA TABLA PRINCIPAL (DIRECTORIO)
     =============================================*/
-public static function mdlMostrarDirectorio()
-{
-    try {
-        $stmt = Conexion::conectar()->prepare("
+    public static function mdlMostrarDirectorio()
+    {
+        try {
+            $stmt = Conexion::conectar()->prepare("
             SELECT 
                 m.id, 
                 m.nombres_apellidos, 
@@ -56,13 +56,13 @@ public static function mdlMostrarDirectorio()
             ORDER BY m.nombres_apellidos ASC
         ");
 
-        $stmt->execute();
+            $stmt->execute();
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC);
-    } catch (Throwable $e) {
-        return [];
+            return $stmt->fetchAll(PDO::FETCH_ASSOC);
+        } catch (Throwable $e) {
+            return [];
+        }
     }
-}
 
     private static function nullify($valor)
     {
@@ -398,16 +398,33 @@ RESUMEN DASHBOARD DINÁMICO
 
         $colabId = (int)$perfil['id'];
 
-        // CONTRATOS
+        // CONTRATOS Y ADENDAS
         $stmt2 = $pdo->prepare("
-        SELECT id, colab_id, fecha_ingreso, fecha_cese, modalidad
-        FROM colab_contratos
-        WHERE colab_id = :id
-        ORDER BY fecha_ingreso ASC, id ASC
-    ");
+                SELECT 
+                    id,
+                    colab_id,
+                    contrato_padre_id,
+                    COALESCE(NULLIF(TRIM(tipo_registro), ''), 'CONTRATO') AS tipo_registro,
+                    numero_documento,
+                    fecha_documento,
+                    fecha_ingreso,
+                    fecha_cese,
+                    modalidad,
+                    motivo_adenda,
+                    observacion
+                FROM colab_contratos
+                WHERE colab_id = :id
+                ORDER BY 
+                    COALESCE(contrato_padre_id, id) ASC,
+                    CASE 
+                        WHEN UPPER(COALESCE(NULLIF(TRIM(tipo_registro), ''), 'CONTRATO')) = 'CONTRATO' THEN 0
+                        ELSE 1
+                    END ASC,
+                    fecha_ingreso ASC,
+                    id ASC
+            ");
         $stmt2->execute([':id' => $colabId]);
         $perfil['contratos'] = $stmt2->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
         // FORMACIÓN
         $stmt3 = $pdo->prepare("
         SELECT *
