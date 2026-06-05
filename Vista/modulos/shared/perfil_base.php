@@ -1818,12 +1818,15 @@
                         <?php endif; ?>
 
                         <?php if ($esEditable): ?>
-                            <!-- BLOQUE 4: CONTRATOS -->
+                            <!-- BLOQUE 4: CONTRATOS Y ADENDAS -->
                             <div class="bg-white border border-slate-200 rounded-3xl p-6 lg:p-8 shadow-sm xl:col-span-2">
                                 <div class="flex items-center justify-between mb-4 gap-3">
                                     <div class="flex-1">
-                                        <p class="section-title">Contratos</p>
+                                        <p class="section-title">Contratos y Adendas</p>
                                         <div class="section-divider"></div>
+                                        <p class="text-[11px] text-slate-400 font-semibold mt-1">
+                                            Registra contratos padre y agrega adendas vinculadas al contrato correspondiente.
+                                        </p>
                                     </div>
 
                                     <button type="button" onclick="agregarContrato()"
@@ -1835,36 +1838,76 @@
                                     </button>
                                 </div>
 
-                                <div id="lista-contratos" class="space-y-3">
-                                    <?php if (empty($contratos)): ?>
+                                <div id="lista-contratos" class="space-y-4">
+                                    <?php
+                                    $contratosOrganizadosEditar = organizarContratosConAdendas($contratos);
+                                    $contratoIndexEdit = 0;
+                                    ?>
+
+                                    <?php if (empty($contratosOrganizadosEditar)): ?>
                                         <div id="sin-contratos" class="text-center py-5 text-slate-400 text-xs border border-dashed border-slate-200 rounded-2xl bg-slate-50/70">
                                             No hay contratos registrados. Haz clic en "Agregar Contrato".
                                         </div>
                                     <?php else: ?>
-                                        <?php foreach (array_values($contratos) as $ci => $contrato): ?>
-                                            <div class="contrato-row bg-white border border-slate-200 rounded-xl p-4 relative transition-all" data-index="<?php echo $ci; ?>">
+                                        <?php foreach ($contratosOrganizadosEditar as $contrato): ?>
+                                            <?php
+                                            $ci = $contratoIndexEdit++;
+                                            $idContratoPadre = (int)($contrato['id'] ?? 0);
+                                            $numeroContrato = trim((string)($contrato['numero_documento'] ?? ''));
+                                            $modalidadContrato = strtoupper(trim((string)($contrato['modalidad'] ?? '')));
+                                            $adendasContrato = $contrato['_adendas'] ?? [];
+                                            ?>
+
+                                            <div class="contrato-row bg-white border border-slate-200 rounded-2xl p-4 relative transition-all"
+                                                data-index="<?php echo $ci; ?>"
+                                                data-tipo-registro="CONTRATO">
 
                                                 <div class="item-resumen flex items-center justify-between gap-3">
                                                     <div class="min-w-0">
-                                                        <p class="text-sm font-bold text-slate-800 val-fecha-ingreso">
-                                                            <?php echo !empty($contrato['fecha_ingreso']) ? formatFecha($contrato['fecha_ingreso']) : 'Sin fecha de ingreso'; ?>
+                                                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-900 border border-red-100">
+                                                                Contrato padre
+                                                            </span>
+
+                                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-100 text-slate-600 border border-slate-200">
+                                                                <?php echo count($adendasContrato); ?> adenda(s)
+                                                            </span>
+                                                        </div>
+
+                                                        <p class="text-sm font-black text-slate-800 val-numero-documento">
+                                                            <?php echo htmlPerfil($numeroContrato !== '' ? $numeroContrato : 'Contrato sin número'); ?>
                                                         </p>
+
                                                         <p class="text-[11px] text-slate-500 mt-0.5">
-                                                            Cese:
+                                                            Inicio:
+                                                            <span class="val-fecha-ingreso">
+                                                                <?php echo !empty($contrato['fecha_ingreso']) ? formatFecha($contrato['fecha_ingreso']) : 'Sin fecha'; ?>
+                                                            </span>
+                                                            • Fin:
                                                             <span class="val-fecha-cese">
                                                                 <?php echo !empty($contrato['fecha_cese']) ? formatFecha($contrato['fecha_cese']) : 'Vigente'; ?>
                                                             </span>
                                                             • Modalidad:
                                                             <span class="val-modalidad">
-                                                                <?php echo htmlspecialchars($contrato['modalidad'] ?? '—'); ?>
+                                                                <?php echo htmlPerfil($modalidadContrato !== '' ? $modalidadContrato : '—'); ?>
                                                             </span>
                                                         </p>
                                                     </div>
 
-                                                    <button type="button" onclick="toggleFila(this, true)"
-                                                        class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
-                                                        Editar
-                                                    </button>
+                                                    <div class="flex flex-wrap justify-end gap-2 shrink-0">
+                                                        <?php if ($idContratoPadre > 0): ?>
+                                                            <button type="button"
+                                                                onclick="agregarAdenda('<?php echo $idContratoPadre; ?>', '<?php echo htmlPerfil($numeroContrato !== '' ? $numeroContrato : 'Contrato padre'); ?>', '<?php echo htmlPerfil($modalidadContrato); ?>')"
+                                                                class="text-slate-700 bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-slate-200">
+                                                                + Adenda
+                                                            </button>
+                                                        <?php endif; ?>
+
+                                                        <button type="button" onclick="toggleFila(this, true)"
+                                                            class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100">
+                                                            Editar
+                                                        </button>
+                                                    </div>
                                                 </div>
 
                                                 <div class="item-form hidden mt-3 pt-4 border-t border-slate-200 relative animate-in">
@@ -1877,40 +1920,62 @@
                                                     </button>
 
                                                     <div class="form-grid-2 pr-6">
-                                                        <div class="field-group">
-                                                            <label class="field-label">Fecha de Ingreso</label>
-                                                            <input type="date"
-                                                                name="contratos[<?php echo $ci; ?>][fecha_ingreso]"
-                                                                class="field-input input-fecha-ingreso"
-                                                                value="<?php echo htmlspecialchars($contrato['fecha_ingreso'] ?? ''); ?>">
-                                                        </div>
-
-                                                        <div class="field-group">
-                                                            <label class="field-label">Fecha de Cese</label>
-                                                            <input type="date"
-                                                                name="contratos[<?php echo $ci; ?>][fecha_cese]"
-                                                                class="field-input input-fecha-cese"
-                                                                value="<?php echo htmlspecialchars($contrato['fecha_cese'] ?? ''); ?>">
-                                                        </div>
-
                                                         <div class="field-group span-full">
+                                                            <label class="field-label">N° de contrato</label>
+                                                            <input type="text"
+                                                                name="contratos[<?php echo $ci; ?>][numero_documento]"
+                                                                class="field-input input-numero-documento"
+                                                                value="<?php echo htmlPerfil($contrato['numero_documento'] ?? ''); ?>"
+                                                                placeholder="Ej. CONTRATO N° 001-2026">
+                                                        </div>
+
+                                                        <div class="field-group">
+                                                            <label class="field-label">Fecha documento</label>
+                                                            <input type="date"
+                                                                name="contratos[<?php echo $ci; ?>][fecha_documento]"
+                                                                class="field-input input-fecha-documento"
+                                                                value="<?php echo htmlPerfil($contrato['fecha_documento'] ?? ''); ?>">
+                                                        </div>
+
+                                                        <div class="field-group">
                                                             <label class="field-label">Modalidad</label>
-                                                            <select
-                                                                name="contratos[<?php echo $ci; ?>][modalidad]"
-                                                                class="field-input input-modalidad">
+                                                            <select name="contratos[<?php echo $ci; ?>][modalidad]" class="field-input input-modalidad">
                                                                 <option value="">Seleccionar</option>
-                                                                <?php
-                                                                $modalidadActual = strtoupper(trim($contrato['modalidad'] ?? ''));
-                                                                foreach (['CAS', 'MILITAR', 'PAC'] as $opt):
-                                                                ?>
-                                                                    <option value="<?php echo $opt; ?>" <?php echo ($modalidadActual === $opt) ? 'selected' : ''; ?>>
+                                                                <?php foreach (['CAS', 'MILITAR', 'PAC'] as $opt): ?>
+                                                                    <option value="<?php echo $opt; ?>" <?php echo ($modalidadContrato === $opt) ? 'selected' : ''; ?>>
                                                                         <?php echo $opt; ?>
                                                                     </option>
                                                                 <?php endforeach; ?>
                                                             </select>
                                                         </div>
 
-                                                        <input type="hidden" name="contratos[<?php echo $ci; ?>][id]" value="<?php echo $contrato['id'] ?? ''; ?>">
+                                                        <div class="field-group">
+                                                            <label class="field-label">Inicio contrato</label>
+                                                            <input type="date"
+                                                                name="contratos[<?php echo $ci; ?>][fecha_ingreso]"
+                                                                class="field-input input-fecha-ingreso"
+                                                                value="<?php echo htmlPerfil($contrato['fecha_ingreso'] ?? ''); ?>">
+                                                        </div>
+
+                                                        <div class="field-group">
+                                                            <label class="field-label">Fin contrato</label>
+                                                            <input type="date"
+                                                                name="contratos[<?php echo $ci; ?>][fecha_cese]"
+                                                                class="field-input input-fecha-cese"
+                                                                value="<?php echo htmlPerfil($contrato['fecha_cese'] ?? ''); ?>">
+                                                        </div>
+
+                                                        <div class="field-group span-full">
+                                                            <label class="field-label">Observación</label>
+                                                            <textarea name="contratos[<?php echo $ci; ?>][observacion]"
+                                                                class="field-input input-observacion"
+                                                                rows="2"><?php echo htmlPerfil($contrato['observacion'] ?? ''); ?></textarea>
+                                                        </div>
+
+                                                        <input type="hidden" name="contratos[<?php echo $ci; ?>][id]" value="<?php echo htmlPerfil($contrato['id'] ?? ''); ?>">
+                                                        <input type="hidden" name="contratos[<?php echo $ci; ?>][tipo_registro]" value="CONTRATO">
+                                                        <input type="hidden" name="contratos[<?php echo $ci; ?>][contrato_padre_id]" value="">
+                                                        <input type="hidden" name="contratos[<?php echo $ci; ?>][motivo_adenda]" value="">
                                                     </div>
 
                                                     <div class="mt-3 text-right">
@@ -1921,6 +1986,140 @@
                                                     </div>
                                                 </div>
                                             </div>
+
+                                            <?php foreach ($adendasContrato as $adenda): ?>
+                                                <?php
+                                                $ai = $contratoIndexEdit++;
+                                                $modalidadAdenda = strtoupper(trim((string)($adenda['modalidad'] ?? $modalidadContrato)));
+                                                ?>
+
+                                                <div class="contrato-row adenda-row bg-slate-50 border border-slate-200 rounded-2xl p-4 relative transition-all ml-0 md:ml-8"
+                                                    data-index="<?php echo $ai; ?>"
+                                                    data-tipo-registro="ADENDA">
+
+                                                    <div class="item-resumen flex items-center justify-between gap-3">
+                                                        <div class="min-w-0">
+                                                            <div class="flex flex-wrap items-center gap-2 mb-1">
+                                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white border border-slate-900">
+                                                                    Adenda
+                                                                </span>
+
+                                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white text-slate-600 border border-slate-200">
+                                                                    Padre: <?php echo htmlPerfil($numeroContrato !== '' ? $numeroContrato : 'Contrato'); ?>
+                                                                </span>
+                                                            </div>
+
+                                                            <p class="text-sm font-black text-slate-800 val-numero-documento">
+                                                                <?php echo htmlPerfil($adenda['numero_documento'] ?: 'Adenda sin número'); ?>
+                                                            </p>
+
+                                                            <p class="text-[11px] text-slate-500 mt-0.5">
+                                                                Inicio:
+                                                                <span class="val-fecha-ingreso">
+                                                                    <?php echo !empty($adenda['fecha_ingreso']) ? formatFecha($adenda['fecha_ingreso']) : 'Sin fecha'; ?>
+                                                                </span>
+                                                                • Fin:
+                                                                <span class="val-fecha-cese">
+                                                                    <?php echo !empty($adenda['fecha_cese']) ? formatFecha($adenda['fecha_cese']) : '—'; ?>
+                                                                </span>
+                                                                • Motivo:
+                                                                <span class="val-motivo-adenda">
+                                                                    <?php echo htmlPerfil($adenda['motivo_adenda'] ?? '—'); ?>
+                                                                </span>
+                                                            </p>
+                                                        </div>
+
+                                                        <button type="button" onclick="toggleFila(this, true)"
+                                                            class="text-red-900 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold transition-colors border border-red-100 shrink-0">
+                                                            Editar
+                                                        </button>
+                                                    </div>
+
+                                                    <div class="item-form hidden mt-3 pt-4 border-t border-slate-200 relative animate-in">
+                                                        <button type="button" onclick="eliminarFila(this)"
+                                                            class="absolute top-0 right-0 text-slate-300 hover:text-red-500 transition-colors p-1"
+                                                            title="Eliminar">
+                                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                                <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12" />
+                                                            </svg>
+                                                        </button>
+
+                                                        <div class="form-grid-2 pr-6">
+                                                            <div class="field-group span-full">
+                                                                <label class="field-label">N° de adenda</label>
+                                                                <input type="text"
+                                                                    name="contratos[<?php echo $ai; ?>][numero_documento]"
+                                                                    class="field-input input-numero-documento"
+                                                                    value="<?php echo htmlPerfil($adenda['numero_documento'] ?? ''); ?>"
+                                                                    placeholder="Ej. ADENDA N° 001-2026">
+                                                            </div>
+
+                                                            <div class="field-group">
+                                                                <label class="field-label">Fecha documento</label>
+                                                                <input type="date"
+                                                                    name="contratos[<?php echo $ai; ?>][fecha_documento]"
+                                                                    class="field-input input-fecha-documento"
+                                                                    value="<?php echo htmlPerfil($adenda['fecha_documento'] ?? ''); ?>">
+                                                            </div>
+
+                                                            <div class="field-group">
+                                                                <label class="field-label">Modalidad</label>
+                                                                <select name="contratos[<?php echo $ai; ?>][modalidad]" class="field-input input-modalidad">
+                                                                    <option value="">Heredar contrato padre</option>
+                                                                    <?php foreach (['CAS', 'MILITAR', 'PAC'] as $opt): ?>
+                                                                        <option value="<?php echo $opt; ?>" <?php echo ($modalidadAdenda === $opt) ? 'selected' : ''; ?>>
+                                                                            <?php echo $opt; ?>
+                                                                        </option>
+                                                                    <?php endforeach; ?>
+                                                                </select>
+                                                            </div>
+
+                                                            <div class="field-group">
+                                                                <label class="field-label">Inicio adenda</label>
+                                                                <input type="date"
+                                                                    name="contratos[<?php echo $ai; ?>][fecha_ingreso]"
+                                                                    class="field-input input-fecha-ingreso"
+                                                                    value="<?php echo htmlPerfil($adenda['fecha_ingreso'] ?? ''); ?>">
+                                                            </div>
+
+                                                            <div class="field-group">
+                                                                <label class="field-label">Fin adenda</label>
+                                                                <input type="date"
+                                                                    name="contratos[<?php echo $ai; ?>][fecha_cese]"
+                                                                    class="field-input input-fecha-cese"
+                                                                    value="<?php echo htmlPerfil($adenda['fecha_cese'] ?? ''); ?>">
+                                                            </div>
+
+                                                            <div class="field-group span-full">
+                                                                <label class="field-label">Motivo de adenda</label>
+                                                                <input type="text"
+                                                                    name="contratos[<?php echo $ai; ?>][motivo_adenda]"
+                                                                    class="field-input input-motivo-adenda"
+                                                                    value="<?php echo htmlPerfil($adenda['motivo_adenda'] ?? ''); ?>"
+                                                                    placeholder="Ej. Ampliación de plazo, renovación, modificación contractual...">
+                                                            </div>
+
+                                                            <div class="field-group span-full">
+                                                                <label class="field-label">Observación</label>
+                                                                <textarea name="contratos[<?php echo $ai; ?>][observacion]"
+                                                                    class="field-input input-observacion"
+                                                                    rows="2"><?php echo htmlPerfil($adenda['observacion'] ?? ''); ?></textarea>
+                                                            </div>
+
+                                                            <input type="hidden" name="contratos[<?php echo $ai; ?>][id]" value="<?php echo htmlPerfil($adenda['id'] ?? ''); ?>">
+                                                            <input type="hidden" name="contratos[<?php echo $ai; ?>][tipo_registro]" value="ADENDA">
+                                                            <input type="hidden" name="contratos[<?php echo $ai; ?>][contrato_padre_id]" value="<?php echo $idContratoPadre; ?>">
+                                                        </div>
+
+                                                        <div class="mt-3 text-right">
+                                                            <button type="button" onclick="toggleFila(this, false)"
+                                                                class="text-xs font-bold text-slate-600 hover:text-slate-900 transition-colors bg-slate-100 hover:bg-slate-200 px-3 py-1.5 rounded-lg">
+                                                                ✓ Listo
+                                                            </button>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <?php endforeach; ?>
                                         <?php endforeach; ?>
                                     <?php endif; ?>
                                 </div>
@@ -3159,17 +3358,38 @@
                     if (elIdioma) elIdioma.textContent = idioma;
                     if (elNivel) elNivel.textContent = nivel;
                 } else if (row.classList.contains('contrato-row')) {
+                    const numeroDocumento = row.querySelector('.input-numero-documento')?.value?.trim() || '';
                     const fechaIngreso = row.querySelector('.input-fecha-ingreso')?.value || '';
                     const fechaCese = row.querySelector('.input-fecha-cese')?.value || '';
                     const modalidad = row.querySelector('.input-modalidad')?.value?.trim() || '—';
+                    const motivoAdenda = row.querySelector('.input-motivo-adenda')?.value?.trim() || '—';
+                    const esAdenda = (row.dataset.tipoRegistro || '').toUpperCase() === 'ADENDA';
 
+                    const elNumero = row.querySelector('.val-numero-documento');
                     const elIngreso = row.querySelector('.val-fecha-ingreso');
                     const elCese = row.querySelector('.val-fecha-cese');
                     const elModalidad = row.querySelector('.val-modalidad');
+                    const elMotivo = row.querySelector('.val-motivo-adenda');
 
-                    if (elIngreso) elIngreso.textContent = fechaIngreso ? formatearFecha(fechaIngreso) : 'Sin fecha de ingreso';
-                    if (elCese) elCese.textContent = fechaCese ? formatearFecha(fechaCese) : 'Vigente';
-                    if (elModalidad) elModalidad.textContent = modalidad;
+                    if (elNumero) {
+                        elNumero.textContent = numeroDocumento || (esAdenda ? 'Adenda sin número' : 'Contrato sin número');
+                    }
+
+                    if (elIngreso) {
+                        elIngreso.textContent = fechaIngreso ? formatearFecha(fechaIngreso) : 'Sin fecha';
+                    }
+
+                    if (elCese) {
+                        elCese.textContent = fechaCese ? formatearFecha(fechaCese) : (esAdenda ? '—' : 'Vigente');
+                    }
+
+                    if (elModalidad) {
+                        elModalidad.textContent = modalidad;
+                    }
+
+                    if (elMotivo) {
+                        elMotivo.textContent = motivoAdenda;
+                    }
                 }
             }
         }
@@ -3246,37 +3466,50 @@
             const idx = contratoIdx++;
 
             const html = `
-            <div class="contrato-row bg-white border border-slate-200 rounded-xl p-4 relative animate-in" data-index="${idx}">
+            <div class="contrato-row bg-white border border-slate-200 rounded-2xl p-4 relative animate-in" data-index="${idx}" data-tipo-registro="CONTRATO">
                 <div class="item-resumen hidden flex items-center justify-between gap-3">
-                    <div>
-                        <p class="val-fecha-ingreso text-sm font-bold text-slate-800">Sin fecha de ingreso</p>
-                        <p class="text-xs text-slate-500">
-                            Cese: <span class="val-fecha-cese">Vigente</span> •
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2 mb-1">
+                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-red-50 text-red-900 border border-red-100">
+                                Contrato padre
+                            </span>
+                        </div>
+
+                        <p class="val-numero-documento text-sm font-black text-slate-800">Contrato sin número</p>
+
+                        <p class="text-[11px] text-slate-500 mt-0.5">
+                            Inicio: <span class="val-fecha-ingreso">Sin fecha</span> •
+                            Fin: <span class="val-fecha-cese">Vigente</span> •
                             Modalidad: <span class="val-modalidad">—</span>
                         </p>
                     </div>
-                    <button type="button" onclick="toggleFila(this, true)" class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100">Editar</button>
+
+                    <button type="button" onclick="toggleFila(this, true)"
+                        class="text-red-900 bg-red-50 hover:bg-red-100 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100">
+                        Editar
+                    </button>
                 </div>
 
                 <div class="item-form mt-1 pt-1 relative">
-                    <button type="button" onclick="eliminarFila(this)" class="absolute -top-2 right-0 text-slate-300 hover:text-red-500 transition-colors p-1">
+                    <button type="button" onclick="eliminarFila(this)"
+                        class="absolute -top-2 right-0 text-slate-300 hover:text-red-500 transition-colors p-1">
                         <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                             <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
                         </svg>
                     </button>
 
                     <div class="form-grid-2 pr-6">
-                        <div class="field-group">
-                            <label class="field-label">Fecha de Ingreso</label>
-                            <input type="date" name="contratos[${idx}][fecha_ingreso]" class="field-input input-fecha-ingreso">
-                        </div>
-
-                        <div class="field-group">
-                            <label class="field-label">Fecha de Cese</label>
-                            <input type="date" name="contratos[${idx}][fecha_cese]" class="field-input input-fecha-cese">
-                        </div>
-
                         <div class="field-group span-full">
+                            <label class="field-label">N° de contrato</label>
+                            <input type="text" name="contratos[${idx}][numero_documento]" class="field-input input-numero-documento" placeholder="Ej. CONTRATO N° 001-2026">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Fecha documento</label>
+                            <input type="date" name="contratos[${idx}][fecha_documento]" class="field-input input-fecha-documento">
+                        </div>
+
+                        <div class="field-group">
                             <label class="field-label">Modalidad</label>
                             <select name="contratos[${idx}][modalidad]" class="field-input input-modalidad">
                                 <option value="">Seleccionar</option>
@@ -3286,15 +3519,143 @@
                             </select>
                         </div>
 
+                        <div class="field-group">
+                            <label class="field-label">Inicio contrato</label>
+                            <input type="date" name="contratos[${idx}][fecha_ingreso]" class="field-input input-fecha-ingreso">
+                        </div>
+
+                        <div class="field-group">
+                            <label class="field-label">Fin contrato</label>
+                            <input type="date" name="contratos[${idx}][fecha_cese]" class="field-input input-fecha-cese">
+                        </div>
+
+                        <div class="field-group span-full">
+                            <label class="field-label">Observación</label>
+                            <textarea name="contratos[${idx}][observacion]" class="field-input input-observacion" rows="2"></textarea>
+                        </div>
+
                         <input type="hidden" name="contratos[${idx}][id]" value="">
+                        <input type="hidden" name="contratos[${idx}][tipo_registro]" value="CONTRATO">
+                        <input type="hidden" name="contratos[${idx}][contrato_padre_id]" value="">
+                        <input type="hidden" name="contratos[${idx}][motivo_adenda]" value="">
                     </div>
 
                     <div class="mt-3 text-right">
-                        <button type="button" onclick="toggleFila(this, false)" class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">✓ Listo</button>
+                        <button type="button" onclick="toggleFila(this, false)"
+                            class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
+                            ✓ Listo
+                        </button>
                     </div>
                 </div>
             </div>`;
+
             document.getElementById('lista-contratos').insertAdjacentHTML('beforeend', html);
+        }
+
+        function agregarAdenda(contratoPadreId, contratoLabel = 'Contrato padre', modalidadPadre = '') {
+            const lista = document.getElementById('lista-contratos');
+            if (!lista) return;
+
+            const idx = contratoIdx++;
+
+            const modalidadSeleccionada = (modalidadPadre || '').toUpperCase();
+
+            const html = `
+    <div class="contrato-row adenda-row bg-slate-50 border border-slate-200 rounded-2xl p-4 relative animate-in ml-0 md:ml-8"
+        data-index="${idx}"
+        data-tipo-registro="ADENDA">
+
+        <div class="item-resumen hidden flex items-center justify-between gap-3">
+            <div class="min-w-0">
+                <div class="flex flex-wrap items-center gap-2 mb-1">
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white border border-slate-900">
+                        Adenda
+                    </span>
+
+                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white text-slate-600 border border-slate-200">
+                        Padre: ${contratoLabel}
+                    </span>
+                </div>
+
+                <p class="val-numero-documento text-sm font-black text-slate-800">Adenda sin número</p>
+
+                <p class="text-[11px] text-slate-500 mt-0.5">
+                    Inicio: <span class="val-fecha-ingreso">Sin fecha</span> •
+                    Fin: <span class="val-fecha-cese">—</span> •
+                    Motivo: <span class="val-motivo-adenda">—</span>
+                </p>
+            </div>
+
+            <button type="button" onclick="toggleFila(this, true)"
+                class="text-red-900 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100">
+                Editar
+            </button>
+        </div>
+
+        <div class="item-form mt-1 pt-1 relative">
+            <button type="button" onclick="eliminarFila(this)"
+                class="absolute -top-2 right-0 text-slate-300 hover:text-red-500 transition-colors p-1">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                </svg>
+            </button>
+
+            <div class="form-grid-2 pr-6">
+                <div class="field-group span-full">
+                    <label class="field-label">N° de adenda</label>
+                    <input type="text" name="contratos[${idx}][numero_documento]" class="field-input input-numero-documento" placeholder="Ej. ADENDA N° 001-2026">
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Fecha documento</label>
+                    <input type="date" name="contratos[${idx}][fecha_documento]" class="field-input input-fecha-documento">
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Modalidad</label>
+                    <select name="contratos[${idx}][modalidad]" class="field-input input-modalidad">
+                        <option value="">Heredar contrato padre</option>
+                        <option value="CAS" ${modalidadSeleccionada === 'CAS' ? 'selected' : ''}>CAS</option>
+                        <option value="MILITAR" ${modalidadSeleccionada === 'MILITAR' ? 'selected' : ''}>MILITAR</option>
+                        <option value="PAC" ${modalidadSeleccionada === 'PAC' ? 'selected' : ''}>PAC</option>
+                    </select>
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Inicio adenda</label>
+                    <input type="date" name="contratos[${idx}][fecha_ingreso]" class="field-input input-fecha-ingreso">
+                </div>
+
+                <div class="field-group">
+                    <label class="field-label">Fin adenda</label>
+                    <input type="date" name="contratos[${idx}][fecha_cese]" class="field-input input-fecha-cese">
+                </div>
+
+                <div class="field-group span-full">
+                    <label class="field-label">Motivo de adenda</label>
+                    <input type="text" name="contratos[${idx}][motivo_adenda]" class="field-input input-motivo-adenda" placeholder="Ej. Ampliación de plazo, renovación, modificación contractual...">
+                </div>
+
+                <div class="field-group span-full">
+                    <label class="field-label">Observación</label>
+                    <textarea name="contratos[${idx}][observacion]" class="field-input input-observacion" rows="2"></textarea>
+                </div>
+
+                <input type="hidden" name="contratos[${idx}][id]" value="">
+                <input type="hidden" name="contratos[${idx}][tipo_registro]" value="ADENDA">
+                <input type="hidden" name="contratos[${idx}][contrato_padre_id]" value="${contratoPadreId}">
+            </div>
+
+            <div class="mt-3 text-right">
+                <button type="button" onclick="toggleFila(this, false)"
+                    class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
+                    ✓ Listo
+                </button>
+            </div>
+        </div>
+    </div>`;
+
+            lista.insertAdjacentHTML('beforeend', html);
         }
 
         function agregarHijo() {
@@ -3674,6 +4035,35 @@
             3: [6, 7],
             4: [9]
         };
+
+        function leerContratoRow(row, index = 0) {
+            const idx = row.dataset.index ?? index;
+
+            return {
+                idx: String(idx),
+                id: row.querySelector(`[name="contratos[${idx}][id]"]`)?.value || '',
+                tipo_registro: row.querySelector(`[name="contratos[${idx}][tipo_registro]"]`)?.value || 'CONTRATO',
+                contrato_padre_id: row.querySelector(`[name="contratos[${idx}][contrato_padre_id]"]`)?.value || '',
+                numero_documento: row.querySelector(`[name="contratos[${idx}][numero_documento]"]`)?.value?.trim() || '',
+                fecha_documento: row.querySelector(`[name="contratos[${idx}][fecha_documento]"]`)?.value || '',
+                fecha_ingreso: row.querySelector(`[name="contratos[${idx}][fecha_ingreso]"]`)?.value || '',
+                fecha_cese: row.querySelector(`[name="contratos[${idx}][fecha_cese]"]`)?.value || '',
+                modalidad: row.querySelector(`[name="contratos[${idx}][modalidad]"]`)?.value?.trim() || '',
+                motivo_adenda: row.querySelector(`[name="contratos[${idx}][motivo_adenda]"]`)?.value?.trim() || '',
+                observacion: row.querySelector(`[name="contratos[${idx}][observacion]"]`)?.value?.trim() || ''
+            };
+        }
+
+        function contratoEstaVacio(item) {
+            return !item.id &&
+                !item.numero_documento &&
+                !item.fecha_documento &&
+                !item.fecha_ingreso &&
+                !item.fecha_cese &&
+                !item.modalidad &&
+                !item.motivo_adenda &&
+                !item.observacion;
+        }
 
 
         function abrirModal() {
@@ -4434,19 +4824,15 @@
             campos['hijos'] = hijos;
 
             const contratos = [];
-            document.querySelectorAll('.contrato-row').forEach(row => {
-                const idx = row.dataset.index;
-                const item = {
-                    id: row.querySelector(`[name="contratos[${idx}][id]"]`)?.value || '',
-                    fecha_ingreso: row.querySelector(`[name="contratos[${idx}][fecha_ingreso]"]`)?.value || '',
-                    fecha_cese: row.querySelector(`[name="contratos[${idx}][fecha_cese]"]`)?.value || '',
-                    modalidad: row.querySelector(`[name="contratos[${idx}][modalidad]"]`)?.value?.trim() || ''
-                };
 
-                if (item.id || item.fecha_ingreso || item.fecha_cese || item.modalidad) {
+            document.querySelectorAll('.contrato-row').forEach((row, index) => {
+                const item = leerContratoRow(row, index);
+
+                if (!contratoEstaVacio(item)) {
                     contratos.push(item);
                 }
             });
+
             campos['contratos'] = contratos;
 
             const formacion = [];
