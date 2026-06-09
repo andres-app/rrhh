@@ -397,33 +397,25 @@ if (
    Ahora validamos la ruta real.
 ============================================================ */
 
-// ── Permisos ──────────────────────────────────────────────────
+/* ============================================================
+   PERMISOS
+============================================================ */
+
 $user_role = strtolower(trim($_SESSION['user_role'] ?? ''));
 
-/*
- * IMPORTANTE:
- * Según tu tabla modulos, las rutas registradas son:
- *
- * rrhh
- * configuracion
- * perfil
- * documentos
- * misvalidaciones
- * contratos
- * usuarios
- *
- * Por eso:
- * /rrhh/dashboard    usa permiso rrhh
- * /rrhh/directorio   usa permiso rrhh
- * /rrhh/validaciones usa permiso rrhh
- * /rrhh/contratos    usa permiso contratos
- */
 $modulePermission = $module;
 
 if ($module === 'rrhh') {
     $sub = $parts[1] ?? 'dashboard';
 
-    if ($sub === 'contratos') {
+    /*
+     * Permisos por submódulo RRHH:
+     * - contratos usa permiso contratos
+     * - teletrabajo también usará permiso contratos
+     *   porque pertenece a gestión documental/laboral.
+     * - los demás usan permiso rrhh
+     */
+    if (in_array($sub, ['contratos', 'teletrabajo'], true)) {
         $modulePermission = 'contratos';
     } else {
         $modulePermission = 'rrhh';
@@ -441,6 +433,7 @@ if (!$permisos['can_view']) {
 }
 
 $_SESSION['current_module_can_edit'] = (bool)$permisos['can_edit'];
+
 
 /* ============================================================
    CARGA DE MÓDULOS
@@ -469,7 +462,8 @@ switch ($module) {
             'dashboard',
             'directorio',
             'validaciones',
-            'contratos'
+            'contratos',
+            'teletrabajo'
         ];
 
         if (!in_array($sub, $subPermitidos, true)) {
