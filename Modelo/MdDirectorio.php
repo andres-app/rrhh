@@ -672,7 +672,7 @@ RESUMEN DASHBOARD DINÁMICO
                     nsa_cip
                 FROM colab_laboral
                 WHERE colab_id = :id
-                ORDER BY fecha_ingreso DESC, id DESC
+                ORDER BY id DESC
                 LIMIT 1
             ");
                 $stmtActualLaboral->execute([':id' => $colabId]);
@@ -726,10 +726,11 @@ RESUMEN DASHBOARD DINÁMICO
                         tipo_puesto          = :tipo_puesto,
                         area                 = :area,
                         procedencia          = :procedencia,
-                        nsa_cip              = :nsa_cip
+                        nsa_cip              = :nsa_cip,
+                        actualizado_por      = :actualizado_por
                     WHERE id = :laboral_id
-                      AND colab_id = :colab_id
-                ");
+                    AND colab_id = :colab_id
+                     ");
 
                     $stmtLaboral->execute([
                         ':correo_institucional' => $correoInstitucional,
@@ -743,6 +744,7 @@ RESUMEN DASHBOARD DINÁMICO
                         ':nsa_cip'              => $nsaCip,
                         ':laboral_id'           => (int)$laboralActual['id'],
                         ':colab_id'             => $colabId,
+                        ':actualizado_por'      => (int)($_SESSION['user_id'] ?? 0),
                     ]);
                 } else {
                     $stmtLaboral = $pdo->prepare("

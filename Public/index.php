@@ -285,6 +285,608 @@ $_SESSION['can_edit'] = (int)($permiso['can_edit'] ?? 0);
 
 /*
 |--------------------------------------------------------------------------
+| RUTAS AJAX DE PERFIL
+|--------------------------------------------------------------------------
+*/
+
+/*
+|--------------------------------------------------------------------------
+| RUTAS AJAX DE PERFIL
+|--------------------------------------------------------------------------
+*/
+
+if ($module === 'perfil' && in_array($sub, ['actualizar', 'cambiar-clave'], true)) {
+    while (ob_get_level() > 0) {
+        ob_end_clean();
+    }
+
+    header('Content-Type: application/json; charset=utf-8');
+
+    if (!function_exists('jsonPerfilResponse')) {
+        function jsonPerfilResponse(array $data, int $status = 200): void
+        {
+            http_response_code($status);
+
+            echo json_encode(
+                $data,
+                JSON_UNESCAPED_UNICODE | JSON_UNESCAPED_SLASHES
+            );
+
+            exit;
+        }
+    }
+
+    if (!function_exists('perfilColumnasTabla')) {
+        function perfilColumnasTabla(PDO $pdo, string $tabla): array
+        {
+            static $cache = [];
+
+            if (isset($cache[$tabla])) {
+                return $cache[$tabla];
+            }
+
+            try {
+                $stmt = $pdo->query("SHOW COLUMNS FROM `{$tabla}`");
+                $cols = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+                $cache[$tabla] = array_map(
+                    fn($c) => (string)$c['Field'],
+                    $cols ?: []
+                );
+
+                return $cache[$tabla];
+            } catch (Throwable $e) {
+                $cache[$tabla] = [];
+                return [];
+            }
+        }
+    }
+
+    if (!function_exists('perfilTablaExiste')) {
+        function perfilTablaExiste(PDO $pdo, string $tabla): bool
+        {
+            try {
+                $stmt = $pdo->prepare("SHOW TABLES LIKE :tabla");
+                $stmt->bindValue(':tabla', $tabla, PDO::PARAM_STR);
+                $stmt->execute();
+
+                return (bool)$stmt->fetchColumn();
+            } catch (Throwable $e) {
+                return false;
+            }
+        }
+    }
+
+    if (!function_exists('perfilPrimeraTabla')) {
+        function perfilPrimeraTabla(PDO $pdo, array $tablas): ?string
+        {
+            foreach ($tablas as $tabla) {
+                if (perfilTablaExiste($pdo, $tabla)) {
+                    return $tabla;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    if (!function_exists('perfilFkColaborador')) {
+        function perfilFkColaborador(array $columnas): ?string
+        {
+            foreach (['colaborador_id', 'id_colaborador', 'colab_id'] as $fk) {
+                if (in_array($fk, $columnas, true)) {
+                    return $fk;
+                }
+            }
+
+            return null;
+        }
+    }
+
+    if (!function_exists('perfilNormalizarValor')) {
+        function perfilNormalizarValor(string $campo, $valor)
+        {
+            if (is_array($valor) || is_object($valor)) {
+                return null;
+            }
+
+            $valor = trim((string)($valor ?? ''));
+
+            if ($valor === '' && str_contains($campo, 'fecha')) {
+                return null;
+            }
+
+            return $valor;
+        }
+    }
+
+    if (!function_exists('perfilFiltrarData')) {
+        function perfilFiltrarData(array $data, array $columnas, array $mapa = []): array
+        {
+            $salida = [];
+
+            foreach ($data as $campo => $valor) {
+                if ($campo === 'id' || is_array($valor) || is_object($valor)) {
+                    continue;
+                }
+
+                $campoReal = $mapa[$campo] ?? $campo;
+
+                if (!in_array($campoReal, $columnas, true)) {
+                    continue;
+                }
+
+                $salida[$campoReal] = perfilNormalizarValor($campoReal, $valor);
+            }
+
+            return $salida;
+        }
+    }
+
+    if (!function_exists('perfilActualizarPorId')) {
+        function perfilActualizarPorId(PDO $pdo, string $tabla, int $id, array $data, array $mapa = []): void
+        {
+            if ($id <= 0 || empty($data)) {
+                return;
+            }
+
+            $columnas = perfilColumnasTabla($pdo, $tabla);
+            $dataOk = perfilFiltrarData($data, $columnas, $mapa);
+
+            if (empty($dataOk)) {
+                return;
+            }
+
+            if (in_array('updated_at', $columnas, true)) {
+                $dataOk['updated_at'] = date('Y-m-d H:i:s');
+            }
+
+            $sets = [];
+            $params = [':id' => $id];
+
+            foreach ($dataOk as $campo => $valor) {
+                $sets[] = "`{$campo}` = :{$campo}";
+                $params[":{$campo}"] = $valor;
+            }
+
+            $sql = "UPDATE `{$tabla}` SET " . implode(', ', $sets) . " WHERE id = :id";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->execute($params);
+        }
+    }
+
+    if (!function_exists('perfilInsertarFila')) {
+        function perfilInsertarFila(PDO $pdo, string $tabla, int $idColaborador, array $data, array $mapa = []): void
+        {
+            $columnas = perfilColumnasTabla($pdo, $tabla);
+            $fk = perfilFkColaborador($columnas);
+
+            if (!$fk) {
+                return;
+            }
+
+            $dataOk = perfilFiltrarData($data, $columnas, $mapa);
+            $dataOk[$fk] = $idColaborador;
+
+            if (in_array('created_at', $columnas, true)) {
+                $dataOk['created_at'] = date('Y-m-d H:i:s');
+            }
+
+            if (in_array('updated_at', $columnas, true)) {
+                $dataOk['updated_at'] = date('Y-m-d H:i:s');
+            }
+
+            if (empty($dataOk)) {
+                return;
+            }
+
+            $campos = array_keys($dataOk);
+            $placeholders = array_map(fn($c) => ':' . $c, $campos);
+
+            $sql = "
+                INSERT INTO `{$tabla}` (`" . implode('`, `', $campos) . "`)
+                VALUES (" . implode(', ', $placeholders) . ")
+            ";
+
+            $stmt = $pdo->prepare($sql);
+
+            foreach ($dataOk as $campo => $valor) {
+                $stmt->bindValue(':' . $campo, $valor);
+            }
+
+            $stmt->execute();
+        }
+    }
+
+    if (!function_exists('perfilActualizarOInsertarLista')) {
+        function perfilActualizarOInsertarLista(PDO $pdo, string $tabla, int $idColaborador, array $items, array $mapa = []): void
+        {
+            $columnas = perfilColumnasTabla($pdo, $tabla);
+            $fk = perfilFkColaborador($columnas);
+
+            if (!$fk) {
+                return;
+            }
+
+            $stmt = $pdo->prepare("SELECT id FROM `{$tabla}` WHERE `{$fk}` = :id_colaborador");
+            $stmt->bindValue(':id_colaborador', $idColaborador, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $idsExistentes = array_map('intval', $stmt->fetchAll(PDO::FETCH_COLUMN) ?: []);
+            $idsUsados = [];
+
+            foreach ($items as $item) {
+                if (!is_array($item)) {
+                    continue;
+                }
+
+                $idItem = (int)($item['id'] ?? 0);
+
+                if ($idItem > 0 && in_array($idItem, $idsExistentes, true)) {
+                    $idsUsados[] = $idItem;
+                    perfilActualizarPorId($pdo, $tabla, $idItem, $item, $mapa);
+                } else {
+                    perfilInsertarFila($pdo, $tabla, $idColaborador, $item, $mapa);
+                }
+            }
+
+            $idsEliminar = array_diff($idsExistentes, $idsUsados);
+
+            if (!empty($idsEliminar)) {
+                $placeholders = implode(',', array_fill(0, count($idsEliminar), '?'));
+
+                $sql = "DELETE FROM `{$tabla}` WHERE `{$fk}` = ? AND id IN ({$placeholders})";
+                $stmt = $pdo->prepare($sql);
+
+                $params = array_merge([$idColaborador], array_values($idsEliminar));
+                $stmt->execute($params);
+            }
+        }
+    }
+
+    if (!function_exists('perfilReemplazarLista')) {
+        function perfilReemplazarLista(PDO $pdo, string $tabla, int $idColaborador, array $items, array $mapa = []): void
+        {
+            $columnas = perfilColumnasTabla($pdo, $tabla);
+            $fk = perfilFkColaborador($columnas);
+
+            if (!$fk) {
+                return;
+            }
+
+            $stmt = $pdo->prepare("DELETE FROM `{$tabla}` WHERE `{$fk}` = :id_colaborador");
+            $stmt->bindValue(':id_colaborador', $idColaborador, PDO::PARAM_INT);
+            $stmt->execute();
+
+            foreach ($items as $item) {
+                if (is_array($item)) {
+                    perfilInsertarFila($pdo, $tabla, $idColaborador, $item, $mapa);
+                }
+            }
+        }
+    }
+
+    if (!function_exists('perfilUpsertUnico')) {
+        function perfilUpsertUnico(PDO $pdo, array $tablas, int $idColaborador, array $data): void
+        {
+            $tabla = perfilPrimeraTabla($pdo, $tablas);
+
+            if (!$tabla) {
+                return;
+            }
+
+            $columnas = perfilColumnasTabla($pdo, $tabla);
+            $fk = perfilFkColaborador($columnas);
+
+            if (!$fk) {
+                return;
+            }
+
+            $stmt = $pdo->prepare("SELECT id FROM `{$tabla}` WHERE `{$fk}` = :id_colaborador LIMIT 1");
+            $stmt->bindValue(':id_colaborador', $idColaborador, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $idRegistro = (int)($stmt->fetchColumn() ?: 0);
+
+            if ($idRegistro > 0) {
+                perfilActualizarPorId($pdo, $tabla, $idRegistro, $data);
+            } else {
+                perfilInsertarFila($pdo, $tabla, $idColaborador, $data);
+            }
+        }
+    }
+
+    if (!function_exists('perfilGuardarArchivoSustento')) {
+        function perfilGuardarArchivoSustento(array $file): ?string
+        {
+            if (empty($file['tmp_name']) || !is_uploaded_file($file['tmp_name'])) {
+                return null;
+            }
+
+            if (($file['size'] ?? 0) > 5 * 1024 * 1024) {
+                throw new RuntimeException('El sustento no debe superar los 5 MB.');
+            }
+
+            $nombreOriginal = (string)($file['name'] ?? '');
+            $ext = strtolower(pathinfo($nombreOriginal, PATHINFO_EXTENSION));
+
+            $permitidos = ['jpg', 'jpeg', 'png', 'pdf', 'webp'];
+
+            if (!in_array($ext, $permitidos, true)) {
+                throw new RuntimeException('Formato de sustento no permitido.');
+            }
+
+            $dirRelativo = 'Uploads/sustentos_perfil/';
+            $dirAbsoluto = ROOT_PATH . $dirRelativo;
+
+            if (!is_dir($dirAbsoluto)) {
+                mkdir($dirAbsoluto, 0775, true);
+            }
+
+            $nombreSeguro = 'sustento_' . date('Ymd_His') . '_' . bin2hex(random_bytes(4)) . '.' . $ext;
+            $destino = $dirAbsoluto . $nombreSeguro;
+
+            if (!move_uploaded_file($file['tmp_name'], $destino)) {
+                throw new RuntimeException('No se pudo guardar el archivo de sustento.');
+            }
+
+            return $dirRelativo . $nombreSeguro;
+        }
+    }
+
+    try {
+        if (!user_is_logged()) {
+            jsonPerfilResponse([
+                'success' => false,
+                'mensaje' => 'Sesión expirada. Vuelve a iniciar sesión.'
+            ], 401);
+        }
+
+        if (!class_exists('Conexion')) {
+            require_once ROOT_PATH . 'Modelo/Conexion.php';
+        }
+
+        $pdo = Conexion::conectar();
+
+        if (!$pdo instanceof PDO) {
+            jsonPerfilResponse([
+                'success' => false,
+                'mensaje' => 'No se pudo conectar a la base de datos.'
+            ], 500);
+        }
+
+        /*
+        |--------------------------------------------------------------------------
+        | /perfil/actualizar
+        |--------------------------------------------------------------------------
+        */
+        if ($sub === 'actualizar') {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'Método no permitido.'
+                ], 405);
+            }
+
+            $payloadRaw = $_POST['payload'] ?? '';
+
+            if ($payloadRaw === '') {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'No se recibió información para actualizar.'
+                ], 400);
+            }
+
+            $payload = json_decode($payloadRaw, true);
+
+            if (!is_array($payload)) {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'El formato de la información enviada no es válido.'
+                ], 400);
+            }
+
+            if (!class_exists('MdDirectorio')) {
+                require_once ROOT_PATH . 'Modelo/MdDirectorio.php';
+            }
+
+            if (!class_exists('CtrDirectorio')) {
+                require_once ROOT_PATH . 'Controlador/CtrDirectorio.php';
+            }
+
+            $rolAjax = strtolower(trim($_SESSION['user_role'] ?? ''));
+            $esAdminAjax = in_array($rolAjax, ['superadmin', 'admin', 'rrhh'], true);
+
+            if ($esAdminAjax) {
+                $idColaborador = (int)($payload['id_colaborador'] ?? $payload['id'] ?? 0);
+
+                if ($idColaborador <= 0) {
+                    jsonPerfilResponse([
+                        'success' => false,
+                        'mensaje' => 'No se pudo identificar al colaborador.'
+                    ], 400);
+                }
+
+                $payload['id'] = $idColaborador;
+                $payload['id_colaborador'] = $idColaborador;
+            }
+
+            $archivoSustento = $_FILES['archivo_sustento'] ?? null;
+
+            $controladorPerfil = new CtrDirectorio();
+            $respuesta = $controladorPerfil->ctrActualizarPerfil($payload, $archivoSustento);
+
+            if (!empty($respuesta['success'])) {
+                $idRedirect = (int)($payload['id'] ?? $payload['id_colaborador'] ?? 0);
+
+                if ($esAdminAjax && $idRedirect > 0) {
+                    $respuesta['redirect'] = BASE_URL . '/perfil/' . $idRedirect;
+                } else {
+                    $respuesta['redirect'] = BASE_URL . '/perfil';
+                }
+            }
+
+            jsonPerfilResponse($respuesta, !empty($respuesta['success']) ? 200 : 400);
+        }
+        /*
+        |--------------------------------------------------------------------------
+        | /perfil/cambiar-clave
+        |--------------------------------------------------------------------------
+        */
+        if ($sub === 'cambiar-clave') {
+            if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'Método no permitido.'
+                ], 405);
+            }
+
+            $input = json_decode(file_get_contents('php://input'), true);
+
+            if (!is_array($input)) {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'Solicitud inválida.'
+                ], 400);
+            }
+
+            $claveActual = trim((string)($input['clave_actual'] ?? ''));
+            $claveNueva = trim((string)($input['clave_nueva'] ?? ''));
+            $claveConfirmar = trim((string)($input['clave_confirmar'] ?? ''));
+
+            if ($claveActual === '' || $claveNueva === '' || $claveConfirmar === '') {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'Completa todos los campos.'
+                ], 400);
+            }
+
+            if ($claveNueva !== $claveConfirmar) {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'La confirmación no coincide.'
+                ], 400);
+            }
+
+            if (strlen($claveNueva) < 8) {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'La nueva clave debe tener mínimo 8 caracteres.'
+                ], 400);
+            }
+
+            if ($claveActual === $claveNueva) {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'La nueva clave debe ser diferente a la actual.'
+                ], 400);
+            }
+
+            $usuarioId = (int)($_SESSION['user_id'] ?? $_SESSION['usuario_id'] ?? 0);
+
+            if ($usuarioId <= 0) {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'Sesión inválida.'
+                ], 401);
+            }
+
+            $columnasUsuarios = perfilColumnasTabla($pdo, 'usuarios');
+
+            $campoClave = null;
+
+            foreach (['password', 'clave', 'contrasena', 'password_hash'] as $campoTmp) {
+                if (in_array($campoTmp, $columnasUsuarios, true)) {
+                    $campoClave = $campoTmp;
+                    break;
+                }
+            }
+
+            if (!$campoClave) {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'No se encontró el campo de clave en la tabla usuarios.'
+                ], 500);
+            }
+
+            $stmt = $pdo->prepare("SELECT * FROM usuarios WHERE id = :id LIMIT 1");
+            $stmt->bindValue(':id', $usuarioId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $usuario = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            if (!$usuario) {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'Usuario no encontrado.'
+                ], 404);
+            }
+
+            $hashActual = (string)($usuario[$campoClave] ?? '');
+
+            $claveOk = password_verify($claveActual, $hashActual) || hash_equals($hashActual, $claveActual);
+
+            if (!$claveOk) {
+                jsonPerfilResponse([
+                    'success' => false,
+                    'mensaje' => 'La clave actual no es correcta.'
+                ], 400);
+            }
+
+            $nuevoHash = password_hash($claveNueva, PASSWORD_DEFAULT);
+
+            $sets = ["`{$campoClave}` = :clave"];
+
+            if (in_array('cambiar_clave', $columnasUsuarios, true)) {
+                $sets[] = "`cambiar_clave` = 0";
+            }
+
+            if (in_array('updated_at', $columnasUsuarios, true)) {
+                $sets[] = "`updated_at` = :updated_at";
+            }
+
+            $sql = "UPDATE usuarios SET " . implode(', ', $sets) . " WHERE id = :id";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':clave', $nuevoHash);
+            $stmt->bindValue(':id', $usuarioId, PDO::PARAM_INT);
+
+            if (in_array('updated_at', $columnasUsuarios, true)) {
+                $stmt->bindValue(':updated_at', date('Y-m-d H:i:s'));
+            }
+
+            $stmt->execute();
+
+            $_SESSION['cambiar_clave'] = 0;
+
+            jsonPerfilResponse([
+                'success' => true,
+                'mensaje' => 'Clave actualizada correctamente.',
+                'redirect' => BASE_URL . '/perfil'
+            ]);
+        }
+
+        jsonPerfilResponse([
+            'success' => false,
+            'mensaje' => 'Ruta AJAX no reconocida.'
+        ], 404);
+    } catch (Throwable $e) {
+        if (isset($pdo) && $pdo instanceof PDO && $pdo->inTransaction()) {
+            $pdo->rollBack();
+        }
+
+        error_log('Error AJAX perfil: ' . $e->getMessage());
+
+        jsonPerfilResponse([
+            'success' => false,
+            'mensaje' => 'Error interno: ' . $e->getMessage()
+        ], 500);
+    }
+}
+
+/*
+|--------------------------------------------------------------------------
 | ROUTER
 |--------------------------------------------------------------------------
 */

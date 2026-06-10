@@ -2120,7 +2120,7 @@
 
                                     <div class="field-group">
                                         <label class="field-label">Sueldo</label>
-                                        <input type="number" name="sueldo" class="field-input"
+                                        <input type="number" step="0.01" min="0" name="sueldo" class="field-input" value="<?php echo htmlspecialchars($perfil['sueldo'] ?? ''); ?>">
                                             value="<?php echo htmlspecialchars($perfil['sueldo'] ?? ''); ?>">
                                     </div>
 
@@ -5121,9 +5121,12 @@
         }
 
         // ── GUARDAR VÍA AJAX ──────────────────────────────
+
         function guardarPerfil() {
             const btn = document.getElementById('btn-guardar');
             const rolSesion = "<?php echo $rolSesion; ?>";
+
+            if (!btn) return;
 
             if (rolSesion === 'colaborador') {
                 const sustentoInput = document.getElementById('archivo_sustento');
@@ -5156,6 +5159,9 @@
 
             const campos = {};
 
+            campos['id'] = <?php echo (int)($perfil['id'] ?? $data['id'] ?? 0); ?>;
+            campos['id_colaborador'] = <?php echo (int)($perfil['id'] ?? $data['id'] ?? 0); ?>;
+
             document.querySelectorAll('.form-step [name]').forEach(el => {
                 if (
                     !el.readOnly &&
@@ -5172,11 +5178,11 @@
                 }
             });
 
-            campos['id'] = <?php echo (int)($perfil['id'] ?? 0); ?>;
-
             const hijos = [];
+
             document.querySelectorAll('.hijo-row').forEach(row => {
                 const idx = row.dataset.index;
+
                 const item = {
                     id: row.querySelector(`[name="hijos[${idx}][id]"]`)?.value || '',
                     nombre: row.querySelector(`[name="hijos[${idx}][nombre]"]`)?.value?.trim() || '',
@@ -5185,18 +5191,21 @@
                     dni: row.querySelector(`[name="hijos[${idx}][dni]"]`)?.value?.trim() || ''
                 };
 
-                if (item.nombre || item.fecha_nacimiento || item.dni || item.id) {
+                if (item.id || item.nombre || item.fecha_nacimiento || item.dni) {
                     hijos.push(item);
                 }
             });
+
             campos['hijos'] = hijos;
 
             const contratos = [];
 
             document.querySelectorAll('.contrato-row').forEach((row, index) => {
-                const item = leerContratoRow(row, index);
+                const item = typeof leerContratoRow === 'function' ?
+                    leerContratoRow(row, index) :
+                    null;
 
-                if (!contratoEstaVacio(item)) {
+                if (item && (typeof contratoEstaVacio !== 'function' || !contratoEstaVacio(item))) {
                     contratos.push(item);
                 }
             });
@@ -5204,8 +5213,10 @@
             campos['contratos'] = contratos;
 
             const formacion = [];
+
             document.querySelectorAll('.formacion-row').forEach(row => {
                 const idx = row.dataset.index;
+
                 const item = {
                     id: row.querySelector(`[name="formacion[${idx}][id]"]`)?.value || '',
                     tipo_grado: row.querySelector(`[name="formacion[${idx}][tipo_grado]"]`)?.value || '',
@@ -5230,11 +5241,14 @@
                     formacion.push(item);
                 }
             });
+
             campos['formacion'] = formacion;
 
             const experiencia = [];
+
             document.querySelectorAll('.experiencia-row').forEach(row => {
                 const idx = row.dataset.index;
+
                 const item = {
                     id: row.querySelector(`[name="experiencia[${idx}][id]"]`)?.value || '',
                     empresa_entidad: row.querySelector(`[name="experiencia[${idx}][empresa_entidad]"]`)?.value?.trim() || '',
@@ -5259,22 +5273,14 @@
                     experiencia.push(item);
                 }
             });
+
             campos['experiencia'] = experiencia;
 
-            const pensionActualGuardar = obtenerPensionActual();
-            const bancarioActualGuardar = obtenerBancarioActual();
-
-            if (!sonIguales(valoresOriginales.pension || {}, pensionActualGuardar)) {
-                campos['pension'] = pensionActualGuardar;
-            }
-
-            if (!sonIguales(valoresOriginales.bancario || {}, bancarioActualGuardar)) {
-                campos['bancario'] = bancarioActualGuardar;
-            }
-
             const idiomas = [];
+
             document.querySelectorAll('.idioma-row').forEach(row => {
                 const idx = row.dataset.index;
+
                 const idioma = row.querySelector(`[name="idiomas[${idx}][idioma]"]`)?.value?.trim() || '';
                 const nivel = row.querySelector(`[name="idiomas[${idx}][nivel]"]`)?.value || 'BASICO';
 
@@ -5285,12 +5291,22 @@
                     });
                 }
             });
+
             campos['idiomas'] = idiomas;
+
+            if (typeof obtenerPensionActual === 'function') {
+                campos['pension'] = obtenerPensionActual();
+            }
+
+            if (typeof obtenerBancarioActual === 'function') {
+                campos['bancario'] = obtenerBancarioActual();
+            }
 
             const formData = new FormData();
             formData.append('payload', JSON.stringify(campos));
 
             const sustentoInput = document.getElementById('archivo_sustento');
+
             if (sustentoInput && sustentoInput.files && sustentoInput.files[0]) {
                 formData.append('archivo_sustento', sustentoInput.files[0]);
             }
@@ -5302,27 +5318,49 @@
                     },
                     body: formData
                 })
-                .then(r => r.text())
-                .then(raw => {
-                    const res = JSON.parse(raw.trim());
+                .then(async response => {
+                    const raw = await response.text();
 
-                    if (res.success) {
-                        cerrarModal(false);
-                        mostrarToast('✓', res.mensaje || 'Operación realizada correctamente', 'bg-green-700');
-                        setTimeout(() => location.reload(), 900);
-                    } else {
-                        mostrarToast('✗', res.mensaje || 'Error al guardar', 'bg-red-800');
+                    let res;
+
+                    try {
+                        res = JSON.parse(raw.trim());
+                    } catch (e) {
+                        console.error('Respuesta no JSON del servidor:', raw);
+                        throw new Error(raw || 'La respuesta del servidor no fue válida.');
                     }
+
+                    if (!response.ok || !res.success) {
+                        throw new Error(res.mensaje || 'No se pudo guardar la información.');
+                    }
+
+                    return res;
+                })
+                .then(res => {
+                    cerrarModal(false);
+                    mostrarToast('✓', res.mensaje || 'Perfil actualizado correctamente.', 'bg-green-700');
+
+                    setTimeout(() => {
+                        window.location.href = res.redirect || window.location.href;
+                    }, 900);
                 })
                 .catch(err => {
                     console.error(err);
-                    mostrarToast('✗', 'La respuesta del servidor no fue válida', 'bg-red-800');
+
+                    mostrarToast(
+                        '✗',
+                        err.message && err.message.length < 180 ?
+                        err.message :
+                        'No se pudo guardar. Revisa el log del servidor.',
+                        'bg-red-800'
+                    );
                 })
                 .finally(() => {
                     btn.textContent = '✓ Guardar Cambios';
                     btn.disabled = false;
                 });
         }
+
 
         document.addEventListener('DOMContentLoaded', () => {
 
