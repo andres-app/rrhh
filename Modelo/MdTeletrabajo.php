@@ -362,16 +362,16 @@ class MdTeletrabajo
         }
     }
 
-public static function mdlListarHistorialPorAcuerdo(int $acuerdoId): array
-{
-    try {
-        if ($acuerdoId <= 0) {
-            return [];
-        }
+    public static function mdlListarHistorialPorAcuerdo(int $acuerdoId): array
+    {
+        try {
+            if ($acuerdoId <= 0) {
+                return [];
+            }
 
-        $pdo = self::conectar();
+            $pdo = self::conectar();
 
-        $sql = "
+            $sql = "
             SELECT
                 tr.id,
                 tr.colab_id,
@@ -414,18 +414,16 @@ public static function mdlListarHistorialPorAcuerdo(int $acuerdoId): array
                 tr.id ASC
         ";
 
-        $stmt = $pdo->prepare($sql);
-        $stmt->bindValue(':acuerdo_id', $acuerdoId, PDO::PARAM_INT);
-        $stmt->execute();
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':acuerdo_id', $acuerdoId, PDO::PARAM_INT);
+            $stmt->execute();
 
-        return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
-
-    } catch (Throwable $e) {
-        self::setError($e);
-        return [];
+            return $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
+        } catch (Throwable $e) {
+            self::setError($e);
+            return [];
+        }
     }
-}
-
     private static function bindNullableString(PDOStatement $stmt, string $param, $valor): void
     {
         if ($valor === null || trim((string)$valor) === '') {

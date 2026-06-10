@@ -179,6 +179,69 @@ foreach ($trabajosRemotos as &$tr) {
 
 unset($tr);
 
+/*
+ * Historial por acuerdo:
+ * Arma el acuerdo principal y todas sus adendas para el modal de detalle.
+ */
+$historialRemotoJs = [];
+$acuerdosConsultados = [];
+
+foreach ($trabajosRemotos as $rowHistorial) {
+    $acuerdoIdHistorial = (int)(
+        $rowHistorial['acuerdo_id']
+        ?? $rowHistorial['documento_padre_id']
+        ?? $rowHistorial['id']
+        ?? 0
+    );
+
+    if ($acuerdoIdHistorial <= 0 || isset($acuerdosConsultados[$acuerdoIdHistorial])) {
+        continue;
+    }
+
+    $acuerdosConsultados[$acuerdoIdHistorial] = true;
+
+    $historial = [];
+
+    if ($controladorRemoto && method_exists($controladorRemoto, 'ctrHistorialTeletrabajo')) {
+        $historial = $controladorRemoto->ctrHistorialTeletrabajo($acuerdoIdHistorial);
+    } elseif (class_exists('MdTeletrabajo') && method_exists('MdTeletrabajo', 'mdlListarHistorialPorAcuerdo')) {
+        $historial = MdTeletrabajo::mdlListarHistorialPorAcuerdo($acuerdoIdHistorial);
+    }
+
+    $historialRemotoJs[$acuerdoIdHistorial] = [];
+
+    foreach ($historial as $h) {
+        $colabIdH = (int)($h['colab_id'] ?? 0);
+        $colaboradorH = $mapaColaboradores[$colabIdH] ?? [];
+
+        $estadoH = rrhh_estado_remoto(
+            $h['fecha_inicio'] ?? null,
+            $h['fecha_fin'] ?? null,
+            $h['estado'] ?? null
+        );
+
+        $historialRemotoJs[$acuerdoIdHistorial][] = [
+            'id' => (int)($h['id'] ?? 0),
+            'acuerdo_id' => (int)($h['acuerdo_id'] ?? $acuerdoIdHistorial),
+            'documento_padre_id' => $h['documento_padre_id'] ?? null,
+            'tipo_registro' => strtoupper(trim((string)($h['tipo_registro'] ?? 'ACUERDO'))),
+            'numero_documento' => (string)($h['numero_documento'] ?? ''),
+            'fecha_documento' => $h['fecha_documento'] ?? null,
+            'fecha_inicio' => $h['fecha_inicio'] ?? null,
+            'fecha_fin' => $h['fecha_fin'] ?? null,
+            'motivo' => (string)($h['motivo'] ?? ''),
+            'observacion' => (string)($h['observacion'] ?? ''),
+            'estado' => $estadoH['estado'],
+            'estado_texto' => $estadoH['texto'],
+            'dias' => $estadoH['dias'],
+            'nombre' => (string)($colaboradorH['nombres_apellidos'] ?? ''),
+            'dni' => (string)($colaboradorH['dni'] ?? ''),
+            'area' => (string)($colaboradorH['area'] ?? ''),
+            'puesto' => (string)($colaboradorH['puesto_cas'] ?? ''),
+        ];
+    }
+}
+
 $areasFiltro = [];
 $totalVigentes = 0;
 $totalPorVencer = 0;
@@ -249,7 +312,7 @@ require_once ROOT_PATH . 'Vista/includes/sidebar.php';
 
                     <div>
                         <h1 class="text-2xl md:text-3xl font-black text-slate-900 tracking-tight">
-                            Trabajo remoto temporal
+                            Teletrabajo temporal
                         </h1>
                         <p class="text-xs md:text-sm text-slate-500 font-medium mt-0.5">
                             Control de acuerdos, adendas, vigencia y alertas de vencimiento.
@@ -353,7 +416,7 @@ require_once ROOT_PATH . 'Vista/includes/sidebar.php';
                 <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
                     <div class="min-w-[220px]">
                         <h2 class="text-sm font-black text-slate-800 uppercase tracking-wide">
-                            Personal con trabajo remoto temporal
+                            Personal con teletrabajo temporal
                         </h2>
                         <p class="text-xs text-slate-400 font-semibold mt-1">
                             <span id="rangeInfo" class="font-black text-red-900">0</span>
@@ -545,7 +608,15 @@ require_once ROOT_PATH . 'Vista/includes/sidebar.php';
 
                                     <div class="text-[11px] text-slate-400 font-bold mt-1">
                                         <?php if ($estadoInfo['dias'] !== null): ?>
-                                            <?= $estadoInfo['dias'] < 0 ? 'Venció hace ' . abs($estadoInfo['dias']) . ' día(s)' : 'Faltan ' . $estadoInfo['dias'] . ' día(s)' ?>
+                                            <?php
+                                            if ($estadoInfo['estado'] === 'POR_INICIAR') {
+                                                echo 'Inicia en ' . abs((int)$estadoInfo['dias']) . ' día(s)';
+                                            } elseif ($estadoInfo['dias'] < 0) {
+                                                echo 'Venció hace ' . abs((int)$estadoInfo['dias']) . ' día(s)';
+                                            } else {
+                                                echo 'Faltan ' . abs((int)$estadoInfo['dias']) . ' día(s)';
+                                            }
+                                            ?>
                                         <?php else: ?>
                                             Sin conteo
                                         <?php endif; ?>
@@ -916,56 +987,152 @@ require_once ROOT_PATH . 'Vista/includes/sidebar.php';
     </div>
 
     <div id="modalDetalle" class="fixed inset-0 z-[9999] hidden">
-        <div class="absolute inset-0 bg-slate-950/40 backdrop-blur-[2px]" onclick="cerrarModalDetalle()"></div>
+        <div class="absolute inset-0 bg-slate-950/50 backdrop-blur-[3px]" onclick="cerrarModalDetalle()"></div>
 
-        <div class="absolute inset-x-4 top-8 md:top-16 md:mx-auto md:max-w-3xl bg-white rounded-[2rem] shadow-2xl border border-slate-200 overflow-hidden">
-            <div class="px-6 py-5 border-b border-slate-100 flex items-start justify-between gap-4">
-                <div>
-                    <p class="text-xs font-black tracking-[0.2em] text-red-900 uppercase">Detalle</p>
-                    <h3 id="detalleTitulo" class="text-xl font-black text-slate-900 mt-1">Trabajo remoto temporal</h3>
-                    <p id="detalleSubtitulo" class="text-sm text-slate-500 mt-1">Información del documento</p>
+        <section class="absolute inset-x-3 top-3 bottom-3 md:inset-x-8 md:top-6 md:bottom-6 xl:inset-x-20 bg-white rounded-[2rem] shadow-2xl border border-slate-200 overflow-hidden flex flex-col">
+
+            <header class="px-5 md:px-7 py-5 border-b border-slate-100 bg-white flex items-start justify-between gap-4 shrink-0">
+                <div class="flex items-start gap-3 min-w-0">
+                    <div class="w-12 h-12 rounded-2xl bg-red-900 text-white flex items-center justify-center shadow-lg shadow-red-900/20 shrink-0">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+
+                    <div class="min-w-0">
+                        <p class="text-[10px] font-black tracking-[0.22em] text-red-900 uppercase">
+                            Expediente de teletrabajo
+                        </p>
+                        <h3 id="detalleTitulo" class="text-xl md:text-2xl font-black text-slate-900 mt-1 truncate">
+                            Trabajo remoto temporal
+                        </h3>
+                        <p id="detalleSubtitulo" class="text-sm text-slate-500 font-semibold mt-1 truncate">
+                            Información del documento
+                        </p>
+                    </div>
                 </div>
 
-                <button type="button" onclick="cerrarModalDetalle()"
-                    class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-red-900">
-                    ✕
-                </button>
+                <div class="flex items-center gap-2 shrink-0">
+                    <?php if ($puedeGestionar): ?>
+                        <button type="button" id="btnAdendaDesdeDetalle"
+                            class="hidden md:inline-flex items-center gap-2 px-4 py-2.5 rounded-2xl bg-red-900 text-white text-xs font-black shadow-lg shadow-red-900/20 hover:bg-red-800 transition">
+                            <span class="text-base leading-none">+</span>
+                            Nueva adenda
+                        </button>
+                    <?php endif; ?>
+
+                    <button type="button" onclick="cerrarModalDetalle()"
+                        class="w-10 h-10 rounded-2xl bg-slate-50 border border-slate-200 text-slate-500 hover:text-red-900 hover:bg-red-50 transition">
+                        ✕
+                    </button>
+                </div>
+            </header>
+
+            <div class="flex-1 min-h-0 bg-gradient-to-br from-slate-50 via-white to-red-50/20 overflow-hidden">
+                <div class="h-full grid grid-cols-1 lg:grid-cols-[360px_minmax(0,1fr)]">
+
+                    <!-- RESUMEN DOCUMENTO ACTUAL -->
+                    <aside class="border-b lg:border-b-0 lg:border-r border-slate-200 bg-white/85 backdrop-blur-sm overflow-y-auto">
+                        <div class="p-5 md:p-6 space-y-4">
+
+                            <div class="rounded-[1.5rem] border border-red-100 bg-red-50/70 p-5">
+                                <div class="flex items-center justify-between gap-3">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.22em] text-red-900">
+                                        Documento mostrado
+                                    </p>
+                                    <span id="detalleDocumentoBadge"
+                                        class="px-2.5 py-1 rounded-xl bg-white border border-red-100 text-[10px] font-black text-red-900 uppercase">
+                                        Actual
+                                    </span>
+                                </div>
+
+                                <h4 id="detalleDocumento" class="text-base font-black text-slate-900 mt-3 leading-snug">
+                                    -
+                                </h4>
+
+                                <p id="detalleEstado" class="mt-3 inline-flex px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase">
+                                    -
+                                </p>
+                            </div>
+
+                            <div class="grid grid-cols-1 gap-3">
+                                <div class="rounded-2xl bg-white border border-slate-200 p-4">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Vigencia actual</p>
+                                    <p id="detalleVigencia" class="text-sm font-black text-slate-800 mt-1">-</p>
+                                </div>
+
+                                <div class="rounded-2xl bg-white border border-slate-200 p-4">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Área / Puesto</p>
+                                    <p id="detalleArea" class="text-sm font-black text-slate-800 mt-1">-</p>
+                                </div>
+
+                                <div class="rounded-2xl bg-white border border-slate-200 p-4">
+                                    <p class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Observación</p>
+                                    <p id="detalleObservacion" class="text-sm font-semibold text-slate-600 mt-1 leading-relaxed">-</p>
+                                </div>
+                            </div>
+                        </div>
+                    </aside>
+
+                    <!-- HISTORIAL ESCALABLE -->
+                    <section class="min-h-0 flex flex-col">
+                        <div class="px-5 md:px-6 py-4 border-b border-slate-200 bg-white/90 backdrop-blur-xl shrink-0">
+                            <div class="flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4">
+                                <div>
+                                    <div class="flex flex-wrap items-center gap-2">
+                                        <h4 class="text-base font-black text-slate-900">
+                                            Historial del acuerdo
+                                        </h4>
+
+                                        <span id="historialTotal"
+                                            class="px-3 py-1 rounded-xl bg-slate-50 border border-slate-200 text-[10px] font-black text-slate-500 uppercase">
+                                            0 registros
+                                        </span>
+                                    </div>
+
+                                    <p id="historialResumen" class="text-xs text-slate-400 font-semibold mt-1">
+                                        Acuerdo principal y adendas ordenadas cronológicamente.
+                                    </p>
+                                </div>
+
+                                <div class="flex flex-col md:flex-row gap-2 w-full xl:w-auto">
+                                    <div class="relative w-full xl:w-[320px]">
+                                        <span class="absolute inset-y-0 left-0 pl-3 flex items-center text-slate-400">
+                                            <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                    d="M21 21l-4.35-4.35m1.85-5.15a7 7 0 11-14 0 7 7 0 0114 0z" />
+                                            </svg>
+                                        </span>
+
+                                        <input type="text" id="historialSearchInput"
+                                            class="w-full pl-9 pr-3 py-2.5 rounded-2xl border border-slate-200 bg-slate-50 text-xs font-bold text-slate-700 outline-none focus:bg-white focus:border-red-900 focus:ring-4 focus:ring-red-900/10"
+                                            placeholder="Buscar documento, motivo u observación...">
+                                    </div>
+
+                                    <select id="historialFilterTipo"
+                                        class="w-full md:w-[170px] rounded-2xl border border-slate-200 bg-slate-50 px-4 py-2.5 text-xs font-black text-slate-700 outline-none focus:bg-white focus:border-red-900 focus:ring-4 focus:ring-red-900/10">
+                                        <option value="">Todos</option>
+                                        <option value="ACUERDO">Acuerdo</option>
+                                        <option value="ADENDA">Adendas</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <div id="historialDocumentos" class="flex-1 min-h-0 overflow-y-auto p-5 md:p-6 space-y-3">
+                            <!-- Se pinta desde JS -->
+                        </div>
+                    </section>
+                </div>
             </div>
-
-            <div class="p-6 bg-gradient-to-br from-slate-50 via-white to-red-50/20">
-                <dl class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="rounded-2xl bg-white border border-slate-200 p-4">
-                        <dt class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Documento</dt>
-                        <dd id="detalleDocumento" class="text-sm font-black text-slate-800 mt-1"></dd>
-                    </div>
-
-                    <div class="rounded-2xl bg-white border border-slate-200 p-4">
-                        <dt class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Vigencia</dt>
-                        <dd id="detalleVigencia" class="text-sm font-black text-slate-800 mt-1"></dd>
-                    </div>
-
-                    <div class="rounded-2xl bg-white border border-slate-200 p-4">
-                        <dt class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Área / Puesto</dt>
-                        <dd id="detalleArea" class="text-sm font-black text-slate-800 mt-1"></dd>
-                    </div>
-
-                    <div class="rounded-2xl bg-white border border-slate-200 p-4">
-                        <dt class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Estado</dt>
-                        <dd id="detalleEstado" class="text-sm font-black text-slate-800 mt-1"></dd>
-                    </div>
-
-                    <div class="md:col-span-2 rounded-2xl bg-white border border-slate-200 p-4">
-                        <dt class="text-[10px] font-black uppercase tracking-[0.2em] text-slate-400">Observación</dt>
-                        <dd id="detalleObservacion" class="text-sm font-semibold text-slate-600 mt-1"></dd>
-                    </div>
-                </dl>
-            </div>
-        </div>
+        </section>
     </div>
 </main>
 
 <script>
     const COLABORADORES_REMOTO = <?= json_encode($colaboradoresJs, JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
+    const HISTORIAL_REMOTO = <?= json_encode($historialRemotoJs ?? [], JSON_UNESCAPED_UNICODE | JSON_HEX_APOS | JSON_HEX_QUOT) ?>;
 
     document.addEventListener('DOMContentLoaded', function() {
         iniciarTablaRemoto();
@@ -1277,19 +1444,350 @@ require_once ROOT_PATH . 'Vista/includes/sidebar.php';
         }, 300);
     }
 
+    let HISTORIAL_MODAL_REMOTO = [];
+    let DOCUMENTO_ACTUAL_MODAL_REMOTO_ID = 0;
+    let DETALLE_ACTUAL_REMOTO = null;
+
     function abrirModalDetalle(data) {
         const modal = document.getElementById('modalDetalle');
         if (!modal) return;
 
+        DETALLE_ACTUAL_REMOTO = data || {};
+
         document.getElementById('detalleTitulo').textContent = data.nombre || 'Trabajo remoto temporal';
         document.getElementById('detalleSubtitulo').textContent = `DNI: ${data.dni || 'No registrado'} · ${data.situacion || 'ACTIVO'}`;
-        document.getElementById('detalleDocumento').textContent = `${data.tipo_registro || 'DOCUMENTO'} · ${data.numero_documento || 'Sin número'} · ${formatearFecha(data.fecha_documento)}`;
-        document.getElementById('detalleVigencia').textContent = `${formatearFecha(data.fecha_inicio)} - ${formatearFecha(data.fecha_fin)}`;
-        document.getElementById('detalleArea').textContent = `${data.area || 'Sin área'} · ${data.puesto || 'Sin puesto'}`;
-        document.getElementById('detalleEstado').textContent = `${data.estado || 'Sin estado'}${data.dias !== null && data.dias !== undefined ? ' · ' + data.dias + ' día(s)' : ''}`;
-        document.getElementById('detalleObservacion').textContent = data.observacion || data.motivo || 'Sin observación registrada.';
+
+        document.getElementById('detalleDocumento').textContent =
+            `${data.tipo_registro || 'DOCUMENTO'} · ${data.numero_documento || 'Sin número'} · ${formatearFecha(data.fecha_documento)}`;
+
+        document.getElementById('detalleVigencia').textContent =
+            `${formatearFecha(data.fecha_inicio)} - ${formatearFecha(data.fecha_fin)}`;
+
+        document.getElementById('detalleArea').textContent =
+            `${data.area || 'Sin área'} · ${data.puesto || 'Sin puesto'}`;
+
+        document.getElementById('detalleObservacion').textContent =
+            data.observacion || data.motivo || 'Sin observación registrada.';
+
+        const estadoEl = document.getElementById('detalleEstado');
+        if (estadoEl) {
+            estadoEl.className = `mt-3 inline-flex px-3 py-1.5 rounded-xl border text-[10px] font-black uppercase ${obtenerClaseEstadoHistorial(data.estado)}`;
+            estadoEl.textContent = `${textoEstadoHistorial(data.estado)}${data.dias !== null && data.dias !== undefined ? ' · ' + Math.abs(parseInt(data.dias || 0, 10)) + ' día(s)' : ''}`;
+        }
+
+        const badge = document.getElementById('detalleDocumentoBadge');
+        if (badge) {
+            badge.textContent = data.tipo_registro === 'ADENDA' ? 'Adenda vigente' : 'Acuerdo vigente';
+        }
+
+        const btnAdenda = document.getElementById('btnAdendaDesdeDetalle');
+        if (btnAdenda) {
+            btnAdenda.onclick = function() {
+                abrirDrawerAdenda(DETALLE_ACTUAL_REMOTO);
+            };
+        }
+
+        const search = document.getElementById('historialSearchInput');
+        const tipo = document.getElementById('historialFilterTipo');
+
+        if (search) search.value = '';
+        if (tipo) tipo.value = '';
+
+        renderHistorialRemoto(data.acuerdo_id || data.documento_id || 0, data.documento_id || 0);
 
         modal.classList.remove('hidden');
+    }
+
+    function renderHistorialRemoto(acuerdoId, documentoActualId) {
+        const historial = HISTORIAL_REMOTO[String(acuerdoId)] || HISTORIAL_REMOTO[acuerdoId] || [];
+
+        HISTORIAL_MODAL_REMOTO = Array.isArray(historial) ? historial : [];
+        DOCUMENTO_ACTUAL_MODAL_REMOTO_ID = parseInt(documentoActualId || 0, 10);
+
+        actualizarResumenHistorial(HISTORIAL_MODAL_REMOTO, DOCUMENTO_ACTUAL_MODAL_REMOTO_ID);
+        conectarFiltrosHistorial();
+        pintarHistorialFiltrado();
+    }
+
+    function conectarFiltrosHistorial() {
+        const search = document.getElementById('historialSearchInput');
+        const tipo = document.getElementById('historialFilterTipo');
+
+        if (search) {
+            search.oninput = pintarHistorialFiltrado;
+        }
+
+        if (tipo) {
+            tipo.onchange = pintarHistorialFiltrado;
+        }
+    }
+
+    function pintarHistorialFiltrado() {
+        const contenedor = document.getElementById('historialDocumentos');
+        if (!contenedor) return;
+
+        const search = document.getElementById('historialSearchInput');
+        const tipo = document.getElementById('historialFilterTipo');
+
+        const q = normalizarRemoto(search?.value || '');
+        const tipoFiltro = (tipo?.value || '').toUpperCase();
+
+        const filtrado = HISTORIAL_MODAL_REMOTO.filter(item => {
+            const tipoItem = (item.tipo_registro || '').toUpperCase();
+
+            const texto = normalizarRemoto([
+                item.tipo_registro,
+                item.numero_documento,
+                item.fecha_documento,
+                item.fecha_inicio,
+                item.fecha_fin,
+                item.motivo,
+                item.observacion,
+                item.estado_texto,
+                item.estado
+            ].join(' '));
+
+            const coincideTexto = !q || texto.includes(q);
+            const coincideTipo = !tipoFiltro || tipoItem === tipoFiltro;
+
+            return coincideTexto && coincideTipo;
+        });
+
+        contenedor.innerHTML = '';
+
+        if (!HISTORIAL_MODAL_REMOTO.length) {
+            contenedor.innerHTML = `
+            <div class="h-full min-h-[320px] flex items-center justify-center">
+                <div class="text-center max-w-sm">
+                    <div class="mx-auto w-16 h-16 rounded-3xl bg-slate-50 border border-slate-200 flex items-center justify-center text-slate-400 mb-4">
+                        <svg class="w-8 h-8" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414A1 1 0 0119 9.414V19a2 2 0 01-2 2z" />
+                        </svg>
+                    </div>
+                    <h4 class="text-base font-black text-slate-800">Sin historial registrado</h4>
+                    <p class="text-sm text-slate-400 font-semibold mt-1">Este acuerdo todavía no tiene documentos asociados.</p>
+                </div>
+            </div>
+        `;
+            return;
+        }
+
+        if (!filtrado.length) {
+            contenedor.innerHTML = `
+            <div class="rounded-2xl border border-slate-200 bg-slate-50 px-4 py-6 text-center">
+                <p class="text-sm font-black text-slate-700">No hay coincidencias</p>
+                <p class="text-xs font-semibold text-slate-400 mt-1">Prueba limpiando la búsqueda o el filtro.</p>
+            </div>
+        `;
+            return;
+        }
+
+        filtrado.forEach((item, index) => {
+            contenedor.appendChild(crearCardHistorial(item, index, filtrado.length));
+        });
+    }
+
+    function crearCardHistorial(item, index, totalFiltrado) {
+        const esActual = parseInt(item.id || 0, 10) === DOCUMENTO_ACTUAL_MODAL_REMOTO_ID;
+        const esAcuerdo = (item.tipo_registro || '').toUpperCase() === 'ACUERDO';
+
+        const claseEstado = obtenerClaseEstadoHistorial(item.estado);
+        const claseTipo = esAcuerdo ?
+            'bg-red-900 text-white border-red-900' :
+            'bg-slate-100 text-slate-700 border-slate-200';
+
+        const textoDias = obtenerTextoDiasHistorial(item);
+
+        const card = document.createElement('article');
+
+        card.className = `
+        relative rounded-[1.35rem] border px-4 py-4 transition-all
+        ${esActual ? 'border-red-200 bg-red-50/60 shadow-sm' : 'border-slate-200 bg-white hover:bg-slate-50'}
+    `;
+
+        card.innerHTML = `
+        <div class="flex gap-4">
+            <div class="flex flex-col items-center shrink-0">
+                <div class="w-10 h-10 rounded-2xl ${esAcuerdo ? 'bg-red-900 text-white' : 'bg-slate-100 text-slate-600'} flex items-center justify-center text-xs font-black border ${esAcuerdo ? 'border-red-900' : 'border-slate-200'}">
+                    ${esAcuerdo ? 'A' : index}
+                </div>
+
+                ${index < totalFiltrado - 1 ? '<div class="w-px flex-1 min-h-[44px] bg-slate-200 mt-2"></div>' : ''}
+            </div>
+
+            <div class="flex-1 min-w-0">
+                <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-3">
+                    <div class="min-w-0">
+                        <div class="flex flex-wrap items-center gap-2">
+                            <span class="px-2.5 py-1 rounded-xl border text-[10px] font-black uppercase ${claseTipo}">
+                                ${escapeHtml(item.tipo_registro || 'DOCUMENTO')}
+                            </span>
+
+                            ${esActual ? `
+                                <span class="px-2.5 py-1 rounded-xl border border-red-100 bg-red-100 text-red-800 text-[10px] font-black uppercase">
+                                    Documento mostrado
+                                </span>
+                            ` : ''}
+
+                            <span class="px-2.5 py-1 rounded-xl border text-[10px] font-black uppercase ${claseEstado}">
+                                ${escapeHtml(item.estado_texto || textoEstadoHistorial(item.estado))}
+                            </span>
+                        </div>
+
+                        <h4 class="mt-2 text-sm md:text-base font-black text-slate-900 leading-snug">
+                            ${escapeHtml(item.numero_documento || 'Sin número')}
+                        </h4>
+
+                        <p class="mt-1 text-xs font-semibold text-slate-400">
+                            ${escapeHtml(item.motivo || 'Trabajo remoto temporal')}
+                        </p>
+                    </div>
+
+                    <div class="xl:text-right shrink-0">
+                        <p class="text-[10px] font-black uppercase tracking-[0.18em] text-slate-400">
+                            Vigencia
+                        </p>
+                        <p class="text-xs font-black text-slate-800 mt-1">
+                            ${formatearFecha(item.fecha_inicio)} - ${formatearFecha(item.fecha_fin)}
+                        </p>
+                        <p class="text-[11px] font-bold text-slate-400 mt-1">
+                            ${escapeHtml(textoDias)}
+                        </p>
+                    </div>
+                </div>
+
+                <div class="mt-4 grid grid-cols-1 md:grid-cols-3 gap-2">
+                    <div class="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
+                        <p class="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">Fecha doc.</p>
+                        <p class="text-xs font-black text-slate-700 mt-0.5">${formatearFecha(item.fecha_documento)}</p>
+                    </div>
+
+                    <div class="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
+                        <p class="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">Inicio</p>
+                        <p class="text-xs font-black text-slate-700 mt-0.5">${formatearFecha(item.fecha_inicio)}</p>
+                    </div>
+
+                    <div class="rounded-xl bg-slate-50 border border-slate-100 px-3 py-2">
+                        <p class="text-[9px] font-black uppercase tracking-[0.16em] text-slate-400">Fin</p>
+                        <p class="text-xs font-black text-slate-700 mt-0.5">${formatearFecha(item.fecha_fin)}</p>
+                    </div>
+                </div>
+
+                ${item.observacion ? `
+                    <details class="mt-3 group">
+                        <summary class="cursor-pointer select-none text-xs font-black text-red-900 hover:text-red-700">
+                            Ver observación
+                        </summary>
+                        <div class="mt-2 rounded-xl bg-white border border-slate-200 px-3 py-2 text-xs font-semibold text-slate-500 leading-relaxed">
+                            ${escapeHtml(item.observacion)}
+                        </div>
+                    </details>
+                ` : ''}
+            </div>
+        </div>
+    `;
+
+        return card;
+    }
+
+    function actualizarResumenHistorial(historial, documentoActualId) {
+        const total = historial.length;
+        const adendas = historial.filter(item => (item.tipo_registro || '').toUpperCase() === 'ADENDA').length;
+        const actual = historial.find(item => parseInt(item.id || 0, 10) === parseInt(documentoActualId || 0, 10));
+
+        const totalEl = document.getElementById('historialTotal');
+        const resumenEl = document.getElementById('historialResumen');
+        const totalMini = document.getElementById('historialTotalMini');
+        const adendasMini = document.getElementById('historialAdendasMini');
+        const actualMini = document.getElementById('historialActualMini');
+        const coberturaEl = document.getElementById('historialCobertura');
+
+        if (totalEl) {
+            totalEl.textContent = `${total} registro${total === 1 ? '' : 's'}`;
+        }
+
+        if (resumenEl) {
+            resumenEl.textContent = total > 0 ?
+                `1 acuerdo principal y ${adendas} adenda${adendas === 1 ? '' : 's'} registrada${adendas === 1 ? '' : 's'}.` :
+                'Acuerdo principal y adendas ordenadas cronológicamente.';
+        }
+
+        if (totalMini) totalMini.textContent = total;
+        if (adendasMini) adendasMini.textContent = adendas;
+        if (actualMini) actualMini.textContent = actual ? (actual.tipo_registro === 'ADENDA' ? 'AD' : 'AC') : '-';
+
+        if (coberturaEl) {
+            const fechasInicio = historial.map(i => i.fecha_inicio).filter(Boolean).sort();
+            const fechasFin = historial.map(i => i.fecha_fin).filter(Boolean).sort();
+
+            const inicio = fechasInicio.length ? fechasInicio[0] : null;
+            const fin = fechasFin.length ? fechasFin[fechasFin.length - 1] : null;
+
+            coberturaEl.textContent = inicio && fin ?
+                `${formatearFecha(inicio)} - ${formatearFecha(fin)}` :
+                'Sin fechas registradas';
+        }
+    }
+
+    function obtenerClaseEstadoHistorial(estado) {
+        estado = (estado || '').toUpperCase();
+
+        if (estado === 'VIGENTE') {
+            return 'bg-emerald-50 text-emerald-700 border-emerald-100';
+        }
+
+        if (estado === 'POR_VENCER') {
+            return 'bg-amber-50 text-amber-700 border-amber-100';
+        }
+
+        if (estado === 'POR_INICIAR') {
+            return 'bg-blue-50 text-blue-700 border-blue-100';
+        }
+
+        if (estado === 'VENCIDO') {
+            return 'bg-red-50 text-red-800 border-red-100';
+        }
+
+        if (estado === 'ANULADO') {
+            return 'bg-slate-100 text-slate-500 border-slate-200';
+        }
+
+        return 'bg-slate-50 text-slate-500 border-slate-200';
+    }
+
+    function textoEstadoHistorial(estado) {
+        estado = (estado || '').toUpperCase();
+
+        const mapa = {
+            'VIGENTE': 'Vigente',
+            'POR_VENCER': 'Por vencer',
+            'POR_INICIAR': 'Por iniciar',
+            'VENCIDO': 'Vencido',
+            'ANULADO': 'Anulado',
+            'SIN_FECHA': 'Sin fecha'
+        };
+
+        return mapa[estado] || 'Sin estado';
+    }
+
+    function obtenerTextoDiasHistorial(item) {
+        const estado = (item.estado || '').toUpperCase();
+        const dias = parseInt(item.dias || 0, 10);
+
+        if (item.dias === null || item.dias === undefined || Number.isNaN(dias)) {
+            return 'Sin conteo';
+        }
+
+        if (estado === 'POR_INICIAR') {
+            return `Inicia en ${Math.abs(dias)} día(s)`;
+        }
+
+        if (estado === 'VENCIDO') {
+            return `Venció hace ${Math.abs(dias)} día(s)`;
+        }
+
+        return `Faltan ${Math.abs(dias)} día(s)`;
     }
 
     function cerrarModalDetalle() {
