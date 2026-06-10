@@ -1,4 +1,5 @@
 <?php
+
 declare(strict_types=1);
 
 // Public/index.php
@@ -339,25 +340,37 @@ switch ($module) {
         break;
 
     /*
-    |--------------------------------------------------------------------------
-    | PERFIL
-    |--------------------------------------------------------------------------
-    | Rutas:
-    | /perfil
-    | /perfil/ID
-    |--------------------------------------------------------------------------
-    */
+|--------------------------------------------------------------------------
+| PERFIL
+|--------------------------------------------------------------------------
+| Rutas:
+| /perfil       -> Mi perfil del usuario logueado
+| /perfil/ID    -> Perfil detalle de colaborador para RRHH/Admin
+|--------------------------------------------------------------------------
+*/
     case 'perfil':
-        $file = ROOT_PATH . 'Vista/modulos/perfil.php';
+        $idPerfilUrl = (int)($parts[1] ?? 0);
 
-        if (!file_exists($file)) {
-            $file = ROOT_PATH . 'Vista/modulos/rrhh/perfil.php';
-        }
+        /*
+     * /perfil/ID
+     * Detalle de colaborador para RRHH/Admin.
+     */
+        if ($idPerfilUrl > 0) {
+            if (!user_is_admin_role()) {
+                http_response_code(403);
+                echo '403 - No tienes permiso para ver este perfil.';
+                exit;
+            }
 
-        if (!file_exists($file)) {
             $file = ROOT_PATH . 'Vista/modulos/rrhh/perfil_detalle.php';
+            break;
         }
 
+        /*
+     * /perfil
+     * Mi perfil del usuario logueado.
+     */
+        $file = ROOT_PATH . 'Vista/modulos/colaborador/perfil.php';
         break;
 
     /*
