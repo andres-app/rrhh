@@ -332,4 +332,13 @@ class CtrTeletrabajo
 
         return $usuarioId > 0 ? $usuarioId : null;
     }
+
+    public function ctrObtenerTeletrabajoActualPorColaborador(int $colabId): ?array
+{
+    if ($colabId <= 0) {
+        return null;
+    }
+
+    return MdTeletrabajo::mdlObtenerTeletrabajoActualPorColaborador($colabId);
+}
 }

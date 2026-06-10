@@ -443,4 +443,81 @@ class MdTeletrabajo
 
         $stmt->bindValue($param, (int)$valor, PDO::PARAM_INT);
     }
+
+    public static function mdlObtenerTeletrabajoActualPorColaborador(int $colabId): ?array
+    {
+        try {
+            if ($colabId <= 0) {
+                return null;
+            }
+
+            $pdo = self::conectar();
+
+            /*
+         * Prioridad:
+         * 1. Documento vigente hoy.
+         * 2. Si todavía no inicia, el próximo.
+         * 3. Si ya venció, el último vencido.
+         */
+            $sql = "
+            SELECT
+                tr.id,
+                tr.colab_id,
+                tr.documento_padre_id,
+                COALESCE(tr.documento_padre_id, tr.id) AS acuerdo_id,
+                tr.tipo_registro,
+                tr.numero_documento,
+                tr.fecha_documento,
+                tr.fecha_inicio,
+                tr.fecha_fin,
+                tr.modalidad,
+                tr.motivo,
+                tr.observacion,
+                tr.estado,
+
+                CASE
+                    WHEN tr.estado = 'ANULADO' THEN 'ANULADO'
+                    WHEN CURDATE() < tr.fecha_inicio THEN 'POR_INICIAR'
+                    WHEN CURDATE() BETWEEN tr.fecha_inicio AND tr.fecha_fin 
+                         AND DATEDIFF(tr.fecha_fin, CURDATE()) <= 15 THEN 'POR_VENCER'
+                    WHEN CURDATE() BETWEEN tr.fecha_inicio AND tr.fecha_fin THEN 'VIGENTE'
+                    WHEN CURDATE() > tr.fecha_fin THEN 'VENCIDO'
+                    ELSE 'SIN_FECHA'
+                END AS estado_calculado
+
+            FROM `" . self::$tabla . "` tr
+            WHERE tr.colab_id = :colab_id
+              AND tr.estado <> 'ANULADO'
+            ORDER BY
+                CASE
+                    WHEN CURDATE() BETWEEN tr.fecha_inicio AND tr.fecha_fin THEN 1
+                    WHEN tr.fecha_inicio > CURDATE() THEN 2
+                    WHEN tr.fecha_fin < CURDATE() THEN 3
+                    ELSE 4
+                END ASC,
+                CASE
+                    WHEN CURDATE() BETWEEN tr.fecha_inicio AND tr.fecha_fin THEN tr.fecha_inicio
+                END DESC,
+                CASE
+                    WHEN tr.fecha_inicio > CURDATE() THEN tr.fecha_inicio
+                END ASC,
+                CASE
+                    WHEN tr.fecha_fin < CURDATE() THEN tr.fecha_fin
+                END DESC,
+                tr.id DESC
+            LIMIT 1
+        ";
+
+            $stmt = $pdo->prepare($sql);
+            $stmt->bindValue(':colab_id', $colabId, PDO::PARAM_INT);
+            $stmt->execute();
+
+            $row = $stmt->fetch(PDO::FETCH_ASSOC);
+
+            return $row ?: null;
+        } catch (Throwable $e) {
+            self::setError($e);
+            return null;
+        }
+    }
 }

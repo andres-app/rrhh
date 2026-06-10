@@ -654,6 +654,24 @@
     $pension     = $data['pension'] ?? [];
     $bancario    = $data['bancario'] ?? [];
 
+    $teletrabajoActual = null;
+
+    if (file_exists(ROOT_PATH . 'Controlador/CtrTeletrabajo.php')) {
+        require_once ROOT_PATH . 'Controlador/CtrTeletrabajo.php';
+
+        if (class_exists('CtrTeletrabajo')) {
+            $ctrTeletrabajoPerfil = new CtrTeletrabajo();
+
+            if (method_exists($ctrTeletrabajoPerfil, 'ctrObtenerTeletrabajoActualPorColaborador')) {
+                $teletrabajoActual = $ctrTeletrabajoPerfil->ctrObtenerTeletrabajoActualPorColaborador((int)($data['id'] ?? 0));
+            }
+        }
+    }
+
+    $estadoTeletrabajo = strtoupper(trim((string)($teletrabajoActual['estado_calculado'] ?? '')));
+
+    $tieneTeletrabajoActivo = in_array($estadoTeletrabajo, ['VIGENTE', 'POR_VENCER', 'POR_INICIAR'], true);
+
     $hijos = array_values(array_filter($familia, fn($f) => in_array(($f['parentesco'] ?? ''), ['HIJO', 'HIJA'], true)));
 
     // Compatibilidad con el modal copiado desde colaborador
@@ -726,6 +744,12 @@
                                 <span class="bg-slate-50 text-slate-600 px-3 py-1.5 rounded-xl text-xs font-bold uppercase tracking-widest border border-slate-200">
                                     <?php echo htmlspecialchars($data['area'] ?? 'Sin área'); ?>
                                 </span>
+
+                                <?php if ($tieneTeletrabajoActivo): ?>
+                                    <span class="bg-blue-50 text-blue-700 px-3 py-1.5 rounded-xl text-xs font-black uppercase tracking-widest border border-blue-100">
+                                        Remoto temporal
+                                    </span>
+                                <?php endif; ?>
                             </div>
                         </div>
 
@@ -912,46 +936,122 @@
                                             <span class="w-1.5 h-4 bg-slate-800 rounded-full"></span>
                                             Datos Laborales
                                         </h3>
-                                        <div class="space-y-4 text-sm">
+
+                                        <div class="space-y-3 text-sm">
+
+                                            <!-- Sueldo -->
                                             <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
                                                 <span class="text-slate-400 font-medium">Sueldo</span>
 
                                                 <div class="flex items-center gap-2">
-                                                    <!-- Monto -->
                                                     <span id="sueldo-texto" class="font-black text-red-900 text-base tracking-widest">
                                                         *****
                                                     </span>
 
-                                                    <!-- Botón ojito -->
                                                     <button type="button" onclick="toggleSueldo()" class="text-slate-400 hover:text-red-900 transition">
-                                                        <svg id="icono-ojo" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                                                            <path id="ojo-abierto" stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                                                            <path id="ojo-linea" stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.847-.66 1.647-1.143 2.379M15 12a3 3 0 00-6 0" />
+                                                        <svg id="icono-ojo" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
+                                                            viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                                            <path id="ojo-abierto" stroke-linecap="round" stroke-linejoin="round"
+                                                                d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                                                            <path id="ojo-linea" stroke-linecap="round" stroke-linejoin="round"
+                                                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.477 0 8.268 2.943 9.542 7-.274.847-.66 1.647-1.143 2.379M15 12a3 3 0 00-6 0" />
                                                         </svg>
                                                     </button>
                                                 </div>
                                             </div>
 
-                                            <!-- Guardamos el valor real -->
-                                            <input type="hidden" id="sueldo-real" value="<?php echo !empty($data['sueldo']) ? number_format($data['sueldo'], 2) : '0.00'; ?>">
-                                            <div class="flex justify-between px-2">
-                                                <span class="text-slate-400">Contrato</span>
-                                                <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['mod_contrato'] ?? '—'); ?></span>
+                                            <input type="hidden" id="sueldo-real"
+                                                value="<?php echo !empty($data['sueldo']) ? number_format($data['sueldo'], 2) : '0.00'; ?>">
+
+                                            <!-- Modalidad laboral original -->
+                                            <div class="rounded-2xl border border-slate-100 bg-white px-4 py-3">
+                                                <div class="flex items-center justify-between gap-3">
+                                                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
+                                                        Contrato laboral
+                                                    </span>
+
+                                                    <span class="inline-flex items-center px-3 py-1 rounded-xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest">
+                                                        <?php echo htmlspecialchars($data['mod_contrato'] ?? '—'); ?>
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div class="flex justify-between px-2">
-                                                <span class="text-slate-400">Tipo Puesto</span>
-                                                <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['tipo_puesto'] ?? '—'); ?></span>
+
+                                            <!-- Condición temporal independiente -->
+                                            <?php if ($tieneTeletrabajoActivo): ?>
+                                                <div class="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
+                                                    <div class="flex items-start gap-3">
+                                                        <div class="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0">
+                                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
+                                                            </svg>
+                                                        </div>
+
+                                                        <div class="min-w-0 flex-1">
+                                                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-blue-500">
+                                                                Condición temporal
+                                                            </p>
+
+                                                            <p class="text-sm font-black text-blue-900 leading-tight mt-1">
+                                                                Trabajo remoto temporal
+                                                            </p>
+
+                                                            <div class="mt-3 grid grid-cols-1 gap-2">
+                                                                <div class="rounded-xl bg-white/80 border border-blue-100 px-3 py-2">
+                                                                    <p class="text-[9px] font-black uppercase tracking-widest text-blue-400">
+                                                                        Vigencia
+                                                                    </p>
+                                                                    <p class="text-xs font-black text-slate-700 mt-0.5">
+                                                                        <?php echo formatFecha($teletrabajoActual['fecha_inicio'] ?? null); ?>
+                                                                        -
+                                                                        <?php echo formatFecha($teletrabajoActual['fecha_fin'] ?? null); ?>
+                                                                    </p>
+                                                                </div>
+
+                                                                <?php if (!empty($teletrabajoActual['numero_documento'])): ?>
+                                                                    <div class="rounded-xl bg-white/80 border border-blue-100 px-3 py-2">
+                                                                        <p class="text-[9px] font-black uppercase tracking-widest text-blue-400">
+                                                                            Documento
+                                                                        </p>
+                                                                        <p class="text-xs font-black text-slate-700 mt-0.5 break-words">
+                                                                            <?php echo htmlspecialchars($teletrabajoActual['numero_documento']); ?>
+                                                                        </p>
+                                                                    </div>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+                                                    </div>
+                                                </div>
+                                            <?php endif; ?>
+
+                                            <!-- Datos complementarios -->
+                                            <div class="rounded-2xl border border-slate-100 bg-white px-4 py-3 space-y-3">
+                                                <div class="grid grid-cols-[96px_minmax(0,1fr)] gap-3 items-start">
+                                                    <span class="text-[11px] font-bold text-slate-400">Tipo puesto</span>
+                                                    <span class="text-right font-black text-slate-700 break-words">
+                                                        <?php echo htmlspecialchars($data['tipo_puesto'] ?? '—'); ?>
+                                                    </span>
+                                                </div>
+
+                                                <div class="grid grid-cols-[96px_minmax(0,1fr)] gap-3 items-start">
+                                                    <span class="text-[11px] font-bold text-slate-400">Procedencia</span>
+                                                    <span class="text-right font-black text-slate-700 break-words">
+                                                        <?php echo htmlspecialchars($data['procedencia'] ?? '—'); ?>
+                                                    </span>
+                                                </div>
+
+                                                <div class="grid grid-cols-[96px_minmax(0,1fr)] gap-3 items-start">
+                                                    <span class="text-[11px] font-bold text-slate-400">NSA / CIP</span>
+                                                    <span class="text-right font-black text-slate-700 break-words">
+                                                        <?php echo htmlspecialchars($data['nsa_cip'] ?? '—'); ?>
+                                                    </span>
+                                                </div>
                                             </div>
-                                            <div class="flex justify-between px-2">
-                                                <span class="text-slate-400">Procedencia</span>
-                                                <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['procedencia'] ?? '—'); ?></span>
-                                            </div>
-                                            <div class="flex justify-between px-2">
-                                                <span class="text-slate-400">NSA / CIP</span>
-                                                <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['nsa_cip'] ?? '—'); ?></span>
-                                            </div>
+
+                                            <!-- Situación -->
                                             <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
                                                 <span class="text-slate-400 font-medium">Situación</span>
+
                                                 <?php
                                                 $sit = $data['situacion'] ?? '';
                                                 $sitColor = match (strtoupper($sit)) {
@@ -959,7 +1059,10 @@
                                                     default   => 'text-red-700',
                                                 };
                                                 ?>
-                                                <span class="font-black <?php echo $sitColor; ?>"><?php echo htmlspecialchars($sit ?: '—'); ?></span>
+
+                                                <span class="font-black <?php echo $sitColor; ?>">
+                                                    <?php echo htmlspecialchars($sit ?: '—'); ?>
+                                                </span>
                                             </div>
                                         </div>
                                     </div>
@@ -1152,6 +1255,33 @@
                                         <span class="text-slate-400 font-medium">Contrato</span>
                                         <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['mod_contrato'] ?? '—'); ?></span>
                                     </div>
+                                    <div class="flex justify-between border-b border-slate-50 pb-2">
+                                        <span class="text-slate-400 font-medium">Condición temporal</span>
+
+                                        <?php if ($tieneTeletrabajoActivo): ?>
+                                            <span class="font-black text-blue-700">Trabajo remoto temporal</span>
+                                        <?php else: ?>
+                                            <span class="font-bold text-slate-400">No registra</span>
+                                        <?php endif; ?>
+                                    </div>
+
+                                    <?php if (!empty($teletrabajoActual)): ?>
+                                        <div class="flex justify-between border-b border-slate-50 pb-2">
+                                            <span class="text-slate-400 font-medium">Vigencia remoto</span>
+                                            <span class="font-bold text-slate-700">
+                                                <?php echo formatFecha($teletrabajoActual['fecha_inicio'] ?? null); ?>
+                                                -
+                                                <?php echo formatFecha($teletrabajoActual['fecha_fin'] ?? null); ?>
+                                            </span>
+                                        </div>
+
+                                        <div class="flex justify-between border-b border-slate-50 pb-2">
+                                            <span class="text-slate-400 font-medium">Documento remoto</span>
+                                            <span class="font-bold text-slate-700 text-right">
+                                                <?php echo htmlspecialchars($teletrabajoActual['numero_documento'] ?? '—'); ?>
+                                            </span>
+                                        </div>
+                                    <?php endif; ?>
                                     <div class="flex justify-between border-b border-slate-50 pb-2">
                                         <span class="text-slate-400 font-medium">Tipo Puesto</span>
                                         <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['tipo_puesto'] ?? '—'); ?></span>
