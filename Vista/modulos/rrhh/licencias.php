@@ -5,6 +5,20 @@ if (!defined('ROOT_PATH')) {
     define('ROOT_PATH', dirname(__DIR__, 3) . DIRECTORY_SEPARATOR);
 }
 
+if (!isset($_SESSION["user_id"])) {
+    header("Location: " . BASE_URL . "/login");
+    exit();
+}
+
+$rolSesion = strtolower(trim($_SESSION['user_role'] ?? ''));
+
+if (!in_array($rolSesion, ['superadmin', 'admin', 'rrhh'], true)) {
+    http_response_code(403);
+    die('No tienes permiso para acceder a este módulo.');
+}
+
+$puedeGestionar = true;
+
 require_once ROOT_PATH . 'Modelo/Conexion.php';
 require_once ROOT_PATH . 'Modelo/MdDirectorio.php';
 require_once ROOT_PATH . 'Controlador/CtrDirectorio.php';
@@ -99,9 +113,6 @@ if (!function_exists('estadoLicenciaView')) {
         }
     }
 }
-
-$rolSesion = strtolower(trim((string)($_SESSION['user_role'] ?? '')));
-$puedeGestionar = in_array($rolSesion, ['superadmin', 'admin', 'rrhh'], true);
 
 $ctrLicencias = new CtrLicencias();
 $ctrDirectorio = new CtrDirectorio();
@@ -202,6 +213,7 @@ foreach ($licencias as $item) {
 }
 
 $titulo_pagina = 'Licencias | RRHH';
+$menu_activo = 'licencias';
 
 require_once ROOT_PATH . 'Vista/includes/header.php';
 require_once ROOT_PATH . 'Vista/includes/sidebar.php';
