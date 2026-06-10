@@ -1595,9 +1595,6 @@
                                                         </div>
 
                                                         <div class="flex flex-wrap items-center gap-2 shrink-0">
-                                                            <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border <?php echo $badgeEstado; ?>">
-                                                                <?php echo htmlspecialchars($item['estado_validacion'] ?? 'PENDIENTE'); ?>
-                                                            </span>
 
                                                             <?php if (!empty($item['actualmente_trabaja'])): ?>
                                                                 <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border bg-blue-50 text-blue-700 border-blue-200">
