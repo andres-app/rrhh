@@ -800,7 +800,7 @@
                     </div>
 
                     <!-- Tabs de navegación -->
-                    <div class="flex items-center gap-8 mt-10 border-t border-slate-100 pt-2 overflow-x-auto no-scrollbar">
+                    <div class="flex items-center gap-8 mt-10 mb-7 border-t border-slate-100 pt-2 overflow-x-auto no-scrollbar">
                         <button onclick="switchTab('resumen')" id="btn-resumen" class="tab-btn tab-active px-2 py-4 text-sm font-bold whitespace-nowrap">
                             RESUMEN
                         </button>
@@ -822,159 +822,226 @@
                         </button>
                     </div>
 
+
                     <!-- ============================================================
-                        TAB 1: RESUMEN PERFIL
-                    ============================================================ -->
+    TAB 1: RESUMEN PERFIL
+============================================================ -->
                     <div id="tab-resumen" class="tab-content block animate-fadeIn">
-                        <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
 
-                            <!-- Columna principal (2/3) -->
-                            <div class="lg:col-span-2 space-y-6">
+                        <?php
+                        $contratosResumen = organizarContratosConAdendas($contratos);
+                        $contratoActualResumen = $contratosResumen[0] ?? null;
 
-                                <!-- Datos Personales -->
-                                <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
+                        $inicioContratoResumen = $contratoActualResumen ? obtenerInicioPeriodoContrato($contratoActualResumen) : null;
+                        $finContratoResumen = $contratoActualResumen ? obtenerVigenciaFinalContrato($contratoActualResumen) : null;
+                        $estadoContratoResumen = $contratoActualResumen ? obtenerEstadoVisualContrato($contratoActualResumen) : null;
+                        $totalAdendasResumen = $contratoActualResumen ? count($contratoActualResumen['_adendas'] ?? []) : 0;
+
+                        $sexo = $data['sexo'] ?? '';
+                        $sexoTexto = $sexo === 'M' ? 'Masculino' : ($sexo === 'F' ? 'Femenino' : '—');
+
+                        $situacion = strtoupper(trim((string)($data['situacion'] ?? '')));
+                        $situacionColor = match ($situacion) {
+                            'ACTIVO' => 'bg-green-50 text-green-700 border-green-100',
+                            default  => 'bg-red-50 text-red-700 border-red-100',
+                        };
+                        ?>
+
+                        <div class="space-y-6">
+
+                            <!-- DATOS PRINCIPALES + FAMILIA -->
+                            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+
+                                <!-- Datos personales -->
+                                <div class="lg:col-span-2 bg-white p-7 rounded-[32px] shadow-sm border border-slate-200/80">
                                     <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
                                         <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
                                         Datos Personales
                                     </h3>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div class="space-y-4 text-sm">
-                                            <div class="flex justify-between border-b border-slate-50 pb-2">
+
+                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+
+                                        <div class="space-y-4">
+                                            <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
                                                 <span class="text-slate-400 font-medium">DNI</span>
-                                                <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['dni'] ?? '—'); ?></span>
-                                            </div>
-                                            <!-- CORRECCIÓN 1: Edad calculada desde fecha_nacimiento -->
-                                            <div class="flex justify-between border-b border-slate-50 pb-2">
-                                                <span class="text-slate-400 font-medium">Edad</span>
-                                                <span class="font-bold text-slate-700"><?php echo calcularEdad($data['fecha_nacimiento'] ?? null); ?></span>
-                                            </div>
-                                            <div class="flex justify-between border-b border-slate-50 pb-2">
-                                                <span class="text-slate-400 font-medium">Fecha Nac.</span>
-                                                <span class="font-bold text-slate-700"><?php echo formatFecha($data['fecha_nacimiento'] ?? null); ?></span>
-                                            </div>
-                                            <div class="flex justify-between border-b border-slate-50 pb-2">
-                                                <span class="text-slate-400 font-medium">Lugar Nac.</span>
-                                                <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['lugar_nacimiento'] ?? '—'); ?></span>
-                                            </div>
-                                        </div>
-                                        <div class="space-y-4 text-sm">
-                                            <div class="flex justify-between border-b border-slate-50 pb-2">
-                                                <span class="text-slate-400 font-medium">Estado Civil</span>
-                                                <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['estado_civil'] ?? '—'); ?></span>
-                                            </div>
-                                            <div class="flex justify-between border-b border-slate-50 pb-2">
-                                                <span class="text-slate-400 font-medium">Sexo</span>
-                                                <span class="font-bold text-slate-700">
-                                                    <?php
-                                                    $sexo = $data['sexo'] ?? '';
-                                                    echo $sexo === 'M' ? 'Masculino' : ($sexo === 'F' ? 'Femenino' : '—');
-                                                    ?>
+                                                <span class="font-black text-red-950 text-right">
+                                                    <?php echo htmlspecialchars($data['dni'] ?? '—'); ?>
                                                 </span>
                                             </div>
-                                            <div class="flex justify-between border-b border-slate-50 pb-2">
+
+                                            <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                                <span class="text-slate-400 font-medium">Fecha Nac.</span>
+                                                <span class="font-bold text-slate-700 text-right">
+                                                    <?php echo formatFecha($data['fecha_nacimiento'] ?? null); ?>
+                                                </span>
+                                            </div>
+
+                                            <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                                <span class="text-slate-400 font-medium">Lugar Nac.</span>
+                                                <span class="font-bold text-slate-700 text-right">
+                                                    <?php echo htmlspecialchars($data['lugar_nacimiento'] ?? '—'); ?>
+                                                </span>
+                                            </div>
+
+                                            <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                                <span class="text-slate-400 font-medium">Situación</span>
+                                                <span class="inline-flex px-3 py-1 rounded-xl border text-[10px] font-black uppercase tracking-widest <?php echo $situacionColor; ?>">
+                                                    <?php echo htmlspecialchars($data['situacion'] ?? '—'); ?>
+                                                </span>
+                                            </div>
+                                        </div>
+
+                                        <div class="space-y-4">
+                                            <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                                <span class="text-slate-400 font-medium">Edad</span>
+                                                <span class="font-black text-red-950 text-right">
+                                                    <?php echo calcularEdad($data['fecha_nacimiento'] ?? null); ?>
+                                                </span>
+                                            </div>
+
+                                            <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                                <span class="text-slate-400 font-medium">Estado Civil</span>
+                                                <span class="font-bold text-slate-700 text-right">
+                                                    <?php echo htmlspecialchars($data['estado_civil'] ?? '—'); ?>
+                                                </span>
+                                            </div>
+
+                                            <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                                <span class="text-slate-400 font-medium">Sexo</span>
+                                                <span class="font-bold text-slate-700 text-right">
+                                                    <?php echo $sexoTexto; ?>
+                                                </span>
+                                            </div>
+
+                                            <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
                                                 <span class="text-slate-400 font-medium">Grupo Sanguíneo</span>
-                                                <span class="font-bold text-red-700"><?php echo htmlspecialchars($data['grupo_sanguineo'] ?? '—'); ?></span>
+                                                <span class="font-black text-red-950 text-right">
+                                                    <?php echo htmlspecialchars($data['grupo_sanguineo'] ?? '—'); ?>
+                                                </span>
                                             </div>
-                                            <div class="flex justify-between border-b border-slate-50 pb-2">
+
+                                            <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
                                                 <span class="text-slate-400 font-medium">Talla</span>
-                                                <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['talla'] ?? '—'); ?></span>
+                                                <span class="font-bold text-slate-700 text-right">
+                                                    <?php echo htmlspecialchars($data['talla'] ?? '—'); ?>
+                                                </span>
                                             </div>
                                         </div>
+
                                     </div>
                                 </div>
 
-                                <!-- Contacto y Domicilio -->
-                                <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
+                                <!-- Familia -->
+                                <div class="bg-white p-7 rounded-[32px] shadow-sm border border-slate-200/80">
                                     <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-                                        <span class="w-1.5 h-5 bg-slate-800 rounded-full"></span>
-                                        Contacto y Domicilio
-                                    </h3>
-                                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                                        <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
-                                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">Dirección</p>
-                                            <p class="font-bold text-slate-700 leading-tight mb-1">
-                                                <?php echo htmlspecialchars($data['direccion_residencia'] ?? 'No registrada'); ?>
-                                            </p>
-                                            <p class="text-xs text-red-800 font-bold">
-                                                <?php echo htmlspecialchars($data['distrito'] ?? ''); ?>
-                                            </p>
-                                        </div>
-                                        <div class="space-y-2 text-sm">
-                                            <div class="p-3 bg-slate-50 rounded-xl flex justify-between items-center border border-slate-100">
-                                                <span class="text-[10px] font-bold text-slate-400">CELULAR</span>
-                                                <span class="font-bold text-slate-700"><?php echo htmlspecialchars($data['celular'] ?? '—'); ?></span>
-                                            </div>
-                                            <div class="p-3 bg-slate-50 rounded-xl flex justify-between items-center border border-slate-100">
-                                                <span class="text-[10px] font-bold text-slate-400">CORREO PERS.</span>
-                                                <span class="font-bold text-slate-600 text-[11px]"><?php echo htmlspecialchars($data['correo_personal'] ?? '—'); ?></span>
-                                            </div>
-                                            <div class="p-3 bg-slate-50 rounded-xl flex justify-between items-center border border-slate-100">
-                                                <span class="text-[10px] font-bold text-slate-400">CORREO INST.</span>
-                                                <span class="font-bold text-red-900 text-[11px]"><?php echo htmlspecialchars($data['correo_institucional'] ?? '—'); ?></span>
-                                            </div>
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <!-- CORRECCIÓN 5: Historial de Contratos / Fechas de Ingreso (múltiples) -->
-                                <?php renderHistorialContratos($contratos); ?>
-
-                            </div><!-- /columna principal -->
-
-                            <!-- Columna lateral (1/3) -->
-                            <div class="space-y-6">
-
-                                <!-- CORRECCIÓN 2 y 3: Familia con n_hijos y fecha nacimiento cónyuge -->
-                                <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                                    <h3 class="text-md font-black text-slate-800 mb-4 flex items-center gap-2">
-                                        <span class="w-1.5 h-4 bg-red-600 rounded-full"></span>
+                                        <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
                                         Familia
                                     </h3>
 
-                                    <!-- Cónyuge -->
-                                    <div class="p-4 bg-red-50 rounded-2xl mb-3 border border-red-100">
-                                        <p class="text-[10px] font-bold text-red-400 uppercase tracking-tighter mb-1">Cónyuge</p>
-                                        <p class="font-black text-red-950 mb-1">
-                                            <?php echo htmlspecialchars(($data['conyuge'] ?? '') ?: 'No registrado'); ?>
-                                        </p>
-                                        <!-- CORRECCIÓN 3: Fecha de nacimiento cónyuge -->
-                                        <?php if (!empty($data['onomastico_conyuge'])): ?>
-                                            <div class="flex items-center gap-1 mt-1">
-                                                <span class="text-[10px] text-red-400 font-bold uppercase tracking-tighter">Fecha nac.:</span>
-                                                <span class="text-[11px] text-red-700 font-bold"><?php echo formatFecha($data['onomastico_conyuge']); ?></span>
-                                            </div>
-                                        <?php else: ?>
-                                            <p class="text-[10px] text-red-300 italic mt-1">Fecha de nacimiento no registrada</p>
-                                        <?php endif; ?>
-                                    </div>
+                                    <div class="space-y-4 text-sm">
 
-                                    <!-- CORRECCIÓN 2: Número de hijos (COUNT real desde BD) -->
-                                    <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl text-sm font-bold border border-slate-100">
-                                        <span class="text-slate-500">Hijos registrados</span>
-                                        <span class="text-red-900 text-xl font-black"><?php echo (int)($data['n_hijos'] ?? 0); ?></span>
+                                        <div class="p-4 bg-red-50 rounded-2xl border border-red-100">
+                                            <p class="text-[10px] font-black text-red-500 uppercase tracking-widest mb-1">
+                                                Cónyuge
+                                            </p>
+
+                                            <p class="font-black text-red-950 leading-tight">
+                                                <?php echo htmlspecialchars(($data['conyuge'] ?? '') ?: 'No registrado'); ?>
+                                            </p>
+
+                                            <p class="text-xs font-bold text-red-700 mt-2">
+                                                <?php echo !empty($data['onomastico_conyuge']) ? formatFecha($data['onomastico_conyuge']) : 'Fecha no registrada'; ?>
+                                            </p>
+                                        </div>
+
+                                        <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                            <span class="text-slate-500 font-bold">Hijos registrados</span>
+                                            <span class="text-red-950 text-2xl font-black">
+                                                <?php echo (int)($data['n_hijos'] ?? 0); ?>
+                                            </span>
+                                        </div>
+
+                                        <div class="flex justify-between items-center p-4 bg-slate-50 rounded-2xl border border-slate-100">
+                                            <span class="text-slate-500 font-bold">DNI cónyuge</span>
+                                            <span class="text-slate-700 font-black">
+                                                <?php echo htmlspecialchars($data['dni_conyuge'] ?? '—'); ?>
+                                            </span>
+                                        </div>
+
                                     </div>
                                 </div>
 
-                                <!-- Datos Laborales (resumen del contrato más reciente) -->
-                                <?php if ($esEditable): ?>
-                                    <div class="bg-white p-6 rounded-3xl shadow-sm border border-slate-200">
-                                        <h3 class="text-md font-black text-slate-800 mb-4 flex items-center gap-2">
-                                            <span class="w-1.5 h-4 bg-slate-800 rounded-full"></span>
-                                            Datos Laborales
-                                        </h3>
+                            </div>
 
-                                        <div class="space-y-3 text-sm">
+                            <!-- CONTACTO + LABORAL -->
+                            <div class="grid grid-cols-1 lg:grid-cols-2 gap-6">
 
-                                            <!-- Sueldo -->
-                                            <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                                <span class="text-slate-400 font-medium">Sueldo</span>
+                                <!-- Contacto -->
+                                <div class="bg-white p-7 rounded-[32px] shadow-sm border border-slate-200/80">
+                                    <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
+                                        <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
+                                        Contacto y Domicilio
+                                    </h3>
+
+                                    <div class="space-y-4 text-sm">
+
+                                        <div class="p-5 bg-slate-50 rounded-2xl border border-slate-100">
+                                            <p class="text-[10px] font-black text-slate-400 uppercase tracking-widest mb-1">
+                                                Dirección
+                                            </p>
+
+                                            <p class="font-bold text-slate-700 leading-tight">
+                                                <?php echo htmlspecialchars($data['direccion_residencia'] ?? 'No registrada'); ?>
+                                            </p>
+
+                                            <p class="text-xs text-red-900 font-black mt-2">
+                                                <?php echo htmlspecialchars($data['distrito'] ?? '—'); ?>
+                                            </p>
+                                        </div>
+
+                                        <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                            <span class="text-slate-400 font-medium">Celular</span>
+                                            <span class="font-black text-red-950 text-right">
+                                                <?php echo htmlspecialchars($data['celular'] ?? '—'); ?>
+                                            </span>
+                                        </div>
+
+                                        <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                            <span class="text-slate-400 font-medium">Correo Personal</span>
+                                            <span class="font-bold text-slate-700 text-right break-all">
+                                                <?php echo htmlspecialchars($data['correo_personal'] ?? '—'); ?>
+                                            </span>
+                                        </div>
+
+                                        <div class="flex justify-between gap-4">
+                                            <span class="text-slate-400 font-medium">Correo Inst.</span>
+                                            <span class="font-black text-red-950 text-right break-all">
+                                                <?php echo htmlspecialchars($data['correo_institucional'] ?? '—'); ?>
+                                            </span>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                                <!-- Datos laborales -->
+                                <div class="bg-white p-7 rounded-[32px] shadow-sm border border-slate-200/80">
+                                    <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
+                                        <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
+                                        Datos Laborales
+                                    </h3>
+
+                                    <div class="space-y-4 text-sm">
+
+                                        <?php if ($esEditable): ?>
+                                            <div class="flex justify-between items-center bg-red-50 p-3 rounded-xl border border-red-100">
+                                                <span class="text-red-500 font-bold">Sueldo</span>
 
                                                 <div class="flex items-center gap-2">
-                                                    <span id="sueldo-texto" class="font-black text-red-900 text-base tracking-widest">
+                                                    <span id="sueldo-texto" class="font-black text-red-950 text-base tracking-widest">
                                                         *****
                                                     </span>
 
-                                                    <button type="button" onclick="toggleSueldo()" class="text-slate-400 hover:text-red-900 transition">
+                                                    <button type="button" onclick="toggleSueldo()" class="text-red-400 hover:text-red-900 transition">
                                                         <svg id="icono-ojo" xmlns="http://www.w3.org/2000/svg" class="w-5 h-5" fill="none"
                                                             viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                                                             <path id="ojo-abierto" stroke-linecap="round" stroke-linejoin="round"
@@ -988,119 +1055,148 @@
 
                                             <input type="hidden" id="sueldo-real"
                                                 value="<?php echo !empty($data['sueldo']) ? number_format($data['sueldo'], 2) : '0.00'; ?>">
+                                        <?php endif; ?>
 
-                                            <!-- Modalidad laboral original -->
-                                            <div class="rounded-2xl border border-slate-100 bg-white px-4 py-3">
-                                                <div class="flex items-center justify-between gap-3">
-                                                    <span class="text-[11px] font-bold text-slate-400 uppercase tracking-wide">
-                                                        Contrato laboral
-                                                    </span>
-
-                                                    <span class="inline-flex items-center px-3 py-1 rounded-xl bg-slate-900 text-white text-[11px] font-black uppercase tracking-widest">
-                                                        <?php echo htmlspecialchars($data['mod_contrato'] ?? '—'); ?>
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <!-- Condición temporal independiente -->
-                                            <?php if ($tieneTeletrabajoActivo): ?>
-                                                <div class="rounded-2xl border border-blue-100 bg-blue-50/70 p-4">
-                                                    <div class="flex items-start gap-3">
-                                                        <div class="w-9 h-9 rounded-2xl bg-blue-600 text-white flex items-center justify-center shrink-0">
-                                                            <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
-                                                                <path stroke-linecap="round" stroke-linejoin="round"
-                                                                    d="M9.75 17L9 20l-1 1h8l-1-1-.75-3M3 13h18M5 17h14a2 2 0 002-2V5a2 2 0 00-2-2H5a2 2 0 00-2 2v10a2 2 0 002 2z" />
-                                                            </svg>
-                                                        </div>
-
-                                                        <div class="min-w-0 flex-1">
-                                                            <p class="text-[10px] font-black uppercase tracking-[0.18em] text-blue-500">
-                                                                Condición temporal
-                                                            </p>
-
-                                                            <p class="text-sm font-black text-blue-900 leading-tight mt-1">
-                                                                Trabajo remoto temporal
-                                                            </p>
-
-                                                            <div class="mt-3 grid grid-cols-1 gap-2">
-                                                                <div class="rounded-xl bg-white/80 border border-blue-100 px-3 py-2">
-                                                                    <p class="text-[9px] font-black uppercase tracking-widest text-blue-400">
-                                                                        Vigencia
-                                                                    </p>
-                                                                    <p class="text-xs font-black text-slate-700 mt-0.5">
-                                                                        <?php echo formatFecha($teletrabajoActual['fecha_inicio'] ?? null); ?>
-                                                                        -
-                                                                        <?php echo formatFecha($teletrabajoActual['fecha_fin'] ?? null); ?>
-                                                                    </p>
-                                                                </div>
-
-                                                                <?php if (!empty($teletrabajoActual['numero_documento'])): ?>
-                                                                    <div class="rounded-xl bg-white/80 border border-blue-100 px-3 py-2">
-                                                                        <p class="text-[9px] font-black uppercase tracking-widest text-blue-400">
-                                                                            Documento
-                                                                        </p>
-                                                                        <p class="text-xs font-black text-slate-700 mt-0.5 break-words">
-                                                                            <?php echo htmlspecialchars($teletrabajoActual['numero_documento']); ?>
-                                                                        </p>
-                                                                    </div>
-                                                                <?php endif; ?>
-                                                            </div>
-                                                        </div>
-                                                    </div>
-                                                </div>
-                                            <?php endif; ?>
-
-                                            <!-- Datos complementarios -->
-                                            <div class="rounded-2xl border border-slate-100 bg-white px-4 py-3 space-y-3">
-                                                <div class="grid grid-cols-[96px_minmax(0,1fr)] gap-3 items-start">
-                                                    <span class="text-[11px] font-bold text-slate-400">Tipo puesto</span>
-                                                    <span class="text-right font-black text-slate-700 break-words">
-                                                        <?php echo htmlspecialchars($data['tipo_puesto'] ?? '—'); ?>
-                                                    </span>
-                                                </div>
-
-                                                <div class="grid grid-cols-[96px_minmax(0,1fr)] gap-3 items-start">
-                                                    <span class="text-[11px] font-bold text-slate-400">Procedencia</span>
-                                                    <span class="text-right font-black text-slate-700 break-words">
-                                                        <?php echo htmlspecialchars($data['procedencia'] ?? '—'); ?>
-                                                    </span>
-                                                </div>
-
-                                                <div class="grid grid-cols-[96px_minmax(0,1fr)] gap-3 items-start">
-                                                    <span class="text-[11px] font-bold text-slate-400">NSA / CIP</span>
-                                                    <span class="text-right font-black text-slate-700 break-words">
-                                                        <?php echo htmlspecialchars($data['nsa_cip'] ?? '—'); ?>
-                                                    </span>
-                                                </div>
-                                            </div>
-
-                                            <!-- Situación -->
-                                            <div class="flex justify-between items-center bg-slate-50 p-3 rounded-xl border border-slate-100">
-                                                <span class="text-slate-400 font-medium">Situación</span>
-
-                                                <?php
-                                                $sit = $data['situacion'] ?? '';
-                                                $sitColor = match (strtoupper($sit)) {
-                                                    'ACTIVO'  => 'text-green-700',
-                                                    default   => 'text-red-700',
-                                                };
-                                                ?>
-
-                                                <span class="font-black <?php echo $sitColor; ?>">
-                                                    <?php echo htmlspecialchars($sit ?: '—'); ?>
-                                                </span>
-                                            </div>
+                                        <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                            <span class="text-slate-400 font-medium">Puesto CAS</span>
+                                            <span class="font-black text-red-950 text-right">
+                                                <?php echo htmlspecialchars($data['puesto_cas'] ?? '—'); ?>
+                                            </span>
                                         </div>
-                                    </div>
-                                <?php endif; ?>
 
-                            </div><!-- /columna lateral -->
+                                        <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                            <span class="text-slate-400 font-medium">Área</span>
+                                            <span class="font-bold text-slate-700 text-right">
+                                                <?php echo htmlspecialchars($data['area'] ?? '—'); ?>
+                                            </span>
+                                        </div>
+
+                                        <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                            <span class="text-slate-400 font-medium">Contrato</span>
+                                            <span class="font-black text-red-950 text-right">
+                                                <?php echo htmlspecialchars($data['mod_contrato'] ?? '—'); ?>
+                                            </span>
+                                        </div>
+
+                                        <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                            <span class="text-slate-400 font-medium">Tipo Puesto</span>
+                                            <span class="font-bold text-slate-700 text-right">
+                                                <?php echo htmlspecialchars($data['tipo_puesto'] ?? '—'); ?>
+                                            </span>
+                                        </div>
+
+                                        <div class="flex justify-between gap-4 border-b border-slate-50 pb-2">
+                                            <span class="text-slate-400 font-medium">Procedencia</span>
+                                            <span class="font-bold text-slate-700 text-right">
+                                                <?php echo htmlspecialchars($data['procedencia'] ?? '—'); ?>
+                                            </span>
+                                        </div>
+
+                                        <div class="flex justify-between gap-4">
+                                            <span class="text-slate-400 font-medium">NSA / CIP</span>
+                                            <span class="font-bold text-slate-700 text-right">
+                                                <?php echo htmlspecialchars($data['nsa_cip'] ?? '—'); ?>
+                                            </span>
+                                        </div>
+
+                                    </div>
+                                </div>
+
+                            </div>
+
+                            <!-- CONTRATO ACTUAL -->
+                            <div class="bg-white p-7 rounded-[32px] shadow-sm border border-slate-200/80">
+                                <div class="flex flex-col lg:flex-row lg:items-start lg:justify-between gap-4 mb-6">
+                                    <div>
+                                        <h3 class="text-lg font-black text-slate-800 flex items-center gap-2">
+                                            <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
+                                            Contrato Vigente o Más Reciente
+                                        </h3>
+
+                                        <p class="text-xs text-slate-400 font-semibold mt-1">
+                                            Resumen compacto del último periodo contractual.
+                                        </p>
+                                    </div>
+
+                                    <?php if ($estadoContratoResumen): ?>
+                                        <span class="inline-flex self-start px-3 py-1.5 rounded-xl bg-red-950 text-white text-[10px] font-black uppercase tracking-widest shadow-sm">
+                                            <?php echo htmlspecialchars($estadoContratoResumen['texto']); ?>
+                                        </span>
+                                    <?php endif; ?>
+                                </div>
+
+                                <?php if (empty($contratoActualResumen)): ?>
+
+                                    <div class="rounded-3xl border border-dashed border-slate-200 bg-slate-50 py-10 text-center">
+                                        <p class="text-slate-400 text-sm font-semibold">
+                                            No hay contratos registrados.
+                                        </p>
+                                    </div>
+
+                                <?php else: ?>
+
+                                    <div class="grid grid-cols-1 md:grid-cols-4 gap-4 text-sm">
+
+                                        <div class="md:col-span-2 rounded-2xl bg-red-50 border border-red-100 p-4">
+                                            <p class="text-[10px] font-black uppercase tracking-widest text-red-500 mb-1">
+                                                Documento contractual
+                                            </p>
+
+                                            <p class="font-black text-red-950 leading-tight">
+                                                <?php echo htmlPerfil($contratoActualResumen['numero_documento'] ?: 'Contrato sin número/documento'); ?>
+                                            </p>
+                                        </div>
+
+                                        <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                                Inicio
+                                            </p>
+
+                                            <p class="font-black text-slate-700">
+                                                <?php echo !empty($inicioContratoResumen) ? formatFecha($inicioContratoResumen) : '—'; ?>
+                                            </p>
+                                        </div>
+
+                                        <div class="rounded-2xl bg-slate-50 border border-slate-100 p-4">
+                                            <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                                Fin
+                                            </p>
+
+                                            <p class="font-black text-red-950">
+                                                <?php echo !empty($finContratoResumen) ? formatFecha($finContratoResumen) : 'Vigente'; ?>
+                                            </p>
+                                        </div>
+
+                                    </div>
+
+                                    <div class="mt-4 flex flex-wrap gap-2">
+                                        <span class="inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-600">
+                                            Modalidad:
+                                            <strong class="ml-1 text-red-950">
+                                                <?php echo htmlPerfil($contratoActualResumen['modalidad'] ?? '—'); ?>
+                                            </strong>
+                                        </span>
+
+                                        <span class="inline-flex items-center px-3 py-1.5 rounded-xl bg-slate-50 border border-slate-200 text-[11px] font-bold text-slate-600">
+                                            <?php echo $totalAdendasResumen; ?> adenda(s)
+                                        </span>
+
+                                        <?php if ($tieneTeletrabajoActivo): ?>
+                                            <span class="inline-flex items-center px-3 py-1.5 rounded-xl bg-blue-50 border border-blue-100 text-[11px] font-black text-blue-700">
+                                                Remoto temporal
+                                            </span>
+                                        <?php endif; ?>
+                                    </div>
+
+                                <?php endif; ?>
+                            </div>
+
                         </div>
                     </div>
 
                     <!-- ============================================================
-            TAB 2: INFORMACIÓN
-        ============================================================ -->
+                    TAB 2: INFORMACIÓN
+                    ============================================================ -->
                     <div id="tab-informacion" class="tab-content hidden animate-fadeIn">
                         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
@@ -1155,7 +1251,7 @@
                             <!-- Contacto -->
                             <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                                 <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-                                    <span class="w-1.5 h-5 bg-slate-800 rounded-full"></span>
+                                    <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
                                     Contacto y Domicilio
                                 </h3>
 
@@ -1209,7 +1305,7 @@
                             <!-- Hijos -->
                             <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
                                 <h3 class="text-lg font-black text-slate-800 mb-6 flex items-center gap-2">
-                                    <span class="w-1.5 h-5 bg-slate-800 rounded-full"></span>
+                                    <span class="w-1.5 h-5 bg-red-800 rounded-full"></span>
                                     Hijos
                                     <span class="ml-auto bg-slate-100 text-slate-500 text-xs font-bold px-2 py-1 rounded-lg">
                                         <?php echo count($hijos); ?> registro(s)
@@ -1250,8 +1346,8 @@
                     </div>
 
                     <!-- ============================================================
-            TAB 3: LABORAL
-        ============================================================ -->
+                    TAB 3: LABORAL
+                     ============================================================ -->
                     <div id="tab-laboral" class="tab-content hidden animate-fadeIn">
                         <div class="grid grid-cols-1 xl:grid-cols-2 gap-6">
 
@@ -1388,21 +1484,22 @@
                             </div>
 
                             <!-- Contratos -->
-                            <?php renderHistorialContratos($contratos); ?>
-
+                            <div class="xl:col-span-2">
+                                <?php renderHistorialContratos($contratos); ?>
+                            </div>
                         </div>
                     </div>
 
                     <!-- ============================================================
-                        TAB 2: FORMACIÓN ACADÉMICA
-                        CORRECCIÓN 4: Muestra TODOS los registros de colab_formacion
-                        (grado, especialización, otros) en timeline
-                    ============================================================ -->
+    TAB 4: FORMACIÓN ACADÉMICA
+============================================================ -->
                     <div id="tab-formacion" class="tab-content hidden animate-fadeIn">
                         <div class="bg-white p-8 rounded-[32px] shadow-sm border border-slate-200/80">
+
                             <h3 class="text-xl font-black text-slate-800 mb-8 flex items-center gap-2">
                                 <span class="w-1.5 h-6 bg-red-900 rounded-full"></span>
-                                Historial Académico
+                                Formación Académica
+
                                 <?php if (!empty($formacion)): ?>
                                     <span class="ml-auto bg-red-50 text-red-800 text-xs font-bold px-2 py-1 rounded-lg border border-red-100">
                                         <?php echo count($formacion); ?> registro(s)
@@ -1411,113 +1508,228 @@
                             </h3>
 
                             <?php if (empty($formacion)): ?>
+
                                 <div class="text-center py-16">
-                                    <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">🎓</div>
-                                    <h4 class="text-lg font-black text-slate-700 mb-2">Sin formación registrada</h4>
+                                    <div class="w-20 h-20 bg-red-50 rounded-full flex items-center justify-center mx-auto mb-6 text-4xl">
+                                        🎓
+                                    </div>
+
+                                    <h4 class="text-lg font-black text-slate-700 mb-2">
+                                        Sin formación registrada
+                                    </h4>
+
                                     <p class="text-slate-400 max-w-sm mx-auto text-sm">
                                         Aún no se ha registrado información académica para este colaborador.
                                     </p>
                                 </div>
+
                             <?php else: ?>
-                                <div class="relative pl-8 border-l border-red-100/70 space-y-6">
-                                    <?php foreach ($formacion as $idx => $item):
-                                        $tipo = strtoupper($item['tipo_grado'] ?? '');
+
+                                <div class="relative pl-8 border-l-2 border-red-100 space-y-5">
+
+                                    <?php foreach ($formacion as $i => $item): ?>
+                                        <?php
+                                        $tipo = strtoupper(trim((string)($item['tipo_grado'] ?? '')));
+
                                         $dotColor = match (true) {
-                                            str_contains($tipo, 'ESPECIALI') => 'bg-amber-500',
-                                            str_contains($tipo, 'MAESTR')    => 'bg-purple-700',
-                                            str_contains($tipo, 'DOCTOR')    => 'bg-slate-800',
-                                            str_contains($tipo, 'BACHILLER') => 'bg-blue-600',
-                                            str_contains($tipo, 'TECNI')     => 'bg-teal-600',
+                                            str_contains($tipo, 'DOCTOR')    => 'bg-slate-900',
+                                            str_contains($tipo, 'MAESTR')    => 'bg-red-950',
+                                            str_contains($tipo, 'TÍTULO')    => 'bg-red-900',
+                                            str_contains($tipo, 'TITULO')    => 'bg-red-900',
+                                            str_contains($tipo, 'BACHILLER') => 'bg-red-800',
+                                            str_contains($tipo, 'TECN')      => 'bg-slate-700',
+                                            str_contains($tipo, 'ESPECIAL')  => 'bg-slate-800',
                                             default                          => 'bg-red-900',
                                         };
+
                                         $badgeColor = match (true) {
-                                            str_contains($tipo, 'ESPECIALI') => 'bg-amber-50 text-amber-800 border-amber-100',
-                                            str_contains($tipo, 'MAESTR')    => 'bg-purple-50 text-purple-800 border-purple-100',
                                             str_contains($tipo, 'DOCTOR')    => 'bg-slate-100 text-slate-800 border-slate-200',
-                                            str_contains($tipo, 'BACHILLER') => 'bg-blue-50 text-blue-800 border-blue-100',
-                                            str_contains($tipo, 'TECNI')     => 'bg-teal-50 text-teal-800 border-teal-100',
+                                            str_contains($tipo, 'MAESTR')    => 'bg-red-50 text-red-950 border-red-100',
+                                            str_contains($tipo, 'TÍTULO')    => 'bg-red-50 text-red-900 border-red-100',
+                                            str_contains($tipo, 'TITULO')    => 'bg-red-50 text-red-900 border-red-100',
+                                            str_contains($tipo, 'BACHILLER') => 'bg-red-50 text-red-800 border-red-100',
+                                            str_contains($tipo, 'TECN')      => 'bg-slate-100 text-slate-700 border-slate-200',
+                                            str_contains($tipo, 'ESPECIAL')  => 'bg-slate-100 text-slate-800 border-slate-200',
                                             default                          => 'bg-red-50 text-red-900 border-red-100',
                                         };
-                                    ?>
+
+                                        $estadoValidacion = strtoupper(trim((string)($item['estado_validacion'] ?? '')));
+                                        $idFormacion = 'formacion-detalle-' . $i;
+                                        ?>
+
                                         <div class="relative">
-                                            <div class="absolute -left-[41px] top-7 w-5 h-5 rounded-full <?php echo $dotColor; ?> border-4 border-white shadow-md"></div>
+                                            <div class="absolute -left-[41px] top-5 w-5 h-5 rounded-full <?php echo $dotColor; ?> border-4 border-white shadow-sm"></div>
 
-                                            <div class="bg-white border border-slate-200/80 rounded-3xl p-5 md:p-6 shadow-sm hover:shadow-md transition-all">
-                                                <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
-                                                    <div class="min-w-0">
-                                                        <?php if (!empty($item['tipo_grado'])): ?>
-                                                            <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-[0.18em] border mb-3 <?php echo $badgeColor; ?>">
-                                                                <?php echo htmlspecialchars($item['tipo_grado']); ?>
-                                                            </span>
-                                                        <?php endif; ?>
+                                            <div class="bg-slate-50 border border-slate-200 rounded-2xl overflow-hidden">
 
-                                                        <h4 class="text-lg md:text-xl font-black text-slate-800 leading-tight">
-                                                            <?php echo htmlspecialchars($item['descripcion_carrera'] ?? 'No registrado'); ?>
-                                                        </h4>
+                                                <!-- Cabecera compacta -->
+                                                <div class="p-5">
+                                                    <div class="flex flex-col lg:flex-row lg:items-center lg:justify-between gap-4">
 
-                                                        <p class="text-sm text-slate-500 mt-2">
-                                                            <?php echo htmlspecialchars($item['institucion'] ?? 'Institución no registrada'); ?>
-                                                        </p>
+                                                        <div class="min-w-0">
+
+                                                            <?php if (!empty($item['tipo_grado'])): ?>
+                                                                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest border mb-2 <?php echo $badgeColor; ?>">
+                                                                    <?php echo htmlspecialchars($item['tipo_grado']); ?>
+                                                                </span>
+                                                            <?php endif; ?>
+
+                                                            <h4 class="text-base font-black text-slate-800 leading-tight">
+                                                                <?php echo htmlspecialchars($item['descripcion_carrera'] ?? 'No registrado'); ?>
+                                                            </h4>
+
+                                                            <p class="text-sm font-bold text-red-900 mt-1">
+                                                                <?php echo htmlspecialchars($item['institucion'] ?? 'Institución no registrada'); ?>
+                                                            </p>
+
+                                                            <div class="mt-2 flex flex-wrap gap-2">
+                                                                <?php if (!empty($item['anio_realizacion'])): ?>
+                                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-bold text-slate-600">
+                                                                        Año:
+                                                                        <strong class="ml-1 text-slate-800">
+                                                                            <?php echo htmlspecialchars($item['anio_realizacion']); ?>
+                                                                        </strong>
+                                                                    </span>
+                                                                <?php endif; ?>
+
+                                                                <?php if (!empty($item['horas_lectivas'])): ?>
+                                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-white border border-slate-200 text-[11px] font-bold text-slate-600">
+                                                                        Horas:
+                                                                        <strong class="ml-1 text-slate-800">
+                                                                            <?php echo htmlspecialchars($item['horas_lectivas']); ?>
+                                                                        </strong>
+                                                                    </span>
+                                                                <?php endif; ?>
+
+                                                                <?php if (!empty($item['grado_alcanzado'])): ?>
+                                                                    <span class="inline-flex items-center px-2.5 py-1 rounded-lg bg-red-50 border border-red-100 text-[11px] font-black text-red-900">
+                                                                        <?php echo htmlspecialchars($item['grado_alcanzado']); ?>
+                                                                    </span>
+                                                                <?php endif; ?>
+                                                            </div>
+                                                        </div>
+
+                                                        <div class="flex flex-wrap items-center gap-2 shrink-0">
+
+                                                            <?php if (!empty($estadoValidacion) && $estadoValidacion !== 'PENDIENTE'): ?>
+                                                                <span class="text-[10px] font-black uppercase tracking-widest px-2 py-1 rounded-lg border
+                                                <?php echo $estadoValidacion === 'APROBADO'
+                                                                    ? 'bg-green-50 text-green-700 border-green-200'
+                                                                    : 'bg-red-50 text-red-700 border-red-200'; ?>">
+                                                                    <?php echo htmlspecialchars($estadoValidacion); ?>
+                                                                </span>
+                                                            <?php endif; ?>
+
+                                                            <button
+                                                                type="button"
+                                                                class="inline-flex items-center gap-2 px-3 py-2 rounded-xl border border-slate-200 bg-white text-slate-700 text-xs font-bold hover:bg-slate-100 transition-all"
+                                                                onclick="toggleFormacionDetalle('<?php echo $idFormacion; ?>', this)">
+                                                                <span class="form-toggle-text">Ver más</span>
+
+                                                                <svg class="form-toggle-icon w-4 h-4 transition-transform" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
+                                                                    <path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7" />
+                                                                </svg>
+                                                            </button>
+
+                                                        </div>
                                                     </div>
-
-                                                    <?php if (!empty($item['estado_validacion']) && $item['estado_validacion'] !== 'PENDIENTE'): ?>
-                                                        <span class="inline-flex items-center self-start px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-widest <?php echo $item['estado_validacion'] === 'APROBADO'
-                                                                                                                                                                                    ? 'bg-green-50 text-green-700 border border-green-100'
-                                                                                                                                                                                    : 'bg-red-50 text-red-700 border border-red-100'; ?>">
-                                                            <?php echo htmlspecialchars($item['estado_validacion']); ?>
-                                                        </span>
-                                                    <?php endif; ?>
                                                 </div>
 
-                                                <div class="mt-5 flex flex-wrap gap-2.5">
-                                                    <?php if (!empty($item['anio_realizacion'])): ?>
-                                                        <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
-                                                            <span class="text-slate-400 font-bold">Año</span>
-                                                            <span class="text-slate-800"><?php echo htmlspecialchars($item['anio_realizacion']); ?></span>
-                                                        </span>
-                                                    <?php endif; ?>
+                                                <!-- Detalle desplegable -->
+                                                <div id="<?php echo $idFormacion; ?>" class="hidden border-t border-slate-200 bg-white">
+                                                    <div class="p-5">
 
-                                                    <?php if (!empty($item['horas_lectivas'])): ?>
-                                                        <span class="inline-flex items-center gap-2 px-3.5 py-2 rounded-2xl bg-slate-50 border border-slate-200 text-xs font-semibold text-slate-700">
-                                                            <span class="text-slate-400 font-bold">Horas</span>
-                                                            <span class="text-slate-800"><?php echo htmlspecialchars($item['horas_lectivas']); ?></span>
-                                                        </span>
-                                                    <?php endif; ?>
-                                                </div>
+                                                        <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
 
-                                                <?php if (!empty($item['especialidad']) || !empty($item['grado_alcanzado'])): ?>
-                                                    <div class="mt-5 grid grid-cols-1 md:grid-cols-2 gap-3">
+                                                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                                                    Tipo de grado
+                                                                </p>
+
+                                                                <p class="text-sm font-bold text-slate-700">
+                                                                    <?php echo htmlspecialchars($item['tipo_grado'] ?? '—'); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                                                    Año de realización
+                                                                </p>
+
+                                                                <p class="text-sm font-bold text-slate-700">
+                                                                    <?php echo htmlspecialchars($item['anio_realizacion'] ?? '—'); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                                                    Horas lectivas
+                                                                </p>
+
+                                                                <p class="text-sm font-bold text-slate-700">
+                                                                    <?php echo htmlspecialchars($item['horas_lectivas'] ?? '—'); ?>
+                                                                </p>
+                                                            </div>
+
+                                                        </div>
+
+                                                        <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+
+                                                            <div class="bg-slate-50 border border-slate-200 rounded-xl p-4">
+                                                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-1">
+                                                                    Institución
+                                                                </p>
+
+                                                                <p class="text-sm font-bold text-slate-700 leading-relaxed">
+                                                                    <?php echo htmlspecialchars($item['institucion'] ?? '—'); ?>
+                                                                </p>
+                                                            </div>
+
+                                                            <div class="bg-red-50 border border-red-100 rounded-xl p-4">
+                                                                <p class="text-[10px] font-black uppercase tracking-widest text-red-400 mb-1">
+                                                                    Grado alcanzado
+                                                                </p>
+
+                                                                <p class="text-sm font-black text-red-950 leading-relaxed">
+                                                                    <?php echo htmlspecialchars($item['grado_alcanzado'] ?? '—'); ?>
+                                                                </p>
+                                                            </div>
+
+                                                        </div>
+
                                                         <?php if (!empty($item['especialidad'])): ?>
-                                                            <div class="rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3">
-                                                                <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">Especialidad</p>
-                                                                <p class="text-sm font-semibold text-slate-800 leading-relaxed">
-                                                                    <?php echo htmlspecialchars($item['especialidad']); ?>
+                                                            <div class="mt-4">
+                                                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">
+                                                                    Especialidad
                                                                 </p>
+
+                                                                <div class="bg-slate-50 border border-slate-200 rounded-xl p-4 text-sm text-slate-700 leading-relaxed font-semibold">
+                                                                    <?php echo nl2br(htmlspecialchars($item['especialidad'])); ?>
+                                                                </div>
                                                             </div>
                                                         <?php endif; ?>
 
-                                                        <?php if (!empty($item['grado_alcanzado'])): ?>
-                                                            <div class="rounded-2xl bg-slate-50 border border-slate-200 px-4 py-3">
-                                                                <p class="text-[11px] font-black uppercase tracking-widest text-slate-400 mb-1">Grado alcanzado</p>
-                                                                <p class="text-sm font-semibold text-slate-800 leading-relaxed">
-                                                                    <?php echo htmlspecialchars($item['grado_alcanzado']); ?>
-                                                                </p>
-                                                            </div>
-                                                        <?php endif; ?>
                                                     </div>
-                                                <?php endif; ?>
+                                                </div>
+
                                             </div>
                                         </div>
+
                                     <?php endforeach; ?>
+
                                 </div>
+
                             <?php endif; ?>
 
+                            <!-- IDIOMAS COMPACTOS -->
                             <?php $idiomas = $perfil['idiomas'] ?? []; ?>
+
                             <?php if (!empty($idiomas)): ?>
                                 <div class="mt-10 pt-8 border-t border-slate-200">
                                     <h3 class="text-xl font-black text-slate-800 mb-6 flex items-center gap-2">
-                                        <span class="w-1.5 h-6 bg-slate-800 rounded-full"></span>
+                                        <span class="w-1.5 h-6 bg-red-800 rounded-full"></span>
                                         Idiomas
+
                                         <span class="ml-auto bg-slate-50 text-slate-700 text-xs font-bold px-2 py-1 rounded-lg border border-slate-200">
                                             <?php echo count($idiomas); ?> registro(s)
                                         </span>
@@ -1526,18 +1738,27 @@
                                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                         <?php foreach ($idiomas as $idioma): ?>
                                             <div class="bg-slate-50 border border-slate-200 rounded-2xl p-5">
-                                                <p class="text-lg font-black text-slate-800 mb-2">
-                                                    <?php echo htmlspecialchars($idioma['idioma'] ?? 'Sin idioma'); ?>
-                                                </p>
-                                                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400">Nivel</p>
-                                                <p class="text-sm font-black text-red-800 mt-1">
-                                                    <?php echo htmlspecialchars($idioma['nivel'] ?? 'BASICO'); ?>
-                                                </p>
+                                                <div class="flex items-center justify-between gap-4">
+                                                    <div>
+                                                        <p class="text-base font-black text-slate-800">
+                                                            <?php echo htmlspecialchars($idioma['idioma'] ?? 'Sin idioma'); ?>
+                                                        </p>
+
+                                                        <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mt-1">
+                                                            Nivel
+                                                        </p>
+                                                    </div>
+
+                                                    <span class="inline-flex px-3 py-1.5 rounded-xl bg-red-50 border border-red-100 text-[11px] font-black text-red-900">
+                                                        <?php echo htmlspecialchars($idioma['nivel'] ?? 'BASICO'); ?>
+                                                    </span>
+                                                </div>
                                             </div>
                                         <?php endforeach; ?>
                                     </div>
                                 </div>
                             <?php endif; ?>
+
                         </div>
                     </div>
 
@@ -3708,99 +3929,99 @@
             const modalidadSeleccionada = (modalidadPadre || '').toUpperCase();
 
             const html = `
-    <div class="contrato-row adenda-row bg-slate-50 border border-slate-200 rounded-2xl p-4 relative animate-in ml-0 md:ml-8"
-        data-index="${idx}"
-        data-tipo-registro="ADENDA">
+        <div class="contrato-row adenda-row bg-slate-50 border border-slate-200 rounded-2xl p-4 relative animate-in ml-0 md:ml-8"
+            data-index="${idx}"
+            data-tipo-registro="ADENDA">
 
-        <div class="item-resumen hidden flex items-center justify-between gap-3">
-            <div class="min-w-0">
-                <div class="flex flex-wrap items-center gap-2 mb-1">
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white border border-slate-900">
-                        Adenda
-                    </span>
+            <div class="item-resumen hidden flex items-center justify-between gap-3">
+                <div class="min-w-0">
+                    <div class="flex flex-wrap items-center gap-2 mb-1">
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-slate-900 text-white border border-slate-900">
+                            Adenda
+                        </span>
 
-                    <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white text-slate-600 border border-slate-200">
-                        Padre: ${contratoLabel}
-                    </span>
+                        <span class="inline-flex items-center px-2.5 py-1 rounded-full text-[10px] font-black uppercase tracking-widest bg-white text-slate-600 border border-slate-200">
+                            Padre: ${contratoLabel}
+                        </span>
+                    </div>
+
+                    <p class="val-numero-documento text-sm font-black text-slate-800">Adenda sin número</p>
+
+                    <p class="text-[11px] text-slate-500 mt-0.5">
+                        Inicio: <span class="val-fecha-ingreso">Sin fecha</span> •
+                        Fin: <span class="val-fecha-cese">—</span> •
+                        Motivo: <span class="val-motivo-adenda">—</span>
+                    </p>
                 </div>
 
-                <p class="val-numero-documento text-sm font-black text-slate-800">Adenda sin número</p>
-
-                <p class="text-[11px] text-slate-500 mt-0.5">
-                    Inicio: <span class="val-fecha-ingreso">Sin fecha</span> •
-                    Fin: <span class="val-fecha-cese">—</span> •
-                    Motivo: <span class="val-motivo-adenda">—</span>
-                </p>
-            </div>
-
-            <button type="button" onclick="toggleFila(this, true)"
-                class="text-red-900 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100">
-                Editar
-            </button>
-        </div>
-
-        <div class="item-form mt-1 pt-1 relative">
-            <button type="button" onclick="eliminarFila(this)"
-                class="absolute -top-2 right-0 text-slate-300 hover:text-red-500 transition-colors p-1">
-                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
-                    <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
-                </svg>
-            </button>
-
-            <div class="form-grid-2 pr-6">
-                <div class="field-group span-full">
-                    <label class="field-label">N° de adenda</label>
-                    <input type="text" name="contratos[${idx}][numero_documento]" class="field-input input-numero-documento" placeholder="Ej. ADENDA N° 001-2026">
-                </div>
-
-                <div class="field-group">
-                    <label class="field-label">Fecha documento</label>
-                    <input type="date" name="contratos[${idx}][fecha_documento]" class="field-input input-fecha-documento">
-                </div>
-
-                <div class="field-group">
-                    <label class="field-label">Modalidad</label>
-                    <select name="contratos[${idx}][modalidad]" class="field-input input-modalidad">
-                        <option value="">Heredar contrato padre</option>
-                        <option value="CAS" ${modalidadSeleccionada === 'CAS' ? 'selected' : ''}>CAS</option>
-                        <option value="MILITAR" ${modalidadSeleccionada === 'MILITAR' ? 'selected' : ''}>MILITAR</option>
-                        <option value="PAC" ${modalidadSeleccionada === 'PAC' ? 'selected' : ''}>PAC</option>
-                    </select>
-                </div>
-
-                <div class="field-group">
-                    <label class="field-label">Inicio adenda</label>
-                    <input type="date" name="contratos[${idx}][fecha_ingreso]" class="field-input input-fecha-ingreso">
-                </div>
-
-                <div class="field-group">
-                    <label class="field-label">Fin adenda</label>
-                    <input type="date" name="contratos[${idx}][fecha_cese]" class="field-input input-fecha-cese">
-                </div>
-
-                <div class="field-group span-full">
-                    <label class="field-label">Motivo de adenda</label>
-                    <input type="text" name="contratos[${idx}][motivo_adenda]" class="field-input input-motivo-adenda" placeholder="Ej. Ampliación de plazo, renovación, modificación contractual...">
-                </div>
-
-                <div class="field-group span-full">
-                    <label class="field-label">Observación</label>
-                    <textarea name="contratos[${idx}][observacion]" class="field-input input-observacion" rows="2"></textarea>
-                </div>
-
-                <input type="hidden" name="contratos[${idx}][id]" value="">
-                <input type="hidden" name="contratos[${idx}][tipo_registro]" value="ADENDA">
-                <input type="hidden" name="contratos[${idx}][contrato_padre_id]" value="${contratoPadreId}">
-            </div>
-
-            <div class="mt-3 text-right">
-                <button type="button" onclick="toggleFila(this, false)"
-                    class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
-                    ✓ Listo
+                <button type="button" onclick="toggleFila(this, true)"
+                    class="text-red-900 bg-white hover:bg-red-50 px-3 py-1.5 rounded-lg text-xs font-bold border border-red-100">
+                    Editar
                 </button>
             </div>
-        </div>
-    </div>`;
+
+            <div class="item-form mt-1 pt-1 relative">
+                <button type="button" onclick="eliminarFila(this)"
+                    class="absolute -top-2 right-0 text-slate-300 hover:text-red-500 transition-colors p-1">
+                    <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/>
+                    </svg>
+                </button>
+
+                <div class="form-grid-2 pr-6">
+                    <div class="field-group span-full">
+                        <label class="field-label">N° de adenda</label>
+                        <input type="text" name="contratos[${idx}][numero_documento]" class="field-input input-numero-documento" placeholder="Ej. ADENDA N° 001-2026">
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Fecha documento</label>
+                        <input type="date" name="contratos[${idx}][fecha_documento]" class="field-input input-fecha-documento">
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Modalidad</label>
+                        <select name="contratos[${idx}][modalidad]" class="field-input input-modalidad">
+                            <option value="">Heredar contrato padre</option>
+                            <option value="CAS" ${modalidadSeleccionada === 'CAS' ? 'selected' : ''}>CAS</option>
+                            <option value="MILITAR" ${modalidadSeleccionada === 'MILITAR' ? 'selected' : ''}>MILITAR</option>
+                            <option value="PAC" ${modalidadSeleccionada === 'PAC' ? 'selected' : ''}>PAC</option>
+                        </select>
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Inicio adenda</label>
+                        <input type="date" name="contratos[${idx}][fecha_ingreso]" class="field-input input-fecha-ingreso">
+                    </div>
+
+                    <div class="field-group">
+                        <label class="field-label">Fin adenda</label>
+                        <input type="date" name="contratos[${idx}][fecha_cese]" class="field-input input-fecha-cese">
+                    </div>
+
+                    <div class="field-group span-full">
+                        <label class="field-label">Motivo de adenda</label>
+                        <input type="text" name="contratos[${idx}][motivo_adenda]" class="field-input input-motivo-adenda" placeholder="Ej. Ampliación de plazo, renovación, modificación contractual...">
+                    </div>
+
+                    <div class="field-group span-full">
+                        <label class="field-label">Observación</label>
+                        <textarea name="contratos[${idx}][observacion]" class="field-input input-observacion" rows="2"></textarea>
+                    </div>
+
+                    <input type="hidden" name="contratos[${idx}][id]" value="">
+                    <input type="hidden" name="contratos[${idx}][tipo_registro]" value="ADENDA">
+                    <input type="hidden" name="contratos[${idx}][contrato_padre_id]" value="${contratoPadreId}">
+                </div>
+
+                <div class="mt-3 text-right">
+                    <button type="button" onclick="toggleFila(this, false)"
+                        class="text-xs font-bold text-slate-500 hover:text-slate-800 transition-colors bg-slate-100 px-3 py-1.5 rounded-lg">
+                        ✓ Listo
+                    </button>
+                </div>
+            </div>
+        </div>`;
 
             lista.insertAdjacentHTML('beforeend', html);
         }
@@ -5319,6 +5540,28 @@
                 abrirModalClave();
             }
         });
+
+        function toggleFormacionDetalle(id, btn) {
+            const detalle = document.getElementById(id);
+            if (!detalle) return;
+
+            const texto = btn.querySelector('.form-toggle-text');
+            const icono = btn.querySelector('.form-toggle-icon');
+
+            const estaOculto = detalle.classList.contains('hidden');
+
+            if (estaOculto) {
+                detalle.classList.remove('hidden');
+
+                if (texto) texto.textContent = 'Ver menos';
+                if (icono) icono.classList.add('rotate-180');
+            } else {
+                detalle.classList.add('hidden');
+
+                if (texto) texto.textContent = 'Ver más';
+                if (icono) icono.classList.remove('rotate-180');
+            }
+        }
     </script>
 
     <?php require_once ROOT_PATH . 'Vista/includes/footer.php'; ?>
