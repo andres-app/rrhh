@@ -1,93 +1,145 @@
 <?php
 // /Controlador/CtrUsuario.php
 
+if (!defined('ROOT_PATH')) {
+    define('ROOT_PATH', dirname(__DIR__) . '/');
+}
+
+if (!class_exists('MdUsuario')) {
+    $rutaMdUsuario = ROOT_PATH . 'Modelo/MdUsuario.php';
+
+    if (!file_exists($rutaMdUsuario)) {
+        throw new RuntimeException('No se encontró Modelo/MdUsuario.php en: ' . $rutaMdUsuario);
+    }
+
+    require_once $rutaMdUsuario;
+}
+
 class CtrUsuario
 {
-
     /**
-     * Maneja el proceso de inicio de sesión
+     * Maneja el proceso de inicio de sesión.
      */
     public function ctrLogin()
     {
-        if (isset($_POST["login_username"])) {
-
-            // 1. Definición de variables
-            $tabla = "usuarios";
-            $item = "username";
-            $valor = $_POST["login_username"];
-
-            /**
-             * 2. Llamada al Modelo
-             * Nota: El modelo MdUsuario::mdlMostrarUsuarios ya debe tener 
-             * el LEFT JOIN con la tabla colab_maestro.
-             */
-            $respuesta = MdUsuario::mdlMostrarUsuarios($tabla, $item, $valor);
-
-            // 3. Verificación de credenciales con password_verify (por tus hashes $2y$10...)
-            if (
-                $respuesta && $respuesta["username"] == $_POST["login_username"] &&
-                password_verify($_POST["login_password"], $respuesta["password"])
-            ) {
-
-                // 4. Verificación de si el usuario está activo
-                if ($respuesta["estado"] == 1) {
-
-                    // 5. Configuración de Variables de Sesión
-                    $_SESSION["validarSesion"] = "ok";
-                    $_SESSION["user_id"] = (int)$respuesta["id"];
-                    $_SESSION["username"] = $respuesta["username"];
-                    $_SESSION["user_role"] = $respuesta["rol"];
-                    $_SESSION["cambiar_clave"] = (int)($respuesta["cambiar_clave"] ?? 0);
-
-                    /**
-                     * 6. Lógica de Nombre Real
-                     * Si existe el registro en colab_maestro usa el nombre real,
-                     * de lo contrario usa el username (ej. para el usuario 'admin')
-                     */
-                    $_SESSION["nombre_completo"] = (!empty($respuesta["nombres_apellidos"]))
-                        ? $respuesta["nombres_apellidos"]
-                        : $respuesta["username"];
-
-                    /**
-                     * 7. Redirección Inteligente según Permisos
-                     */
-                    $rolLimpio = strtolower(trim($respuesta["rol"]));
-
-                    if ($_SESSION["cambiar_clave"] === 1) {
-                        echo '<script>window.location = "perfil";</script>';
-                        exit();
-                    }
-
-                    if ($rolLimpio == "superadmin" || $rolLimpio == "admin" || $rolLimpio == "rrhh") {
-                        echo '<script>window.location = "rrhh/dashboard";</script>';
-                    } else if ($rolLimpio == "colaborador") {
-                        echo '<script>window.location = "perfil";</script>';
-                    } else {
-                        echo '<script>window.location = "inicio";</script>';
-                    }
-
-                    exit();
-                } else {
-                    echo '<div class="mt-4 bg-orange-50 border-l-4 border-orange-500 p-3 text-orange-700 text-sm italic">
-                            Esta cuenta está desactivada. Por favor, contacte con Recursos Humanos.
-                          </div>';
-                }
-            } else {
-                // Error de credenciales
-                echo '<div class="mt-4 bg-red-50 border-l-4 border-red-500 p-3 text-red-700 text-sm font-bold shadow-sm">
-                        Usuario o contraseña incorrectos.
-                      </div>';
-            }
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return;
         }
+
+        if (!isset($_POST["login_username"])) {
+            return;
+        }
+
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $tabla = "usuarios";
+        $item = "username";
+        $valor = trim((string)($_POST["login_username"] ?? ''));
+        $claveIngresada = (string)($_POST["login_password"] ?? '');
+
+        if ($valor === '' || $claveIngresada === '') {
+            echo '<div class="mt-4 bg-red-50 border-l-4 border-red-500 p-3 text-red-700 text-sm font-bold shadow-sm">
+                    Ingresa usuario y contraseña.
+                  </div>';
+            return;
+        }
+
+        $respuesta = MdUsuario::mdlMostrarUsuarios($tabla, $item, $valor);
+
+        if (!$respuesta || !is_array($respuesta)) {
+            echo '<div class="mt-4 bg-red-50 border-l-4 border-red-500 p-3 text-red-700 text-sm font-bold shadow-sm">
+                    Usuario o contraseña incorrectos.
+                  </div>';
+            return;
+        }
+
+        $usernameBD = (string)($respuesta["username"] ?? '');
+
+        $hashBD = (string)(
+            $respuesta["password"]
+            ?? $respuesta["password_hash"]
+            ?? $respuesta["clave"]
+            ?? $respuesta["contrasena"]
+            ?? $respuesta["contraseña"]
+            ?? ''
+        );
+
+        if ($usernameBD !== $valor || $hashBD === '' || !password_verify($claveIngresada, $hashBD)) {
+            echo '<div class="mt-4 bg-red-50 border-l-4 border-red-500 p-3 text-red-700 text-sm font-bold shadow-sm">
+                    Usuario o contraseña incorrectos.
+                  </div>';
+            return;
+        }
+
+        if ((int)($respuesta["estado"] ?? 0) !== 1) {
+            echo '<div class="mt-4 bg-orange-50 border-l-4 border-orange-500 p-3 text-orange-700 text-sm italic">
+                    Esta cuenta está desactivada. Por favor, contacte con Recursos Humanos.
+                  </div>';
+            return;
+        }
+
+        $_SESSION["validarSesion"] = "ok";
+        $_SESSION["user_id"] = (int)($respuesta["id"] ?? 0);
+        $_SESSION["username"] = $usernameBD;
+        $_SESSION["user_role"] = (string)($respuesta["rol"] ?? '');
+        $_SESSION["cambiar_clave"] = (int)($respuesta["cambiar_clave"] ?? 0);
+
+        $_SESSION["nombre_completo"] = !empty($respuesta["nombres_apellidos"])
+            ? $respuesta["nombres_apellidos"]
+            : $usernameBD;
+
+        $rolLimpio = strtolower(trim((string)($respuesta["rol"] ?? '')));
+
+        if ($_SESSION["cambiar_clave"] === 1) {
+            echo '<script>window.location = "perfil";</script>';
+            exit();
+        }
+
+        if (in_array($rolLimpio, ["superadmin", "admin", "rrhh"], true)) {
+            echo '<script>window.location = "rrhh/dashboard";</script>';
+            exit();
+        }
+
+        if ($rolLimpio === "colaborador") {
+            echo '<script>window.location = "perfil";</script>';
+            exit();
+        }
+
+        echo '<script>window.location = "inicio";</script>';
+        exit();
     }
 
     /**
-     * Cerrar sesión de forma segura
+     * Cerrar sesión de forma segura.
      */
-    static public function ctrLogout()
+    public static function ctrLogout()
     {
+        if (session_status() === PHP_SESSION_NONE) {
+            session_start();
+        }
+
+        $_SESSION = [];
+
+        if (ini_get("session.use_cookies")) {
+            $params = session_get_cookie_params();
+
+            setcookie(
+                session_name(),
+                '',
+                time() - 42000,
+                $params["path"],
+                $params["domain"],
+                $params["secure"],
+                $params["httponly"]
+            );
+        }
+
         session_destroy();
+
         echo '<script>window.location = "login";</script>';
+        exit();
     }
 
     public static function ctrCambiarClavePerfil(): array
@@ -163,7 +215,6 @@ class CtrUsuario
                 ];
             }
 
-            // Evita que vuelva a poner su DNI como clave
             if ($claveNueva === (string)($usuario['username'] ?? '')) {
                 return [
                     'success' => false,
@@ -184,10 +235,12 @@ class CtrUsuario
 
             $_SESSION['cambiar_clave'] = 0;
 
+            $baseUrl = defined('BASE_URL') ? BASE_URL : '';
+
             return [
                 'success' => true,
                 'mensaje' => 'Clave actualizada correctamente.',
-                'redirect' => BASE_URL . '/perfil'
+                'redirect' => $baseUrl . '/perfil'
             ];
         } catch (Throwable $e) {
             error_log('Error al cambiar clave: ' . $e->getMessage());

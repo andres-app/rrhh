@@ -1,4 +1,5 @@
 <!DOCTYPE html>
+<!-- Vista/includes/header.php -->
 <html lang="es">
 
 <head>
@@ -94,31 +95,82 @@
             }
         }
 
+        #preloader-premium {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background-color: rgba(255, 255, 255, 0.4);
+            backdrop-filter: blur(6px);
+            transition: opacity 0.35s ease, visibility 0.35s ease;
+
+            /* seguridad: se oculta solo aunque falle JS */
+            animation: ocultarPreloaderSeguro 2.8s ease forwards;
+        }
+
         .loader-hidden {
             opacity: 0 !important;
+            visibility: hidden !important;
             pointer-events: none !important;
+        }
+
+        @keyframes ocultarPreloaderSeguro {
+
+            0%,
+            75% {
+                opacity: 1;
+                visibility: visible;
+            }
+
+            100% {
+                opacity: 0;
+                visibility: hidden;
+                pointer-events: none;
+            }
         }
     </style>
 </head>
 
-<body class="bg-slate-50 font-sans antialiased text-slate-900 flex flex-col md:flex-row h-screen overflow-hidden">
+<body class="bg-slate-50 font-sans antialiased text-slate-900 flex flex-col md:flex-row min-h-screen overflow-hidden">
 
-    <div id="preloader-premium">
-        <div class="loader-container">
-            <div class="orbit"></div>
-            <div class="orbit"></div>
-            <div class="orbit"></div>
-        </div>
-        <script>
-            (function() {
-                const loader = document.getElementById('preloader-premium');
-                const close = () => {
-                    if (loader) loader.classList.add('loader-hidden');
-                };
-                // Se apaga sí o sí a los 2.5 segundos para evitar bloqueos
-                setTimeout(close, 2500);
-                window.addEventListener('load', close);
-                if (document.readyState === 'complete') close();
-            })();
-        </script>
+<div id="preloader-premium">
+    <div class="loader-container">
+        <div class="orbit"></div>
+        <div class="orbit"></div>
+        <div class="orbit"></div>
     </div>
+</div>
+
+<script>
+    (function() {
+        function cerrarPreloader() {
+            const loader = document.getElementById('preloader-premium');
+
+            if (!loader) {
+                return;
+            }
+
+            loader.classList.add('loader-hidden');
+
+            setTimeout(function() {
+                if (loader && loader.parentNode) {
+                    loader.parentNode.removeChild(loader);
+                }
+            }, 450);
+        }
+
+        window.addEventListener('load', cerrarPreloader);
+
+        document.addEventListener('DOMContentLoaded', function() {
+            setTimeout(cerrarPreloader, 600);
+        });
+
+        setTimeout(cerrarPreloader, 2500);
+
+        if (document.readyState === 'interactive' || document.readyState === 'complete') {
+            setTimeout(cerrarPreloader, 300);
+        }
+    })();
+</script>
