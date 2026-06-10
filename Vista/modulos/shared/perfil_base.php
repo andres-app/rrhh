@@ -698,6 +698,32 @@
     $perfil['pension']     = $pension;
     $perfil['bancario']    = $bancario;
 
+    $experienciaOrdenada = $perfil['experiencia'] ?? [];
+
+    usort($experienciaOrdenada, function ($a, $b) {
+        $aActual = !empty($a['actualmente_trabaja']);
+        $bActual = !empty($b['actualmente_trabaja']);
+
+        // Primero los trabajos actuales
+        if ($aActual !== $bActual) {
+            return $aActual ? -1 : 1;
+        }
+
+        // Luego ordenar por fecha final o fecha inicio más reciente
+        $fechaA = $aActual
+            ? ($a['fecha_inicio'] ?? '')
+            : ($a['fecha_fin'] ?? $a['fecha_inicio'] ?? '');
+
+        $fechaB = $bActual
+            ? ($b['fecha_inicio'] ?? '')
+            : ($b['fecha_fin'] ?? $b['fecha_inicio'] ?? '');
+
+        return strcmp($fechaB, $fechaA);
+    });
+
+    // Reemplaza la experiencia original por la ordenada para usarla en vista y modal
+    $perfil['experiencia'] = $experienciaOrdenada;
+
     $resumenSolicitudes = MdDirectorio::mdlResumenSolicitudesPorColaborador((int)($perfil['id'] ?? 0));
     ?>
 
@@ -1556,12 +1582,6 @@
                                             if ($diff->d > 0) $partes[] = $diff->d . ' día' . ($diff->d > 1 ? 's' : '');
                                             $tiempoServicio = !empty($partes) ? implode(', ', $partes) : '0 días';
                                         }
-
-                                        $badgeEstado = match ($item['estado_validacion'] ?? 'PENDIENTE') {
-                                            'APROBADO' => 'bg-green-50 text-green-700 border-green-200',
-                                            'RECHAZADO' => 'bg-red-50 text-red-700 border-red-200',
-                                            default => 'bg-amber-50 text-amber-700 border-amber-200',
-                                        };
 
                                         $idExp = 'exp-detalle-' . $i;
                                         ?>
