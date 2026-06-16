@@ -251,4 +251,113 @@ class CtrUsuario
             ];
         }
     }
+
+    public function ctrListarUsuarios()
+    {
+        $usuarios = MdUsuario::mdlMostrarUsuarios("usuarios", null, null);
+        return is_array($usuarios) ? $usuarios : [];
+    }
+
+    public function ctrCrearUsuario()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return;
+        }
+
+        if (!isset($_POST['nuevo_usuario'], $_POST['nuevo_password'], $_POST['nuevo_rol'])) {
+            return;
+        }
+
+        $username = trim($_POST['nuevo_usuario']);
+        $password = trim($_POST['nuevo_password']);
+        $rol = trim($_POST['nuevo_rol']);
+
+        if ($username === '' || $password === '' || $rol === '') {
+            return;
+        }
+
+        $rolesPermitidos = ['superadmin', 'admin', 'rrhh', 'colaborador'];
+
+        if (!in_array($rol, $rolesPermitidos, true)) {
+            return;
+        }
+
+        $existe = MdUsuario::mdlMostrarUsuarios("usuarios", "username", $username);
+
+        if ($existe) {
+            echo '<script>alert("El usuario ya existe.");</script>';
+            return;
+        }
+
+        $hash = password_hash($password, PASSWORD_DEFAULT);
+
+        $ok = MdUsuario::mdlCrearUsuario($username, $hash, $rol);
+
+        if ($ok) {
+            echo '<script>window.location = "usuarios";</script>';
+            exit;
+        }
+
+        echo '<script>alert("No se pudo crear el usuario.");</script>';
+    }
+
+    public function ctrEditarUsuario()
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return;
+        }
+
+        if (!isset($_POST['editar_id'], $_POST['editar_usuario'], $_POST['editar_rol'])) {
+            return;
+        }
+
+        $id = (int) $_POST['editar_id'];
+        $username = trim($_POST['editar_usuario']);
+        $rol = trim($_POST['editar_rol']);
+        $password = trim($_POST['editar_password'] ?? '');
+
+        if ($id <= 0 || $username === '' || $rol === '') {
+            return;
+        }
+
+        $rolesPermitidos = ['superadmin', 'admin', 'rrhh', 'colaborador'];
+
+        if (!in_array($rol, $rolesPermitidos, true)) {
+            return;
+        }
+
+        $hash = $password !== '' ? password_hash($password, PASSWORD_DEFAULT) : null;
+
+        $ok = MdUsuario::mdlEditarUsuario($id, $username, $rol, $hash);
+
+        if ($ok) {
+            echo '<script>window.location = "usuarios";</script>';
+            exit;
+        }
+
+        echo '<script>alert("No se pudo editar el usuario.");</script>';
+    }
+
+    public function ctrEstadoUsuario()
+    {
+        if (!isset($_GET['estado_id'], $_GET['estado_val'])) {
+            return;
+        }
+
+        $id = (int) $_GET['estado_id'];
+        $estado = (int) $_GET['estado_val'];
+
+        if ($id <= 0 || !in_array($estado, [0, 1], true)) {
+            return;
+        }
+
+        $ok = MdUsuario::mdlCambiarEstadoUsuario($id, $estado);
+
+        if ($ok) {
+            echo '<script>window.location = "usuarios";</script>';
+            exit;
+        }
+
+        echo '<script>alert("No se pudo cambiar el estado del usuario.");</script>';
+    }
 }

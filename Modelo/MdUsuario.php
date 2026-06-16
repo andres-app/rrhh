@@ -159,4 +159,102 @@ class MdUsuario
             return false;
         }
     }
+
+    public static function mdlCrearUsuario($username, $passwordHash, $rol)
+{
+    try {
+        $pdo = Conexion::conectar();
+
+        $columnaClave = self::mdlDetectarColumnaClave($pdo);
+
+        if (!$columnaClave) {
+            return false;
+        }
+
+        $sql = "
+            INSERT INTO usuarios 
+                (username, `$columnaClave`, rol, estado, cambiar_clave)
+            VALUES 
+                (:username, :password, :rol, 1, 1)
+        ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+        $stmt->bindParam(':password', $passwordHash, PDO::PARAM_STR);
+        $stmt->bindParam(':rol', $rol, PDO::PARAM_STR);
+
+        return $stmt->execute();
+    } catch (Throwable $e) {
+        error_log('Error en MdUsuario::mdlCrearUsuario: ' . $e->getMessage());
+        return false;
+    }
+}
+
+public static function mdlEditarUsuario($id, $username, $rol, $passwordHash = null)
+{
+    try {
+        $pdo = Conexion::conectar();
+
+        $columnaClave = self::mdlDetectarColumnaClave($pdo);
+
+        if (!$columnaClave) {
+            return false;
+        }
+
+        if ($passwordHash !== null && $passwordHash !== '') {
+            $sql = "
+                UPDATE usuarios
+                SET 
+                    username = :username,
+                    rol = :rol,
+                    `$columnaClave` = :password
+                WHERE id = :id
+            ";
+        } else {
+            $sql = "
+                UPDATE usuarios
+                SET 
+                    username = :username,
+                    rol = :rol
+                WHERE id = :id
+            ";
+        }
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':username', $username, PDO::PARAM_STR);
+        $stmt->bindParam(':rol', $rol, PDO::PARAM_STR);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+        if ($passwordHash !== null && $passwordHash !== '') {
+            $stmt->bindParam(':password', $passwordHash, PDO::PARAM_STR);
+        }
+
+        return $stmt->execute();
+    } catch (Throwable $e) {
+        error_log('Error en MdUsuario::mdlEditarUsuario: ' . $e->getMessage());
+        return false;
+    }
+}
+
+public static function mdlCambiarEstadoUsuario($id, $estado)
+{
+    try {
+        $pdo = Conexion::conectar();
+
+        $sql = "
+            UPDATE usuarios
+            SET estado = :estado
+            WHERE id = :id
+        ";
+
+        $stmt = $pdo->prepare($sql);
+        $stmt->bindParam(':estado', $estado, PDO::PARAM_INT);
+        $stmt->bindParam(':id', $id, PDO::PARAM_INT);
+
+        return $stmt->execute();
+    } catch (Throwable $e) {
+        error_log('Error en MdUsuario::mdlCambiarEstadoUsuario: ' . $e->getMessage());
+        return false;
+    }
+}
 }

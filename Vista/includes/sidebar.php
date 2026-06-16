@@ -177,10 +177,10 @@ if (!function_exists('itemSidebar')) {
 
             <?php if ($accesoPerfil): ?>
                 <?= itemSidebar(
-                    BASE_URL . "/perfil",
-                    '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M12 12c2.7 0 5-2.69 5-6s-2.3-6-5-6-5 2.69-5 6 2.3 6 5 6zm0 2c-3.33 0-10 1.67-10 5v3h20v-3c0-3.33-6.67-5-10-5z"/></svg>',
-                    "Mi Perfil",
-                    $menu_activo === 'perfil'
+                    BASE_URL . "/configuracion/permisos",
+                    '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94a7.49 7.49 0 000-1.88l2.03-1.58a.5.5 0 00.12-.65l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.28 7.28 0 00-1.63-.94l-.36-2.54A.5.5 0 0013.9 1h-3.8a.5.5 0 00-.5.42l-.36 2.54c-.58.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 00-.6.22L2.7 7.48a.5.5 0 00.12.65l2.03 1.58a7.49 7.49 0 000 1.88L2.82 13.17a.5.5 0 00-.12.65l1.92 3.32c.14.24.43.34.68.22l2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54c.04.24.25.42.5.42h3.8c.25 0 .46-.18.5-.42l.36-2.54c.58-.23 1.13-.54 1.63-.94l2.39.96c.25.12.54.02.68-.22l1.92-3.32a.5.5 0 00-.12-.65l-2.03-1.58zM12 15a3 3 0 110-6 3 3 0 010 6z"/></svg>',
+                    "Permisos",
+                    $menu_activo === 'permisos'
                 ) ?>
             <?php endif; ?>
 
@@ -272,16 +272,16 @@ if (!function_exists('itemSidebar')) {
 
             <?php if ($accesoConfig): ?>
                 <?= itemSidebar(
-                    BASE_URL . "/configuracion",
+                    BASE_URL . "/configuracion/permisos",
                     '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M19.14 12.94a7.49 7.49 0 000-1.88l2.03-1.58a.5.5 0 00.12-.65l-1.92-3.32a.5.5 0 00-.6-.22l-2.39.96a7.28 7.28 0 00-1.63-.94l-.36-2.54A.5.5 0 0013.9 1h-3.8a.5.5 0 00-.5.42l-.36 2.54c-.58.23-1.13.54-1.63.94l-2.39-.96a.5.5 0 00-.6.22L2.7 7.48a.5.5 0 00.12.65l2.03 1.58a7.49 7.49 0 000 1.88L2.82 13.17a.5.5 0 00-.12.65l1.92 3.32c.14.24.43.34.68.22l2.39-.96c.5.4 1.05.72 1.63.94l.36 2.54c.04.24.25.42.5.42h3.8c.25 0 .46-.18.5-.42l.36-2.54c.58-.23 1.13-.54 1.63-.94l2.39.96c.25.12.54.02.68-.22l1.92-3.32a.5.5 0 00-.12-.65l-2.03-1.58zM12 15a3 3 0 110-6 3 3 0 010 6z"/></svg>',
                     "Permisos",
-                    $menu_activo === 'configuracion'
+                    $menu_activo === 'permisos'
                 ) ?>
             <?php endif; ?>
 
             <?php if ($accesoUsuarios): ?>
                 <?= itemSidebar(
-                    BASE_URL . "/rrhh/usuarios",
+                    BASE_URL . "/configuracion/usuarios",
                     '<svg class="w-5 h-5" fill="currentColor" viewBox="0 0 24 24"><path d="M16 11c1.66 0 3-1.79 3-4s-1.34-4-3-4-3 1.79-3 4 1.34 4 3 4zM8 11c1.66 0 3-1.79 3-4S9.66 3 8 3 5 4.79 5 7s1.34 4 3 4zm0 2c-2.67 0-8 1.34-8 4v3h16v-3c0-2.66-5.33-4-8-4zm8 0c-.29 0-.62.02-.97.05 1.37.98 2.97 2.44 2.97 3.95v3h6v-3c0-2.66-5.33-4-8-4z"/></svg>',
                     "Usuarios",
                     $menu_activo === 'usuarios'
@@ -313,33 +313,33 @@ if (!function_exists('itemSidebar')) {
 </aside>
 
 <style>
-.custom-scrollbar::-webkit-scrollbar {
-    display: none;
-}
+    .custom-scrollbar::-webkit-scrollbar {
+        display: none;
+    }
 
-.custom-scrollbar {
-    scrollbar-width: none;
-}
+    .custom-scrollbar {
+        scrollbar-width: none;
+    }
 </style>
 
 <script>
-(function() {
-    const btnMenu = document.getElementById("btn-menu");
-    const sidebar = document.getElementById("sidebar");
-    const overlay = document.getElementById("sidebar-overlay");
+    (function() {
+        const btnMenu = document.getElementById("btn-menu");
+        const sidebar = document.getElementById("sidebar");
+        const overlay = document.getElementById("sidebar-overlay");
 
-    if (btnMenu && sidebar && overlay) {
-        btnMenu.onclick = () => {
-            sidebar.classList.remove("-translate-x-full");
-            overlay.classList.remove("hidden");
-        };
-    }
+        if (btnMenu && sidebar && overlay) {
+            btnMenu.onclick = () => {
+                sidebar.classList.remove("-translate-x-full");
+                overlay.classList.remove("hidden");
+            };
+        }
 
-    if (overlay && sidebar) {
-        overlay.onclick = () => {
-            sidebar.classList.add("-translate-x-full");
-            overlay.classList.add("hidden");
-        };
-    }
-})();
+        if (overlay && sidebar) {
+            overlay.onclick = () => {
+                sidebar.classList.add("-translate-x-full");
+                overlay.classList.add("hidden");
+            };
+        }
+    })();
 </script>
