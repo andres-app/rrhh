@@ -353,6 +353,8 @@ RESUMEN DASHBOARD DINÁMICO
             m.usuario_id,
             m.nombres_apellidos,
             m.dni,
+            m.ruc,
+            m.licencia_conducir,
             m.fecha_nacimiento,
             m.lugar_nacimiento,
             m.edad,
@@ -360,6 +362,7 @@ RESUMEN DASHBOARD DINÁMICO
             m.estado_civil,
             m.grupo_sanguineo,
             m.talla,
+            m.grado_militar,
             m.celular,
             m.correo_personal,
             m.direccion_residencia,
@@ -592,30 +595,71 @@ RESUMEN DASHBOARD DINÁMICO
             // ─────────────────────────────────────────────
             // 1. TABLA MAESTRO
             // ─────────────────────────────────────────────
+            $stmtActualPersonal = $pdo->prepare("
+    SELECT 
+        ruc,
+        licencia_conducir,
+        sexo,
+        grado_militar
+    FROM colab_maestro
+    WHERE id = :id
+    LIMIT 1
+");
+            $stmtActualPersonal->execute([':id' => $colabId]);
+            $personalActual = $stmtActualPersonal->fetch(PDO::FETCH_ASSOC) ?: [];
+
+            $sexoRecibido = array_key_exists('sexo', $datos)
+                ? strtoupper(trim((string)$datos['sexo']))
+                : null;
+
+            $sexoFinal = array_key_exists('sexo', $datos)
+                ? (in_array($sexoRecibido, ['M', 'F'], true) ? $sexoRecibido : null)
+                : ($personalActual['sexo'] ?? null);
+
             $stmt = $pdo->prepare("
             UPDATE colab_maestro SET
-                fecha_nacimiento     = :fecha_nacimiento,
-                lugar_nacimiento     = :lugar_nacimiento,
-                estado_civil         = :estado_civil,
-                grupo_sanguineo      = :grupo_sanguineo,
-                talla                = :talla,
-                celular              = :celular,
-                correo_personal      = :correo_personal,
-                direccion_residencia = :direccion_residencia,
-                distrito             = :distrito
+                ruc                   = :ruc,
+                licencia_conducir     = :licencia_conducir,
+                fecha_nacimiento      = :fecha_nacimiento,
+                lugar_nacimiento      = :lugar_nacimiento,
+                sexo                  = :sexo,
+                estado_civil          = :estado_civil,
+                grupo_sanguineo       = :grupo_sanguineo,
+                talla                 = :talla,
+                grado_militar         = :grado_militar,
+                celular               = :celular,
+                correo_personal       = :correo_personal,
+                direccion_residencia  = :direccion_residencia,
+                distrito              = :distrito,
+                actualizado_por       = :actualizado_por
             WHERE id = :id
         ");
 
             $stmt->execute([
+                ':ruc'                  => array_key_exists('ruc', $datos)
+                    ? self::nullify($datos['ruc'] ?? null)
+                    : ($personalActual['ruc'] ?? null),
+
+                ':licencia_conducir'    => array_key_exists('licencia_conducir', $datos)
+                    ? self::nullify($datos['licencia_conducir'] ?? null)
+                    : ($personalActual['licencia_conducir'] ?? null),
+
                 ':fecha_nacimiento'     => !empty($datos['fecha_nacimiento']) ? $datos['fecha_nacimiento'] : null,
                 ':lugar_nacimiento'     => self::nullify($datos['lugar_nacimiento'] ?? null),
+                ':sexo'                 => $sexoFinal,
                 ':estado_civil'         => self::nullify($datos['estado_civil'] ?? null),
                 ':grupo_sanguineo'      => self::nullify($datos['grupo_sanguineo'] ?? null),
                 ':talla'                => self::nullify($datos['talla'] ?? null),
+
+                ':grado_militar'        => array_key_exists('grado_militar', $datos)
+                    ? self::nullify($datos['grado_militar'] ?? null)
+                    : ($personalActual['grado_militar'] ?? null),
+
                 ':celular'              => self::nullify($datos['celular'] ?? null),
                 ':correo_personal'      => self::nullify($datos['correo_personal'] ?? null),
                 ':direccion_residencia' => self::nullify($datos['direccion_residencia'] ?? null),
                 ':distrito'             => self::nullify($datos['distrito'] ?? null),
+                ':actualizado_por'      => (int)($_SESSION['user_id'] ?? 0),
                 ':id'                   => $colabId,
             ]);
 

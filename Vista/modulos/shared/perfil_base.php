@@ -2013,6 +2013,40 @@
                                 </div>
 
                                 <div class="field-group">
+                                    <label class="field-label">RUC</label>
+                                    <input
+                                        type="text"
+                                        name="ruc"
+                                        class="field-input"
+                                        maxlength="11"
+                                        placeholder="Ej: 10456789012"
+                                        value="<?php echo htmlspecialchars($perfil['ruc'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Licencia de Conducir</label>
+                                    <input
+                                        type="text"
+                                        name="licencia_conducir"
+                                        class="field-input"
+                                        placeholder="Ej: A-I / A-II"
+                                        value="<?php echo htmlspecialchars($perfil['licencia_conducir'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Sexo</label>
+                                    <select name="sexo" class="field-input">
+                                        <option value="">Seleccionar</option>
+                                        <option value="M" <?php echo (($perfil['sexo'] ?? '') === 'M') ? 'selected' : ''; ?>>
+                                            Masculino
+                                        </option>
+                                        <option value="F" <?php echo (($perfil['sexo'] ?? '') === 'F') ? 'selected' : ''; ?>>
+                                            Femenino
+                                        </option>
+                                    </select>
+                                </div>
+
+                                <div class="field-group">
                                     <label class="field-label">Fecha de Nacimiento</label>
                                     <input
                                         type="date"
@@ -2064,6 +2098,16 @@
                                         class="field-input"
                                         placeholder="Ej: 1.70"
                                         value="<?php echo htmlspecialchars($perfil['talla'] ?? ''); ?>">
+                                </div>
+
+                                <div class="field-group">
+                                    <label class="field-label">Grado Militar</label>
+                                    <input
+                                        type="text"
+                                        name="grado_militar"
+                                        class="field-input"
+                                        placeholder="Ej: Técnico / Oficial / Suboficial"
+                                        value="<?php echo htmlspecialchars($perfil['grado_militar'] ?? ''); ?>">
                                 </div>
                             </div>
                         </div>
@@ -2121,7 +2165,6 @@
                                     <div class="field-group">
                                         <label class="field-label">Sueldo</label>
                                         <input type="number" step="0.01" min="0" name="sueldo" class="field-input" value="<?php echo htmlspecialchars($perfil['sueldo'] ?? ''); ?>">
-                                            value="<?php echo htmlspecialchars($perfil['sueldo'] ?? ''); ?>">
                                     </div>
 
                                     <div class="field-group">
