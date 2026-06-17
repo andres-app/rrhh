@@ -781,13 +781,13 @@
 
                         <!-- Acción -->
                         <div class="shrink-0 flex flex-col sm:flex-row gap-3">
-                            <button onclick="abrirModalClave()"
+                            <!-- <button onclick="abrirModalClave()"
                                 class="inline-flex items-center justify-center gap-2 bg-slate-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-slate-800 transition-all shadow-lg shadow-slate-900/20 active:scale-95">
                                 <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5">
                                     <path stroke-linecap="round" stroke-linejoin="round" d="M16.5 10.5V7a4.5 4.5 0 00-9 0v3.5m-.75 0h10.5A1.75 1.75 0 0119 12.25v6A1.75 1.75 0 0117.25 20H6.75A1.75 1.75 0 015 18.25v-6a1.75 1.75 0 011.75-1.75z" />
                                 </svg>
                                 Cambiar Clave
-                            </button>
+                            </button> -->
 
                             <button onclick="abrirModal()"
                                 class="inline-flex items-center justify-center gap-2 bg-red-900 text-white px-6 py-3 rounded-2xl font-bold hover:bg-[#310404] transition-all shadow-lg shadow-red-900/20 active:scale-95">
