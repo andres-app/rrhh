@@ -507,16 +507,7 @@ $contratosAgrupados = [];
 $colaboradores = [];
 $modalidades = [];
 
-$totalRegistros = 0;
-$totalContratos = 0;
-$totalAdendas = 0;
 $totalGrupos = 0;
-$totalVigentes = 0;
-$totalPorVencer = 0;
-$totalVencidos = 0;
-$totalActivos = 0;
-$totalCesados = 0;
-$totalConAdendas = 0;
 $errorVista = null;
 
 try {
@@ -649,8 +640,6 @@ try {
 
     $registros = $stmt->fetchAll(PDO::FETCH_ASSOC) ?: [];
 
-    $totalRegistros = count($registros);
-
     foreach ($registros as $row) {
         $row['_adendas'] = [];
         $id = (int)($row['id'] ?? 0);
@@ -662,12 +651,6 @@ try {
         $porId[$id] = $row;
 
         $tipo = tipoRegistroContrato($row);
-
-        if ($tipo === 'ADENDA') {
-            $totalAdendas++;
-        } else {
-            $totalContratos++;
-        }
 
         $modalidad = strtoupper(trim((string)($row['modalidad'] ?? '')));
 
@@ -703,29 +686,6 @@ try {
 
         $estado = estadoVigenciaContrato($vigenciaFinal);
 
-        if ($estado['clave'] === 'vigente') {
-            $totalVigentes++;
-        }
-
-        if ($estado['clave'] === 'por_vencer') {
-            $totalPorVencer++;
-        }
-
-        if ($estado['clave'] === 'vencido') {
-            $totalVencidos++;
-        }
-
-        $situacion = strtoupper(trim((string)($grupo['situacion_colaborador'] ?? 'ACTIVO')));
-
-        if ($situacion === 'CESADO') {
-            $totalCesados++;
-        } else {
-            $totalActivos++;
-        }
-
-        if (!empty($grupo['_adendas'])) {
-            $totalConAdendas++;
-        }
     }
 
     ksort($modalidades);
@@ -809,80 +769,16 @@ require_once __DIR__ . '/../../includes/sidebar.php';
             </div>
         <?php endif; ?>
 
-        <!-- KPIS -->
-        <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-4">
-
-            <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Registros</p>
-                <p class="text-3xl font-black text-slate-800"><?= number_format($totalRegistros) ?></p>
-                <p class="text-xs text-slate-400 mt-1">Contratos + adendas</p>
-            </div>
-
-            <div class="bg-red-50 p-5 rounded-3xl border border-red-100 shadow-sm">
-                <p class="text-[10px] font-black uppercase tracking-widest text-red-400 mb-2">Contratos</p>
-                <p class="text-3xl font-black text-red-900"><?= number_format($totalContratos) ?></p>
-                <p class="text-xs text-red-500/80 mt-1">Contratos padre</p>
-            </div>
-
-            <div class="bg-white p-5 rounded-3xl border border-slate-200 shadow-sm">
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-400 mb-2">Adendas</p>
-                <p class="text-3xl font-black text-slate-800"><?= number_format($totalAdendas) ?></p>
-                <p class="text-xs text-slate-400 mt-1">Historial vinculado</p>
-            </div>
-
-            <div class="bg-emerald-50 p-5 rounded-3xl border border-emerald-100 shadow-sm">
-                <p class="text-[10px] font-black uppercase tracking-widest text-emerald-500 mb-2">Vigentes</p>
-                <p class="text-3xl font-black text-emerald-700"><?= number_format($totalVigentes) ?></p>
-                <p class="text-xs text-emerald-600/80 mt-1">Según vigencia final</p>
-            </div>
-
-            <div class="bg-amber-50 p-5 rounded-3xl border border-amber-100 shadow-sm">
-                <p class="text-[10px] font-black uppercase tracking-widest text-amber-500 mb-2">Por vencer</p>
-                <p class="text-3xl font-black text-amber-700"><?= number_format($totalPorVencer) ?></p>
-                <p class="text-xs text-amber-600/80 mt-1">Dentro de 30 días</p>
-            </div>
-
-            <div class="bg-slate-100 p-5 rounded-3xl border border-slate-200 shadow-sm">
-                <p class="text-[10px] font-black uppercase tracking-widest text-slate-500 mb-2">Vencidos</p>
-                <p class="text-3xl font-black text-slate-700"><?= number_format($totalVencidos) ?></p>
-                <p class="text-xs text-slate-500 mt-1">Ya culminados</p>
-            </div>
-
-        </div>
-
         <!-- PANEL PRINCIPAL -->
         <div class="bg-white border border-slate-200 rounded-[32px] shadow-sm overflow-hidden">
 
             <!-- FILTROS -->
             <div class="px-6 py-5 border-b border-slate-100 bg-gradient-to-br from-white via-slate-50 to-white">
-                <div class="flex flex-col xl:flex-row xl:items-start xl:justify-between gap-5 mb-5">
-                    <div>
-                        <h2 class="text-lg font-black text-slate-800">Listado jerárquico</h2>
-                        <p class="text-sm text-slate-500 mt-0.5">
-                            Cada contrato muestra su vigencia real y permite abrir sus adendas solo cuando sea necesario.
-                        </p>
-                    </div>
-
-                    <div class="flex flex-wrap gap-2 text-[11px] font-black">
-                        <span class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-emerald-50 text-emerald-700 border border-emerald-100">
-                            <span class="w-2 h-2 rounded-full bg-emerald-500"></span>
-                            <?= number_format($totalActivos) ?> activo(s)
-                        </span>
-
-                        <span class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-red-50 text-red-700 border border-red-100">
-                            <span class="w-2 h-2 rounded-full bg-red-500"></span>
-                            <?= number_format($totalCesados) ?> cesado(s)
-                        </span>
-
-                        <span class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-100 text-slate-700 border border-slate-200">
-                            <span class="w-2 h-2 rounded-full bg-slate-500"></span>
-                            <?= number_format($totalConAdendas) ?> con adenda(s)
-                        </span>
-
-                        <span id="contadorFiltrado" class="inline-flex items-center gap-2 px-3 py-2 rounded-2xl bg-slate-900 text-white border border-slate-900">
-                            <?= number_format($totalGrupos) ?> visible(s)
-                        </span>
-                    </div>
+                <div class="mb-5">
+                    <h2 class="text-lg font-black text-slate-800">Listado jerárquico</h2>
+                    <p class="text-sm text-slate-500 mt-0.5">
+                        Cada contrato muestra su vigencia real y permite abrir sus adendas solo cuando sea necesario.
+                    </p>
                 </div>
 
                 <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-6 gap-3">
@@ -935,7 +831,24 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                 </div>
 
-                <div class="mt-3 flex justify-end">
+                <div class="mt-4 flex flex-col md:flex-row md:items-center md:justify-between gap-3">
+                    <div class="flex flex-wrap items-center gap-2">
+                        <label for="pageSizeContratos" class="text-xs font-black uppercase tracking-widest text-slate-400">
+                            Mostrar
+                        </label>
+
+                        <select id="pageSizeContratos"
+                            class="rounded-2xl border border-slate-200 bg-white px-3 py-2 text-xs font-black text-slate-700 focus:outline-none focus:ring-4 focus:ring-red-100 focus:border-red-300">
+                            <option value="10">10</option>
+                            <option value="25">25</option>
+                            <option value="50">50</option>
+                            <option value="100">100</option>
+                            <option value="todos">Todos</option>
+                        </select>
+
+                        <span class="text-xs font-bold text-slate-400">registros por página</span>
+                    </div>
+
                     <button type="button" id="btnLimpiarFiltros"
                         class="inline-flex items-center justify-center gap-2 px-4 py-2 rounded-2xl bg-slate-100 text-slate-600 text-xs font-black hover:bg-slate-200 transition-all">
                         Limpiar filtros
@@ -1303,6 +1216,27 @@ require_once __DIR__ . '/../../includes/sidebar.php';
 
                             </div>
                         <?php endforeach; ?>
+                    </div>
+
+                    <div id="paginacionContratos"
+                        class="mt-5 flex flex-col xl:flex-row xl:items-center xl:justify-between gap-4 border-t border-slate-100 pt-4">
+                        <div id="infoPaginacionContratos" class="text-xs font-black text-slate-500">
+                            Mostrando 0 a 0 de 0 registros
+                        </div>
+
+                        <div class="flex flex-wrap items-center gap-2">
+                            <button type="button" id="btnPaginaAnterior"
+                                class="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-xs font-black text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                Anterior
+                            </button>
+
+                            <div id="numerosPaginacionContratos" class="flex flex-wrap items-center gap-1"></div>
+
+                            <button type="button" id="btnPaginaSiguiente"
+                                class="px-3 py-2 rounded-2xl border border-slate-200 bg-white text-xs font-black text-slate-600 hover:bg-slate-100 disabled:opacity-40 disabled:cursor-not-allowed">
+                                Siguiente
+                            </button>
+                        </div>
                     </div>
                 </div>
 
@@ -1686,8 +1620,16 @@ ksort($modalidadesDatalist);
         const filtroModalidad = document.getElementById('filtroModalidad');
         const btnLimpiar = document.getElementById('btnLimpiarFiltros');
         const filas = Array.from(document.querySelectorAll('.fila-contrato'));
-        const contador = document.getElementById('contadorFiltrado');
         const sinResultados = document.getElementById('sinResultadosFiltro');
+        const pageSizeContratos = document.getElementById('pageSizeContratos');
+        const paginacionContratos = document.getElementById('paginacionContratos');
+        const infoPaginacionContratos = document.getElementById('infoPaginacionContratos');
+        const numerosPaginacionContratos = document.getElementById('numerosPaginacionContratos');
+        const btnPaginaAnterior = document.getElementById('btnPaginaAnterior');
+        const btnPaginaSiguiente = document.getElementById('btnPaginaSiguiente');
+
+        let paginaActualContratos = 1;
+        let filasFiltradasContratos = [];
 
         function normalizar(texto) {
             return (texto || '')
@@ -1758,14 +1700,132 @@ ksort($modalidadesDatalist);
             return true;
         }
 
-        function aplicarFiltros() {
+        function obtenerPageSizeContratos() {
+            if (!pageSizeContratos) {
+                return 10;
+            }
+
+            if (pageSizeContratos.value === 'todos') {
+                return Math.max(filasFiltradasContratos.length, 1);
+            }
+
+            const valor = parseInt(pageSizeContratos.value, 10);
+
+            return Number.isFinite(valor) && valor > 0 ? valor : 10;
+        }
+
+        function crearBotonPagina(numero, activo) {
+            const btn = document.createElement('button');
+            btn.type = 'button';
+            btn.textContent = numero.toLocaleString('es-PE');
+            btn.className = activo
+                ? 'min-w-9 px-3 py-2 rounded-2xl bg-red-900 text-white text-xs font-black border border-red-900'
+                : 'min-w-9 px-3 py-2 rounded-2xl bg-white text-slate-600 text-xs font-black border border-slate-200 hover:bg-slate-100';
+
+            btn.addEventListener('click', function() {
+                paginaActualContratos = numero;
+                renderizarPaginaContratos();
+            });
+
+            return btn;
+        }
+
+        function crearPuntosPaginacion() {
+            const span = document.createElement('span');
+            span.textContent = '...';
+            span.className = 'px-2 py-2 text-xs font-black text-slate-400';
+
+            return span;
+        }
+
+        function renderizarNumerosPaginacion(totalPaginas) {
+            if (!numerosPaginacionContratos) {
+                return;
+            }
+
+            numerosPaginacionContratos.innerHTML = '';
+
+            if (totalPaginas <= 1) {
+                return;
+            }
+
+            const paginas = new Set([1, totalPaginas]);
+
+            for (let i = paginaActualContratos - 1; i <= paginaActualContratos + 1; i++) {
+                if (i >= 1 && i <= totalPaginas) {
+                    paginas.add(i);
+                }
+            }
+
+            const ordenadas = Array.from(paginas).sort((a, b) => a - b);
+            let anterior = 0;
+
+            ordenadas.forEach(numero => {
+                if (anterior > 0 && numero - anterior > 1) {
+                    numerosPaginacionContratos.appendChild(crearPuntosPaginacion());
+                }
+
+                numerosPaginacionContratos.appendChild(crearBotonPagina(numero, numero === paginaActualContratos));
+                anterior = numero;
+            });
+        }
+
+        function renderizarPaginaContratos() {
+            const total = filasFiltradasContratos.length;
+            const pageSize = obtenerPageSizeContratos();
+            const totalPaginas = Math.max(Math.ceil(total / pageSize), 1);
+
+            if (paginaActualContratos > totalPaginas) {
+                paginaActualContratos = totalPaginas;
+            }
+
+            if (paginaActualContratos < 1) {
+                paginaActualContratos = 1;
+            }
+
+            const inicio = (paginaActualContratos - 1) * pageSize;
+            const fin = inicio + pageSize;
+            const filasPagina = new Set(filasFiltradasContratos.slice(inicio, fin));
+
+            filas.forEach(fila => {
+                const debeMostrar = filasPagina.has(fila);
+                fila.style.display = debeMostrar ? '' : 'none';
+            });
+
+            if (sinResultados) {
+                sinResultados.classList.toggle('hidden', total !== 0);
+            }
+
+            if (paginacionContratos) {
+                paginacionContratos.classList.toggle('hidden', total === 0);
+            }
+
+            if (infoPaginacionContratos) {
+                const desde = total === 0 ? 0 : inicio + 1;
+                const hasta = Math.min(fin, total);
+                infoPaginacionContratos.textContent = `Mostrando ${desde.toLocaleString('es-PE')} a ${hasta.toLocaleString('es-PE')} de ${total.toLocaleString('es-PE')} registro(s)`;
+            }
+
+            if (btnPaginaAnterior) {
+                btnPaginaAnterior.disabled = paginaActualContratos <= 1;
+            }
+
+            if (btnPaginaSiguiente) {
+                btnPaginaSiguiente.disabled = paginaActualContratos >= totalPaginas;
+            }
+
+            renderizarNumerosPaginacion(totalPaginas);
+            cerrarMenusAcciones();
+        }
+
+        function aplicarFiltros(resetPagina = true) {
             const q = normalizar(inputTexto ? inputTexto.value : '');
             const situacion = filtroSituacion ? filtroSituacion.value : '';
             const tipo = filtroTipo ? filtroTipo.value : '';
             const estado = filtroEstado ? filtroEstado.value : '';
             const modalidad = filtroModalidad ? filtroModalidad.value : '';
 
-            let visibles = 0;
+            filasFiltradasContratos = [];
 
             filas.forEach(fila => {
                 const texto = normalizar(fila.dataset.search || '');
@@ -1777,10 +1837,8 @@ ksort($modalidadesDatalist);
 
                 const visible = cumpleTexto && cumpleSituacion && cumpleTipo && cumpleEstado && cumpleModalidad;
 
-                fila.style.display = visible ? '' : 'none';
-
                 if (visible) {
-                    visibles++;
+                    filasFiltradasContratos.push(fila);
 
                     const adendas = Array.from(fila.querySelectorAll('.item-adenda'));
                     const hayCoincidenciaAdenda = q !== '' && adendas.some(adenda => {
@@ -1793,21 +1851,50 @@ ksort($modalidadesDatalist);
                 }
             });
 
-            if (contador) {
-                contador.textContent = visibles.toLocaleString('es-PE') + ' visible(s)';
+            if (resetPagina) {
+                paginaActualContratos = 1;
             }
 
-            if (sinResultados) {
-                sinResultados.classList.toggle('hidden', visibles !== 0);
-            }
+            renderizarPaginaContratos();
         }
 
         [inputTexto, filtroSituacion, filtroTipo, filtroEstado, filtroModalidad].forEach(el => {
             if (el) {
-                el.addEventListener('input', aplicarFiltros);
-                el.addEventListener('change', aplicarFiltros);
+                el.addEventListener('input', function() {
+                    aplicarFiltros(true);
+                });
+                el.addEventListener('change', function() {
+                    aplicarFiltros(true);
+                });
             }
         });
+
+        if (pageSizeContratos) {
+            pageSizeContratos.addEventListener('change', function() {
+                aplicarFiltros(true);
+            });
+        }
+
+        if (btnPaginaAnterior) {
+            btnPaginaAnterior.addEventListener('click', function() {
+                if (paginaActualContratos > 1) {
+                    paginaActualContratos--;
+                    renderizarPaginaContratos();
+                }
+            });
+        }
+
+        if (btnPaginaSiguiente) {
+            btnPaginaSiguiente.addEventListener('click', function() {
+                const pageSize = obtenerPageSizeContratos();
+                const totalPaginas = Math.max(Math.ceil(filasFiltradasContratos.length / pageSize), 1);
+
+                if (paginaActualContratos < totalPaginas) {
+                    paginaActualContratos++;
+                    renderizarPaginaContratos();
+                }
+            });
+        }
 
         if (btnLimpiar) {
             btnLimpiar.addEventListener('click', function() {
@@ -1819,7 +1906,7 @@ ksort($modalidadesDatalist);
 
                 filas.forEach(fila => abrirCerrarHistorial(fila, false));
 
-                aplicarFiltros();
+                aplicarFiltros(true);
             });
         }
 
@@ -2133,6 +2220,6 @@ ksort($modalidadesDatalist);
             cerrarMenusAcciones();
         });
 
-        aplicarFiltros();
+        aplicarFiltros(true);
     });
 </script>
